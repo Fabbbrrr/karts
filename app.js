@@ -136,7 +136,12 @@ const elements = {
     hudShowIntervalCheckbox: document.getElementById('hud-show-interval'),
     hudShowConsistencyCheckbox: document.getElementById('hud-show-consistency'),
     hudShowLapHistoryCheckbox: document.getElementById('hud-show-lap-history'),
-    showAllHud: document.getElementById('show-all-hud')
+    showAllHud: document.getElementById('show-all-hud'),
+    
+    // Driver notes
+    hudNoteInput: document.getElementById('hud-note-input'),
+    hudAddNoteBtn: document.getElementById('hud-add-note-btn'),
+    hudNotesList: document.getElementById('hud-notes-list')
 };
 
 // Initialize App
@@ -148,6 +153,9 @@ function init() {
     
     // Load personal records
     loadPersonalRecords();
+    
+    // Load driver notes
+    loadDriverNotes();
     
     // Enable always-on display mode
     enableAlwaysOnDisplay();
@@ -502,6 +510,21 @@ function setupEventListeners() {
             alert('All HUD components restored! ✅');
         });
     }
+    
+    // Driver notes
+    if (elements.hudAddNoteBtn) {
+        elements.hudAddNoteBtn.addEventListener('click', () => {
+            addDriverNote();
+        });
+    }
+    
+    if (elements.hudNoteInput) {
+        elements.hudNoteInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addDriverNote();
+            }
+        });
+    }
 }
 
 // Settings Management
@@ -727,6 +750,7 @@ function resetSessionData() {
     state.lastBestLap = {};
     state.lastGap = {};
     state.positionHistory = {};
+    state.driverNotes = {};
     console.log('✅ Session data reset complete!');
 }
 
@@ -1297,6 +1321,9 @@ function updateHUDView() {
     
     // Update lap history
     updateLapHistoryDisplay(mainDriver, run.best_time_raw);
+    
+    // Update driver notes
+    updateDriverNotesList();
 }
 
 // Update session timer with warnings
@@ -1485,8 +1512,123 @@ function toggleHUDCard(settingName) {
 
 // Expose toggleHUDCard to global scope for onclick handlers
 window.kartingApp = {
-    toggleHUDCard: toggleHUDCard
+    toggleHUDCard: toggleHUDCard,
+    deleteDriverNote: (kartNumber, timestamp) => deleteDriverNote(kartNumber, timestamp)
 };
+
+// Driver Notes Functions
+function addDriverNote() {
+    if (!state.settings.mainDriver || !elements.hudNoteInput) return;
+    
+    const noteText = elements.hudNoteInput.value.trim();
+    if (!noteText) return;
+    
+    const kartNumber = state.settings.mainDriver;
+    const run = state.sessionData?.runs?.find(r => r.kart_number === kartNumber);
+    const lapNum = run?.total_laps || 0;
+    
+    // Initialize notes array for this kart if needed
+    if (!state.driverNotes[kartNumber]) {
+        state.driverNotes[kartNumber] = [];
+    }
+    
+    // Add note
+    const note = {
+        lapNum: lapNum,
+        note: noteText,
+        timestamp: Date.now()
+    };
+    
+    state.driverNotes[kartNumber].push(note);
+    
+    // Save to localStorage
+    saveDriverNotes();
+    
+    // Clear input
+    elements.hudNoteInput.value = '';
+    
+    // Update display
+    updateDriverNotesList();
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+function deleteDriverNote(kartNumber, timestamp) {
+    if (!state.driverNotes[kartNumber]) return;
+    
+    state.driverNotes[kartNumber] = state.driverNotes[kartNumber].filter(
+        note => note.timestamp !== timestamp
+    );
+    
+    saveDriverNotes();
+    updateDriverNotesList();
+}
+
+function updateDriverNotesList() {
+    if (!elements.hudNotesList || !state.settings.mainDriver) return;
+    
+    const kartNumber = state.settings.mainDriver;
+    const notes = state.driverNotes[kartNumber] || [];
+    
+    if (notes.length === 0) {
+        elements.hudNotesList.innerHTML = '<div class="hud-notes-empty">No notes yet. Add a note to remember important moments!</div>';
+        return;
+    }
+    
+    // Reverse to show newest first
+    const reversedNotes = [...notes].reverse();
+    
+    elements.hudNotesList.innerHTML = '';
+    
+    reversedNotes.forEach(note => {
+        const div = document.createElement('div');
+        div.className = 'hud-note-item';
+        
+        const timeStr = new Date(note.timestamp).toLocaleTimeString();
+        
+        div.innerHTML = `
+            <div class="hud-note-header">
+                <span class="hud-note-lap">Lap ${note.lapNum}</span>
+                <span>
+                    <span class="hud-note-time">${timeStr}</span>
+                    <button class="hud-note-delete" onclick="window.kartingApp.deleteDriverNote('${kartNumber}', ${note.timestamp})">×</button>
+                </span>
+            </div>
+            <div class="hud-note-text">${escapeHtml(note.note)}</div>
+        `;
+        
+        elements.hudNotesList.appendChild(div);
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function saveDriverNotes() {
+    try {
+        localStorage.setItem('karting-driver-notes', JSON.stringify(state.driverNotes));
+    } catch (error) {
+        console.error('Error saving driver notes:', error);
+    }
+}
+
+function loadDriverNotes() {
+    try {
+        const saved = localStorage.getItem('karting-driver-notes');
+        if (saved) {
+            state.driverNotes = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.error('Error loading driver notes:', error);
+        state.driverNotes = {};
+    }
+}
 
 function updateLapHistoryDisplay(kartNumber, bestTimeRaw) {
     const hudLapList = document.getElementById('hud-lap-list');
@@ -2083,7 +2225,8 @@ function exportAllAppData() {
         settings: state.settings,
         lapHistory: state.lapHistory,
         personalRecords: state.personalRecords,
-        startingPositions: state.startingPositions
+        startingPositions: state.startingPositions,
+        driverNotes: state.driverNotes
     };
     
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -2117,7 +2260,8 @@ function importAllAppData(file) {
                 'This will replace:\n' +
                 '- All settings\n' +
                 '- Lap history\n' +
-                '- Personal records\n\n' +
+                '- Personal records\n' +
+                '- Driver notes\n\n' +
                 'Current data will be overwritten!'
             );
             
@@ -2143,6 +2287,12 @@ function importAllAppData(file) {
             // Import starting positions
             if (importedData.startingPositions) {
                 state.startingPositions = importedData.startingPositions;
+            }
+            
+            // Import driver notes
+            if (importedData.driverNotes) {
+                state.driverNotes = importedData.driverNotes;
+                saveDriverNotes();
             }
             
             // Apply settings to UI
