@@ -98,7 +98,20 @@ const elements = {
     showGapTrend: document.getElementById('show-gap-trend'),
     showPositionChanges: document.getElementById('show-position-changes'),
     enableBestLapCelebration: document.getElementById('enable-best-lap-celebration'),
-    resetSettings: document.getElementById('reset-settings')
+    resetSettings: document.getElementById('reset-settings'),
+    
+    // Compare tab
+    compareScreen: document.getElementById('compare-screen'),
+    compareDriver1Select: document.getElementById('compare-driver1'),
+    compareDriver2Select: document.getElementById('compare-driver2'),
+    compareContent: document.getElementById('compare-content'),
+    compareNoSelection: document.getElementById('compare-no-selection'),
+    
+    // Summary tab
+    summaryScreen: document.getElementById('summary-screen'),
+    summaryNoData: document.getElementById('summary-no-data'),
+    summaryContent: document.getElementById('summary-content'),
+    summaryExport: document.getElementById('summary-export')
 };
 
 // Initialize App
@@ -107,6 +120,9 @@ function init() {
     
     // Load settings from localStorage
     loadSettings();
+    
+    // Load personal records
+    loadPersonalRecords();
     
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -231,6 +247,26 @@ function setupEventListeners() {
                 applySettings();
                 updateAllViews();
             }
+        });
+    }
+    
+    // Compare tab listeners
+    if (elements.compareDriver1Select) {
+        elements.compareDriver1Select.addEventListener('change', () => {
+            updateCompareView();
+        });
+    }
+    
+    if (elements.compareDriver2Select) {
+        elements.compareDriver2Select.addEventListener('change', () => {
+            updateCompareView();
+        });
+    }
+    
+    // Summary tab listener
+    if (elements.summaryExport) {
+        elements.summaryExport.addEventListener('click', () => {
+            exportSessionData();
         });
     }
 }
@@ -578,10 +614,16 @@ function updateDriverDropdown() {
     if (!state.sessionData || !state.sessionData.runs) return;
     
     const currentValue = elements.mainDriverSelect.value;
+    const compare1Value = elements.compareDriver1Select?.value || '';
+    const compare2Value = elements.compareDriver2Select?.value || '';
+    
     elements.mainDriverSelect.innerHTML = '<option value="">-- Select Kart --</option>';
+    if (elements.compareDriver1Select) elements.compareDriver1Select.innerHTML = '<option value="">-- Select Driver --</option>';
+    if (elements.compareDriver2Select) elements.compareDriver2Select.innerHTML = '<option value="">-- Select Driver --</option>';
     
     const activeRuns = state.sessionData.runs.filter(run => run.kart_number && run.kart_number !== '');
     activeRuns.forEach(run => {
+        // Main driver select
         const option = document.createElement('option');
         option.value = run.kart_number;
         option.textContent = `Kart ${run.kart_number} - ${run.name}`;
@@ -589,6 +631,28 @@ function updateDriverDropdown() {
             option.selected = true;
         }
         elements.mainDriverSelect.appendChild(option);
+        
+        // Compare driver 1 select
+        if (elements.compareDriver1Select) {
+            const option1 = document.createElement('option');
+            option1.value = run.kart_number;
+            option1.textContent = `Kart ${run.kart_number} - ${run.name}`;
+            if (run.kart_number === compare1Value) {
+                option1.selected = true;
+            }
+            elements.compareDriver1Select.appendChild(option1);
+        }
+        
+        // Compare driver 2 select
+        if (elements.compareDriver2Select) {
+            const option2 = document.createElement('option');
+            option2.value = run.kart_number;
+            option2.textContent = `Kart ${run.kart_number} - ${run.name}`;
+            if (run.kart_number === compare2Value) {
+                option2.selected = true;
+            }
+            elements.compareDriver2Select.appendChild(option2);
+        }
     });
 }
 
@@ -1022,6 +1086,321 @@ document.addEventListener('touchend', (event) => {
     }
     lastTouchEnd = now;
 }, false);
+
+// Personal Records Management
+function loadPersonalRecords() {
+    try {
+        const saved = localStorage.getItem('kartingPersonalRecords');
+        if (saved) {
+            state.personalRecords = JSON.parse(saved);
+            console.log('Personal records loaded:', state.personalRecords);
+        } else {
+            state.personalRecords = {};
+        }
+    } catch (error) {
+        console.error('Error loading personal records:', error);
+        state.personalRecords = {};
+    }
+}
+
+function savePersonalRecords() {
+    try {
+        localStorage.setItem('kartingPersonalRecords', JSON.stringify(state.personalRecords));
+    } catch (error) {
+        console.error('Error saving personal records:', error);
+    }
+}
+
+function checkAndUpdateRecords(kartNumber, run) {
+    if (!state.personalRecords[kartNumber]) {
+        state.personalRecords[kartNumber] = {
+            bestLapRaw: Infinity,
+            bestLap: null,
+            bestPosition: Infinity,
+            mostLaps: 0,
+            mostPositionsGained: -Infinity
+        };
+    }
+    
+    const records = state.personalRecords[kartNumber];
+    const newRecords = [];
+    
+    // Check best lap
+    if (run.best_time_raw && run.best_time_raw < records.bestLapRaw) {
+        records.bestLapRaw = run.best_time_raw;
+        records.bestLap = run.best_time;
+        newRecords.push(`🏁 New best lap: ${run.best_time}`);
+    }
+    
+    // Check best position
+    if (run.pos < records.bestPosition) {
+        records.bestPosition = run.pos;
+        newRecords.push(`🥇 New best position: P${run.pos}`);
+    }
+    
+    // Check most laps
+    if (run.total_laps > records.mostLaps) {
+        records.mostLaps = run.total_laps;
+        newRecords.push(`📊 Most laps: ${run.total_laps}`);
+    }
+    
+    // Check most positions gained
+    const startPos = state.startingPositions[kartNumber];
+    if (startPos) {
+        const gained = startPos - run.pos;
+        if (gained > records.mostPositionsGained) {
+            records.mostPositionsGained = gained;
+            newRecords.push(`↑ Most positions gained: +${gained}`);
+        }
+    }
+    
+    if (newRecords.length > 0) {
+        savePersonalRecords();
+    }
+    
+    return newRecords;
+}
+
+// Compare View
+function updateCompareView() {
+    if (!state.sessionData) return;
+    
+    const driver1Num = elements.compareDriver1Select?.value;
+    const driver2Num = elements.compareDriver2Select?.value;
+    
+    if (!driver1Num || !driver2Num || driver1Num === driver2Num) {
+        if (elements.compareContent) elements.compareContent.classList.add('hidden');
+        if (elements.compareNoSelection) elements.compareNoSelection.style.display = 'block';
+        return;
+    }
+    
+    const driver1 = state.sessionData.runs.find(r => r.kart_number === driver1Num);
+    const driver2 = state.sessionData.runs.find(r => r.kart_number === driver2Num);
+    
+    if (!driver1 || !driver2) return;
+    
+    if (elements.compareContent) elements.compareContent.classList.remove('hidden');
+    if (elements.compareNoSelection) elements.compareNoSelection.style.display = 'none';
+    
+    // Update driver names
+    const d1Name = document.getElementById('compare-driver1-name');
+    const d2Name = document.getElementById('compare-driver2-name');
+    if (d1Name) d1Name.textContent = `Kart ${driver1.kart_number}`;
+    if (d2Name) d2Name.textContent = `Kart ${driver2.kart_number}`;
+    
+    // Update stats with highlighting
+    updateCompareRow('pos', driver1.pos, driver2.pos, (a, b) => a < b);
+    updateCompareRow('best', driver1.best_time, driver2.best_time, (a, b) => a.timeRaw < b.timeRaw, driver1, driver2);
+    updateCompareRow('last', driver1.last_time, driver2.last_time, (a, b) => a.timeRaw < b.timeRaw, driver1, driver2);
+    updateCompareRow('avg', driver1.avg_lap, driver2.avg_lap, (a, b) => a.timeRaw < b.timeRaw, driver1, driver2);
+    updateCompareRow('consistency', driver1.consistency_lap, driver2.consistency_lap, (a, b) => a.timeRaw < b.timeRaw, driver1, driver2);
+    updateCompareRow('laps', driver1.total_laps, driver2.total_laps, (a, b) => a > b);
+    updateCompareRow('gap', driver1.gap, driver2.gap, (a, b) => a < b);
+}
+
+function updateCompareRow(stat, val1, val2, isBetter, run1, run2) {
+    const el1 = document.getElementById(`compare-driver1-${stat}`);
+    const el2 = document.getElementById(`compare-driver2-${stat}`);
+    
+    if (!el1 || !el2) return;
+    
+    el1.textContent = val1 || '-';
+    el2.textContent = val2 || '-';
+    
+    // Reset colors
+    el1.style.color = '';
+    el2.style.color = '';
+    
+    // Highlight better value
+    if (val1 && val2 && val1 !== '-' && val2 !== '-') {
+        let compare;
+        if (run1 && run2) {
+            // For time comparisons, use raw values
+            compare = isBetter({timeRaw: run1[`${stat}_time_raw`] || run1.best_time_raw}, {timeRaw: run2[`${stat}_time_raw`] || run2.best_time_raw});
+        } else {
+            compare = isBetter(val1, val2);
+        }
+        
+        if (compare) {
+            el1.style.color = '#00ff88';
+            el2.style.color = '#ff6b6b';
+        } else {
+            el1.style.color = '#ff6b6b';
+            el2.style.color = '#00ff88';
+        }
+    }
+}
+
+// Summary View
+function updateSummaryView() {
+    if (!state.sessionData || !state.settings.mainDriver) {
+        if (elements.summaryNoData) elements.summaryNoData.style.display = 'block';
+        if (elements.summaryContent) elements.summaryContent.classList.add('hidden');
+        return;
+    }
+    
+    const run = state.sessionData.runs.find(r => r.kart_number === state.settings.mainDriver);
+    if (!run) return;
+    
+    if (elements.summaryNoData) elements.summaryNoData.style.display = 'none';
+    if (elements.summaryContent) elements.summaryContent.classList.remove('hidden');
+    
+    // Update driver name
+    const nameEl = document.getElementById('summary-driver-name');
+    if (nameEl) nameEl.textContent = `Kart ${run.kart_number} - ${run.name}`;
+    
+    // Update stats
+    const bestLapEl = document.getElementById('summary-best-lap');
+    const avgLapEl = document.getElementById('summary-avg-lap');
+    const totalLapsEl = document.getElementById('summary-total-laps');
+    const consistencyEl = document.getElementById('summary-consistency');
+    const finalPosEl = document.getElementById('summary-final-pos');
+    const posChangeEl = document.getElementById('summary-pos-change');
+    
+    if (bestLapEl) bestLapEl.textContent = run.best_time || '--.-';
+    if (avgLapEl) avgLapEl.textContent = run.avg_lap || '--.-';
+    if (totalLapsEl) totalLapsEl.textContent = run.total_laps || '0';
+    if (consistencyEl) consistencyEl.textContent = run.consistency_lap || '-';
+    if (finalPosEl) finalPosEl.textContent = `P${run.pos}`;
+    
+    // Position change
+    const startPos = state.startingPositions[run.kart_number];
+    if (posChangeEl && startPos) {
+        const change = startPos - run.pos;
+        if (change > 0) {
+            posChangeEl.textContent = `↑ +${change}`;
+            posChangeEl.style.color = '#00ff88';
+        } else if (change < 0) {
+            posChangeEl.textContent = `↓ ${change}`;
+            posChangeEl.style.color = '#ff6b6b';
+        } else {
+            posChangeEl.textContent = '-';
+            posChangeEl.style.color = '';
+        }
+    }
+    
+    // Update lap list
+    const lapListEl = document.getElementById('summary-lap-list');
+    if (lapListEl) {
+        const history = state.lapHistory[run.kart_number];
+        if (history && history.length > 0) {
+            lapListEl.innerHTML = '';
+            history.forEach(lap => {
+                const div = document.createElement('div');
+                div.className = 'summary-lap-item';
+                if (lap.timeRaw === run.best_time_raw) {
+                    div.classList.add('best');
+                }
+                
+                const lapColor = getLapColor(lap, run.best_time_raw);
+                div.innerHTML = `
+                    <div style="color: ${getLapColorHex(lapColor)}; font-weight: bold;">L${lap.lapNum}</div>
+                    <div style="color: ${getLapColorHex(lapColor)};">${lap.time}</div>
+                    <div style="color: #888;">Δ ${formatDelta(lap.delta)}</div>
+                    <div style="color: #888;">P${lap.position || '-'}</div>
+                `;
+                lapListEl.appendChild(div);
+            });
+        } else {
+            lapListEl.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">No lap data available</div>';
+        }
+    }
+    
+    // Check for new personal records
+    const newRecords = checkAndUpdateRecords(run.kart_number, run);
+    const recordsEl = document.getElementById('summary-records');
+    const recordsListEl = document.getElementById('summary-records-list');
+    
+    if (newRecords.length > 0 && recordsEl && recordsListEl) {
+        recordsEl.classList.remove('hidden');
+        recordsListEl.innerHTML = '';
+        newRecords.forEach(record => {
+            const div = document.createElement('div');
+            div.className = 'summary-record-item';
+            div.textContent = record;
+            recordsListEl.appendChild(div);
+        });
+    }
+}
+
+function getLapColorHex(color) {
+    const colors = {
+        'purple': '#a855f7',
+        'green': '#00ff88',
+        'yellow': '#ffaa00',
+        'red': '#ff6b6b'
+    };
+    return colors[color] || '#fff';
+}
+
+function formatDelta(delta) {
+    if (!delta) return '0.000';
+    const seconds = (delta / 1000).toFixed(3);
+    return delta > 0 ? `+${seconds}` : seconds;
+}
+
+// Export Session Data
+function exportSessionData() {
+    if (!state.sessionData || !state.settings.mainDriver) {
+        alert('No session data to export. Select a driver first.');
+        return;
+    }
+    
+    const run = state.sessionData.runs.find(r => r.kart_number === state.settings.mainDriver);
+    if (!run) return;
+    
+    const history = state.lapHistory[run.kart_number] || [];
+    const exportData = {
+        sessionInfo: {
+            eventName: state.sessionData.event_name,
+            date: new Date().toISOString(),
+            driver: `Kart ${run.kart_number} - ${run.name}`
+        },
+        summary: {
+            bestLap: run.best_time,
+            averageLap: run.avg_lap,
+            totalLaps: run.total_laps,
+            finalPosition: run.pos,
+            startingPosition: state.startingPositions[run.kart_number],
+            consistency: run.consistency_lap
+        },
+        laps: history.map(lap => ({
+            lapNumber: lap.lapNum,
+            lapTime: lap.time,
+            delta: formatDelta(lap.delta),
+            position: lap.position
+        }))
+    };
+    
+    // Create download
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `karting-session-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+}
+
+// Update All Views (including compare and summary)
+function updateAllViews() {
+    if (!state.sessionData) return;
+    
+    // Update existing views
+    if (state.currentTab === 'race' && elements.raceScreen) {
+        updateRaceView();
+    }
+    if (state.currentTab === 'hud' && elements.hudScreen) {
+        updateHUDView();
+    }
+    if (state.currentTab === 'compare' && elements.compareScreen) {
+        updateCompareView();
+    }
+    if (state.currentTab === 'summary' && elements.summaryScreen) {
+        updateSummaryView();
+    }
+}
 
 // Export for debugging and HTML onclick
 window.kartingApp = {
