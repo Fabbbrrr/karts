@@ -12,11 +12,27 @@ const CONFIG = {
 // Settings with defaults
 const DEFAULT_SETTINGS = {
     mainDriver: null,
+    // Display toggles
     showIntervals: true,
     showGaps: true,
     showConsistency: true,
     showAvgLap: true,
-    showLastLap: true
+    showLastLap: true,
+    // New feature toggles
+    showPaceTrend: true,
+    showPercentageOffBest: true,
+    showGapTrend: true,
+    showPositionChanges: true,
+    enableBestLapCelebration: true,
+    // HUD component visibility
+    hudShowLastLap: true,
+    hudShowBestLap: true,
+    hudShowAvgLap: true,
+    hudShowGap: true,
+    hudShowInterval: true,
+    hudShowConsistency: true,
+    hudShowLapHistory: true,
+    hudShowStats: true
 };
 
 // State Management
@@ -26,7 +42,12 @@ const state = {
     isConnected: false,
     currentTab: 'race',
     settings: { ...DEFAULT_SETTINGS },
-    lapHistory: {} // Track lap history per kart: { kartNumber: [{lapNum, time, timeRaw, delta}] }
+    lapHistory: {}, // Track lap history per kart: { kartNumber: [{lapNum, time, timeRaw, delta}] }
+    startingPositions: {}, // Track starting position for each kart
+    gapHistory: {}, // Track gap trends: { kartNumber: [{timestamp, gap}] }
+    sessionBest: null, // Track fastest lap of session
+    personalRecords: null, // Load from localStorage
+    lastBestLap: {} // Track last best lap time per kart for celebration
 };
 
 // DOM Elements
@@ -308,6 +329,11 @@ function updateLapHistory() {
         
         const kartNumber = run.kart_number;
         
+        // Track starting position
+        if (!state.startingPositions[kartNumber]) {
+            state.startingPositions[kartNumber] = run.pos;
+        }
+        
         // Initialize history for this kart if needed
         if (!state.lapHistory[kartNumber]) {
             state.lapHistory[kartNumber] = [];
@@ -318,13 +344,19 @@ function updateLapHistory() {
         
         // Check if this is a new lap (lap count increased)
         if (history.length === 0 || history[history.length - 1].lapNum < lapCount) {
+            // Check for best lap celebration
+            if (state.settings.enableBestLapCelebration) {
+                checkBestLapCelebration(kartNumber, run.best_time_raw);
+            }
+            
             // Add new lap to history
             const lapData = {
                 lapNum: lapCount,
                 time: run.last_time,
                 timeRaw: run.last_time_raw,
                 bestTimeRaw: run.best_time_raw,
-                delta: 0
+                delta: 0,
+                position: run.pos
             };
             
             // Calculate delta from best lap
@@ -339,7 +371,142 @@ function updateLapHistory() {
                 history.shift();
             }
         }
+        
+        // Track gap trends
+        trackGapTrend(kartNumber, run.gap);
+        
+        // Update session best
+        if (!state.sessionBest || (run.best_time_raw && run.best_time_raw < state.sessionBest.timeRaw)) {
+            state.sessionBest = {
+                kartNumber: run.kart_number,
+                name: run.name,
+                time: run.best_time,
+                timeRaw: run.best_time_raw
+            };
+        }
     });
+}
+
+// Check and trigger best lap celebration
+function checkBestLapCelebration(kartNumber, bestTimeRaw) {
+    if (!bestTimeRaw) return;
+    
+    const lastBest = state.lastBestLap[kartNumber];
+    if (!lastBest || bestTimeRaw < lastBest) {
+        state.lastBestLap[kartNumber] = bestTimeRaw;
+        if (lastBest) {
+            // New personal best! Trigger celebration
+            triggerBestLapCelebration(kartNumber);
+        }
+    }
+}
+
+// Trigger best lap celebration animation
+function triggerBestLapCelebration(kartNumber) {
+    // Only celebrate for main driver
+    if (kartNumber !== state.settings.mainDriver) return;
+    
+    const hudScreen = elements.hudScreen;
+    if (!hudScreen) return;
+    
+    hudScreen.classList.add('best-lap-celebration');
+    
+    // Vibrate if available
+    if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+    }
+    
+    setTimeout(() => {
+        hudScreen.classList.remove('best-lap-celebration');
+    }, 2000);
+}
+
+// Track gap trend over time
+function trackGapTrend(kartNumber, gap) {
+    if (!state.gapHistory[kartNumber]) {
+        state.gapHistory[kartNumber] = [];
+    }
+    
+    // Parse gap to number (handle "+1.234", "+1 lap", etc)
+    let gapValue = null;
+    if (gap && gap !== '-') {
+        const match = gap.match(/\+?([\d.]+)/);
+        if (match) {
+            gapValue = parseFloat(match[1]);
+        }
+    }
+    
+    state.gapHistory[kartNumber].push({
+        timestamp: Date.now(),
+        gap: gapValue
+    });
+    
+    // Keep only last 10 data points
+    if (state.gapHistory[kartNumber].length > 10) {
+        state.gapHistory[kartNumber].shift();
+    }
+}
+
+// Calculate pace trend
+function calculatePaceTrend(kartNumber) {
+    const history = state.lapHistory[kartNumber];
+    if (!history || history.length < 4) return null;
+    
+    const recentLaps = history.slice(-3);
+    const olderLaps = history.length > 6 ? history.slice(-6, -3) : history.slice(0, Math.max(history.length - 3, 1));
+    
+    const recentAvg = recentLaps.reduce((sum, lap) => sum + lap.timeRaw, 0) / recentLaps.length;
+    const olderAvg = olderLaps.reduce((sum, lap) => sum + lap.timeRaw, 0) / olderLaps.length;
+    
+    const diff = recentAvg - olderAvg;
+    
+    return {
+        improving: diff < -100, // Improving by > 0.1s
+        declining: diff > 100,  // Declining by > 0.1s
+        difference: diff / 1000
+    };
+}
+
+// Calculate percentage off best
+function calculatePercentageOffBest(lastTimeRaw, bestTimeRaw) {
+    if (!lastTimeRaw || !bestTimeRaw || lastTimeRaw === bestTimeRaw) return 0;
+    return (((lastTimeRaw - bestTimeRaw) / bestTimeRaw) * 100).toFixed(1);
+}
+
+// Calculate gap trend
+function calculateGapTrend(kartNumber) {
+    const history = state.gapHistory[kartNumber];
+    if (!history || history.length < 3) return null;
+    
+    const validGaps = history.filter(h => h.gap !== null).slice(-5);
+    if (validGaps.length < 2) return null;
+    
+    const first = validGaps[0].gap;
+    const last = validGaps[validGaps.length - 1].gap;
+    const diff = last - first;
+    
+    return {
+        closing: diff < -0.5, // Gap closing by > 0.5s
+        opening: diff > 0.5,  // Gap opening by > 0.5s
+        difference: diff
+    };
+}
+
+// Get F1-style lap color
+function getLapColor(lap, bestTimeRaw) {
+    if (!lap.timeRaw) return '';
+    
+    // Purple = Personal best
+    if (lap.timeRaw === bestTimeRaw) return 'purple';
+    
+    // Green = Within 0.5s of best
+    if (lap.delta !== null && Math.abs(lap.delta) <= 500) return 'green';
+    
+    // Yellow = Within 1s of best
+    if (lap.delta !== null && Math.abs(lap.delta) <= 1000) return 'yellow';
+    
+    // Red = More than 1s off best
+    return 'red';
 }
 
 // UI Updates
@@ -418,16 +585,6 @@ function createRaceItem(run) {
         div.classList.add('main-driver');
     }
     
-    // Add click handler to select driver
-    div.addEventListener('click', (e) => {
-        console.log('Driver clicked:', run.kart_number);
-        e.stopPropagation();
-        state.settings.mainDriver = run.kart_number;
-        saveSettings();
-        applySettings();
-        switchTab('hud');
-    });
-    
     const positionClass = run.pos <= 3 ? `p${run.pos}` : '';
     
     // Build details array based on settings
@@ -461,6 +618,7 @@ function createRaceItem(run) {
         </div>`);
     }
     
+    // Set content FIRST
     div.innerHTML = `
         <div class="race-position ${positionClass}">P${run.pos}</div>
         <div class="race-driver-info">
@@ -475,6 +633,16 @@ function createRaceItem(run) {
             ${state.settings.showGaps ? `<div class="race-gap">${run.gap}</div>` : ''}
         </div>
     `;
+    
+    // Add click handler AFTER innerHTML (so it doesn't get wiped)
+    div.addEventListener('click', (e) => {
+        console.log('Driver clicked:', run.kart_number);
+        e.stopPropagation();
+        state.settings.mainDriver = run.kart_number;
+        saveSettings();
+        applySettings();
+        switchTab('hud');
+    });
     
     return div;
 }
