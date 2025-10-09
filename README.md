@@ -56,13 +56,34 @@ Complete session summary with:
 ### 💤 **Always-On Display**
 Screen stays awake during races - no more fumbling to unlock mid-session!
 
-### 🎵 **Sound Alerts**
+### 🎵 **Sound & Haptic Alerts**
 - 🎶 **Personal Best** - Happy ascending chime
 - 🔺 **Position Gain** - Quick double beep  
 - 🔻 **Position Loss** - Low warning tone
+- ⚠️ **Opponent Close** - Alert when within 1 second of competitor
+
+### 📝 **Driver Notes**
+Add timestamped notes during or after your session:
+- "Lap 5: Changed tire pressure"
+- "Lap 8: Traffic on Turn 3"
+- Perfect for tracking setup changes and conditions
+
+### 📊 **Position Chart**
+Beautiful F1-style visualization showing:
+- Every driver's position throughout the race
+- Exactly when positions changed
+- Color-coded lines for each driver
+- See who you're battling with at a glance
+
+### 🎨 **Color Themes**
+Choose your vibe:
+- 🌙 **Dark** - Easy on the eyes (default)
+- ☀️ **Light** - Bright and clear
+- 🏎️ **F1 Red** - Racing heritage
+- 🏁 **Racing Green** - Classic motorsport
 
 ### ⚡ **Lightning Fast**
-50ms refresh rate for real-time updates as they happen.
+Instant updates via websocket - see changes the moment they happen on track.
 
 ### 📱 **Install Like a Real App**
 No app store needed! Add to home screen and it works offline, loads instantly, and feels native.
@@ -91,9 +112,10 @@ Mini toggle buttons on every component - hide what you don't need without diving
 ### 🏁 During a Race:
 
 1. **Open the app** - It connects automatically
-2. **Tap your kart number** - Selects you as main driver
+2. **Select your kart** - Tap driver name on Race tab OR use HUD screen selector
 3. **Switch to HUD tab** - Full-screen view of YOUR data
 4. **Race!** - Screen stays on, data updates in real-time
+5. **Add notes** - Tap to record observations during or after laps
 
 ### 📊 Tabs Explained:
 
@@ -107,10 +129,14 @@ Mini toggle buttons on every component - hide what you don't need without diving
 
 ### 💡 Pro Tips:
 
-- **Tap driver name** on Race tab to select as main driver
+- **Quick driver switch** - Use dropdown in HUD header to change drivers on the fly
+- **Tap driver name** on Race tab for instant HUD view
 - **Mini toggles** (➖) on HUD cards instantly hide components
+- **Add notes as you race** - Track setup changes and conditions
+- **Watch the position chart** - See who's gaining or losing positions
+- **Proximity alerts** - Get notified when opponents are within 1 second
 - **Export session data** to analyze later on a computer
-- **Import/Export** all your data to backup records
+- **Switch themes** in settings to match your style
 - **Consistency score** of 90+ = very consistent driving
 
 ---
@@ -122,10 +148,12 @@ Every card has a mini toggle (➖) in the corner - tap to hide/show instantly!
 
 ### Settings Tab:
 - ✅ **Enable/disable** any feature
-- 🎨 **Choose** what data to display
+- 🎨 **Choose** what data to display and color theme
 - 👤 **Select** main driver
-- 💾 **Manage** your data exports
+- 🏁 **Configure** track/venue (works with any RaceFacer venue!)
+- 💾 **Manage** your data exports and backups
 - 🎛️ **Control** HUD component visibility
+- ⚠️ **Adjust** proximity alert threshold
 
 ### Quick Reset:
 Tap "Show All HUD Components" in settings to bring back hidden items.
@@ -159,10 +187,11 @@ Unlike basic timing displays, KartTimer Pro gives you:
 | Problem | Solution |
 |---------|----------|
 | **No connection** | Check WiFi, refresh page |
-| **Wrong venue** | App connects to Le Mans Entertainment by default |
-| **No data showing** | Make sure there's an active session |
-| **Screen sleeps** | Install as PWA (Add to Home Screen) |
-| **Can't select driver** | Tap directly on driver name in Race tab |
+| **Wrong venue** | Go to Settings → Track Configuration to change venue |
+| **No data showing** | Make sure there's an active session at your venue |
+| **Screen sleeps** | Install as PWA (Add to Home Screen) for Always-On Display |
+| **Can't select driver** | Use HUD screen selector OR tap driver name in Race tab |
+| **Updates feel slow** | Refresh the page - updates are instant via websocket |
 
 ---
 
@@ -172,13 +201,17 @@ Unlike basic timing displays, KartTimer Pro gives you:
 
 ---
 
-## 🎮 Works With
+## 🎮 Works With Any RaceFacer Venue!
 
-- **RaceFacer** timing systems
+- **RaceFacer** timing systems worldwide
 - Any venue using RaceFacer Live Timing
-- Currently configured for: Le Mans Entertainment
+- **Easy configuration**: Just enter your venue name in Settings → Track Configuration
+- Default: Le Mans Entertainment
 
-*Want your venue added? Check the technical docs for configuration.*
+**Example venues:**
+- Go to Settings → Track/Venue Configuration
+- Enter your venue's channel name (e.g., "yourvenuename")
+- Find it at `live.racefacer.com/YOUR_VENUE_NAME`
 
 ---
 
@@ -220,21 +253,24 @@ Unlike basic timing displays, KartTimer Pro gives you:
 <td width="50%">
 
 ### 🎨 Visual Design
-- High contrast colors
+- 4 color themes to choose from
 - F1-inspired lap colors
-- Dark mode optimized
+- High contrast for track visibility
 - Large readable fonts
 - Smooth animations
+- Position change visualization
 
 </td>
 <td width="50%">
 
 ### 🛠️ Technical
-- 50ms refresh rate
-- WebSocket connection
+- Event-driven updates (instant)
+- WebSocket real-time connection
+- Canvas-based visualizations
 - Service worker caching
-- Wake Lock API
-- Web Audio API
+- Wake Lock API (always-on)
+- Web Audio API (alerts)
+- Multi-venue support
 
 </td>
 </tr>
