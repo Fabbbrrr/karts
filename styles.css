@@ -904,7 +904,8 @@ html, body {
     font-size: 1rem;
 }
 
-.settings-select {
+.settings-select,
+.settings-input {
     width: 100%;
     background: #0a0a0a;
     color: #fff;
@@ -917,7 +918,12 @@ html, body {
     cursor: pointer;
 }
 
-.settings-select:focus {
+.settings-input {
+    cursor: text;
+}
+
+.settings-select:focus,
+.settings-input:focus {
     outline: none;
     border-color: #00ff88;
 }

@@ -12,6 +12,7 @@ const CONFIG = {
 // Settings with defaults
 const DEFAULT_SETTINGS = {
     mainDriver: null,
+    channel: 'lemansentertainment', // Track/venue channel
     // Display toggles
     showIntervals: true,
     showGaps: true,
@@ -90,6 +91,7 @@ const elements = {
     
     // Settings tab
     settingsScreen: document.getElementById('settings-screen'),
+    channelInput: document.getElementById('channel-input'),
     mainDriverSelect: document.getElementById('main-driver-select'),
     showIntervals: document.getElementById('show-intervals'),
     showGaps: document.getElementById('show-gaps'),
@@ -305,6 +307,18 @@ function setupEventListeners() {
     }
     
     // Settings - add listeners only if elements exist
+    if (elements.channelInput) {
+        elements.channelInput.addEventListener('change', (e) => {
+            const newChannel = e.target.value.trim() || 'lemansentertainment';
+            if (newChannel !== state.settings.channel) {
+                state.settings.channel = newChannel;
+                saveSettings();
+                // Reconnect to new channel
+                reconnectToChannel();
+            }
+        });
+    }
+    
     if (elements.mainDriverSelect) {
         elements.mainDriverSelect.addEventListener('change', (e) => {
             state.settings.mainDriver = e.target.value || null;
@@ -509,6 +523,9 @@ function saveSettings() {
 
 function applySettings() {
     // Apply to form elements - check if they exist first
+    if (elements.channelInput) {
+        elements.channelInput.value = state.settings.channel || 'lemansentertainment';
+    }
     if (elements.mainDriverSelect && elements.mainDriverSelect.value !== state.settings.mainDriver) {
         elements.mainDriverSelect.value = state.settings.mainDriver || '';
     }
@@ -575,11 +592,38 @@ function connectWebSocket() {
         state.socket.on('connect', onConnect);
         state.socket.on('disconnect', onDisconnect);
         state.socket.on('connect_error', onConnectError);
-        state.socket.on(CONFIG.CHANNEL, onSessionData);
+        
+        // Listen to the configured channel
+        const channel = state.settings.channel || CONFIG.CHANNEL;
+        state.socket.on(channel, onSessionData);
         
     } catch (error) {
         console.error('WebSocket connection error:', error);
         updateLoadingStatus('Connection failed. Retrying...');
+    }
+}
+
+// Reconnect to a new channel
+function reconnectToChannel() {
+    console.log('🔄 Reconnecting to new channel...');
+    
+    if (state.socket) {
+        // Remove old event listener
+        const oldChannel = CONFIG.CHANNEL;
+        state.socket.off(oldChannel);
+        
+        // Add new event listener
+        const newChannel = state.settings.channel || CONFIG.CHANNEL;
+        state.socket.on(newChannel, onSessionData);
+        
+        // Disconnect and reconnect
+        state.socket.disconnect();
+        state.socket.connect();
+        
+        // Reset session data
+        updateLoadingStatus(`Connecting to ${newChannel}...`);
+        elements.loadingScreen.classList.add('active');
+        elements.tabNav.classList.add('hidden');
     }
 }
 
@@ -589,8 +633,10 @@ function onConnect() {
     updateConnectionIndicator(true);
     updateLoadingStatus('Connected! Waiting for data...');
     
-    // Join the channel
-    state.socket.emit('join', CONFIG.CHANNEL);
+    // Join the channel (use configured channel from settings)
+    const channel = state.settings.channel || CONFIG.CHANNEL;
+    console.log(`📡 Joining channel: ${channel}`);
+    state.socket.emit('join', channel);
 }
 
 function onDisconnect() {
