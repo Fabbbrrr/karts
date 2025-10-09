@@ -5,8 +5,7 @@
 const CONFIG = {
     SOCKET_URL: 'https://live.racefacer.com:3123',
     CHANNEL: 'lemansentertainment',
-    RECONNECT_DELAY: 2000,
-    UPDATE_INTERVAL: 50 // Fastest possible refresh (50ms)
+    RECONNECT_DELAY: 2000
 };
 
 // Settings with defaults
@@ -815,7 +814,8 @@ function onSessionData(data) {
             // Update driver dropdown in settings
             updateDriverDropdown();
             
-            // Update all views
+            // Update all views immediately with fresh data
+            // This ensures instant UI updates as soon as server pushes new data
             updateAllViews();
         }
     } catch (error) {
@@ -1841,12 +1841,9 @@ function updateLapHistoryDisplay(kartNumber, bestTimeRaw) {
     });
 }
 
-// Fast update loop
-setInterval(() => {
-    if (state.sessionData) {
-        updateAllViews();
-    }
-}, CONFIG.UPDATE_INTERVAL);
+// UI updates are now driven by websocket events (onSessionData)
+// This ensures updates happen immediately when new data arrives,
+// without unnecessary re-renders when data hasn't changed
 
 // PWA Install Prompt
 let deferredPrompt;
