@@ -418,6 +418,15 @@ function createRaceItem(run) {
         div.classList.add('main-driver');
     }
     
+    // Add click handler to select driver
+    div.style.cursor = 'pointer';
+    div.addEventListener('click', () => {
+        state.settings.mainDriver = run.kart_number;
+        saveSettings();
+        applySettings();
+        switchTab('hud');
+    });
+    
     const positionClass = run.pos <= 3 ? `p${run.pos}` : '';
     
     // Build details array based on settings
