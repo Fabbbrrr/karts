@@ -32,6 +32,8 @@
         <nav id="tab-nav" class="tab-nav hidden">
             <button class="tab-btn active" data-tab="race">Race</button>
             <button class="tab-btn" data-tab="hud">HUD</button>
+            <button class="tab-btn" data-tab="compare">Compare</button>
+            <button class="tab-btn" data-tab="summary">Summary</button>
             <button class="tab-btn" data-tab="settings">Settings</button>
         </nav>
         
@@ -141,6 +143,133 @@
                         <div id="hud-lap-list" class="hud-lap-list">
                             <div class="hud-no-laps">No lap data yet...</div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Compare Tab -->
+        <div id="compare-screen" class="screen tab-content">
+            <div class="compare-container">
+                <h1>📊 Driver Comparison</h1>
+                
+                <div class="compare-selectors">
+                    <div class="compare-selector">
+                        <label>Driver 1:</label>
+                        <select id="compare-driver1" class="settings-select">
+                            <option value="">-- Select Driver --</option>
+                        </select>
+                    </div>
+                    <div class="compare-vs">VS</div>
+                    <div class="compare-selector">
+                        <label>Driver 2:</label>
+                        <select id="compare-driver2" class="settings-select">
+                            <option value="">-- Select Driver --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="compare-content" class="compare-content hidden">
+                    <div class="compare-table">
+                        <div class="compare-row compare-header">
+                            <div class="compare-stat-label">Stat</div>
+                            <div id="compare-driver1-name" class="compare-value">Driver 1</div>
+                            <div id="compare-driver2-name" class="compare-value">Driver 2</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Position</div>
+                            <div id="compare-driver1-pos" class="compare-value">-</div>
+                            <div id="compare-driver2-pos" class="compare-value">-</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Best Lap</div>
+                            <div id="compare-driver1-best" class="compare-value">-</div>
+                            <div id="compare-driver2-best" class="compare-value">-</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Last Lap</div>
+                            <div id="compare-driver1-last" class="compare-value">-</div>
+                            <div id="compare-driver2-last" class="compare-value">-</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Avg Lap</div>
+                            <div id="compare-driver1-avg" class="compare-value">-</div>
+                            <div id="compare-driver2-avg" class="compare-value">-</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Consistency</div>
+                            <div id="compare-driver1-consistency" class="compare-value">-</div>
+                            <div id="compare-driver2-consistency" class="compare-value">-</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Total Laps</div>
+                            <div id="compare-driver1-laps" class="compare-value">-</div>
+                            <div id="compare-driver2-laps" class="compare-value">-</div>
+                        </div>
+                        <div class="compare-row">
+                            <div class="compare-stat-label">Gap to Leader</div>
+                            <div id="compare-driver1-gap" class="compare-value">-</div>
+                            <div id="compare-driver2-gap" class="compare-value">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="compare-no-selection" class="compare-placeholder">
+                    <p>Select two drivers to compare their stats side-by-side</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Tab -->
+        <div id="summary-screen" class="screen tab-content">
+            <div class="summary-container">
+                <h1>📈 Session Summary</h1>
+                
+                <div id="summary-no-data" class="summary-placeholder">
+                    <p>Complete a session to see your summary and statistics</p>
+                </div>
+                
+                <div id="summary-content" class="summary-content hidden">
+                    <div class="summary-header">
+                        <h3 id="summary-driver-name">Your Session</h3>
+                        <button id="summary-export" class="settings-btn-secondary">Export Data</button>
+                    </div>
+                    
+                    <div class="summary-stats-grid">
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Best Lap</div>
+                            <div id="summary-best-lap" class="summary-stat-value">--.-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Average Lap</div>
+                            <div id="summary-avg-lap" class="summary-stat-value">--.-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Total Laps</div>
+                            <div id="summary-total-laps" class="summary-stat-value">0</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Consistency</div>
+                            <div id="summary-consistency" class="summary-stat-value">-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Final Position</div>
+                            <div id="summary-final-pos" class="summary-stat-value">-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Position Change</div>
+                            <div id="summary-pos-change" class="summary-stat-value">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-lap-table">
+                        <h3>All Laps</h3>
+                        <div id="summary-lap-list" class="summary-lap-list"></div>
+                    </div>
+                    
+                    <div id="summary-records" class="summary-records hidden">
+                        <h3>🏆 New Personal Records!</h3>
+                        <div id="summary-records-list"></div>
                     </div>
                 </div>
             </div>
