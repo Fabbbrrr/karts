@@ -147,7 +147,11 @@ const elements = {
     // Driver notes
     hudNoteInput: document.getElementById('hud-note-input'),
     hudAddNoteBtn: document.getElementById('hud-add-note-btn'),
-    hudNotesList: document.getElementById('hud-notes-list')
+    hudNotesList: document.getElementById('hud-notes-list'),
+    
+    // HUD driver selectors
+    hudDriverSelect: document.getElementById('hud-driver-select'),
+    hudQuickDriverSelect: document.getElementById('hud-quick-driver-select')
 };
 
 // Initialize App
@@ -406,6 +410,26 @@ function setupEventListeners() {
         elements.mainDriverSelect.addEventListener('change', (e) => {
             state.settings.mainDriver = e.target.value || null;
             saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    // HUD driver selector (no driver screen)
+    if (elements.hudDriverSelect) {
+        elements.hudDriverSelect.addEventListener('change', (e) => {
+            state.settings.mainDriver = e.target.value || null;
+            saveSettings();
+            applySettings();
+            updateAllViews();
+        });
+    }
+    
+    // HUD quick driver selector (header)
+    if (elements.hudQuickDriverSelect) {
+        elements.hudQuickDriverSelect.addEventListener('change', (e) => {
+            state.settings.mainDriver = e.target.value || null;
+            saveSettings();
+            applySettings();
             updateAllViews();
         });
     }
@@ -1176,10 +1200,12 @@ function updateDriverDropdown() {
     elements.mainDriverSelect.innerHTML = '<option value="">-- Select Kart --</option>';
     if (elements.compareDriver1Select) elements.compareDriver1Select.innerHTML = '<option value="">-- Select Driver --</option>';
     if (elements.compareDriver2Select) elements.compareDriver2Select.innerHTML = '<option value="">-- Select Driver --</option>';
+    if (elements.hudDriverSelect) elements.hudDriverSelect.innerHTML = '<option value="">-- Select Kart --</option>';
+    if (elements.hudQuickDriverSelect) elements.hudQuickDriverSelect.innerHTML = '<option value="">-- Select Kart --</option>';
     
     const activeRuns = state.sessionData.runs.filter(run => run.kart_number && run.kart_number !== '');
     activeRuns.forEach(run => {
-        // Main driver select
+        // Main driver select (Settings)
         const option = document.createElement('option');
         option.value = run.kart_number;
         option.textContent = `Kart ${run.kart_number} - ${run.name}`;
@@ -1187,6 +1213,28 @@ function updateDriverDropdown() {
             option.selected = true;
         }
         elements.mainDriverSelect.appendChild(option);
+        
+        // HUD driver select (no driver selected screen)
+        if (elements.hudDriverSelect) {
+            const hudOption = document.createElement('option');
+            hudOption.value = run.kart_number;
+            hudOption.textContent = `Kart ${run.kart_number} - ${run.name}`;
+            if (run.kart_number === currentValue) {
+                hudOption.selected = true;
+            }
+            elements.hudDriverSelect.appendChild(hudOption);
+        }
+        
+        // HUD quick driver select (header selector)
+        if (elements.hudQuickDriverSelect) {
+            const quickOption = document.createElement('option');
+            quickOption.value = run.kart_number;
+            quickOption.textContent = `${run.kart_number} - ${run.name}`;
+            if (run.kart_number === currentValue) {
+                quickOption.selected = true;
+            }
+            elements.hudQuickDriverSelect.appendChild(quickOption);
+        }
         
         // Compare driver 1 select
         if (elements.compareDriver1Select) {

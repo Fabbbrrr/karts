@@ -514,6 +514,9 @@ html, body {
 
 .hud-header-left {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .hud-header-right {
@@ -1126,6 +1129,34 @@ html, body {
     .hud-kart {
         font-size: 2.8rem;
     }
+    
+    .hud-quick-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .hud-quick-selector label {
+        font-size: 0.75rem;
+    }
+    
+    .hud-quick-driver-select {
+        width: 100%;
+        font-size: 0.85rem;
+    }
+    
+    .hud-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .hud-header-right {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
     
     .hud-card.primary .hud-value {
         font-size: 3rem;

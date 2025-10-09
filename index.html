@@ -61,8 +61,14 @@
         <!-- HUD Tab - Single Driver Focus -->
         <div id="hud-screen" class="screen tab-content">
             <div id="hud-no-driver" class="hud-placeholder">
-                <h2>No Driver Selected</h2>
-                <p>Go to Settings to select your kart number</p>
+                <h2>Select Your Driver</h2>
+                <p style="color: #888; margin-bottom: 20px;">Choose a kart number to view your personal HUD</p>
+                <div class="hud-driver-selector">
+                    <label for="hud-driver-select" style="color: #00ff88; font-size: 1.1rem; margin-bottom: 8px; display: block;">Kart Number:</label>
+                    <select id="hud-driver-select" class="hud-driver-select">
+                        <option value="">-- Select Kart --</option>
+                    </select>
+                </div>
             </div>
             
             <div id="hud-content" class="hud-content hidden">
@@ -70,6 +76,12 @@
                     <div class="hud-header-left">
                         <div id="hud-event-name" class="hud-event-name"></div>
                         <div id="hud-lap-info" class="hud-lap-info"></div>
+                        <div class="hud-quick-selector">
+                            <label for="hud-quick-driver-select" style="font-size: 0.85rem; color: #888; margin-right: 8px;">Switch Driver:</label>
+                            <select id="hud-quick-driver-select" class="hud-quick-driver-select">
+                                <option value="">-- Select Kart --</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="hud-header-right">
                         <div id="hud-session-timer" class="hud-session-timer"></div>
