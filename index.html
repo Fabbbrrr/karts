@@ -65,8 +65,14 @@
             
             <div id="hud-content" class="hud-content hidden">
                 <div class="hud-header">
-                    <div id="hud-event-name" class="hud-event-name"></div>
-                    <div id="hud-lap-info" class="hud-lap-info"></div>
+                    <div class="hud-header-left">
+                        <div id="hud-event-name" class="hud-event-name"></div>
+                        <div id="hud-lap-info" class="hud-lap-info"></div>
+                    </div>
+                    <div class="hud-header-stats">
+                        <div id="hud-pace-trend" class="hud-stat-badge"></div>
+                        <div id="hud-position-change" class="hud-stat-badge"></div>
+                    </div>
                 </div>
                 
                 <div class="hud-main">
@@ -76,32 +82,41 @@
                     </div>
                     
                     <div class="hud-timing-grid">
-                        <div class="hud-card primary">
+                        <div class="hud-card primary" id="hud-card-last-lap">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowLastLap')">−</button>
                             <div class="hud-label">LAST LAP</div>
                             <div id="hud-last-time" class="hud-value">--.-</div>
+                            <div id="hud-pct-off-best" class="hud-sub-value"></div>
                         </div>
                         
-                        <div class="hud-card primary">
+                        <div class="hud-card primary" id="hud-card-best-lap">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowBestLap')">−</button>
                             <div class="hud-label">BEST LAP</div>
                             <div id="hud-best-time" class="hud-value">--.-</div>
+                            <div id="hud-session-best" class="hud-sub-value"></div>
                         </div>
                         
-                        <div class="hud-card">
+                        <div class="hud-card" id="hud-card-avg">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowAvgLap')">−</button>
                             <div class="hud-label">AVG</div>
                             <div id="hud-avg-time" class="hud-value">--.-</div>
                         </div>
                         
-                        <div class="hud-card">
+                        <div class="hud-card" id="hud-card-gap">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowGap')">−</button>
                             <div class="hud-label">GAP</div>
                             <div id="hud-gap" class="hud-value">-</div>
+                            <div id="hud-gap-trend" class="hud-sub-value"></div>
                         </div>
                         
-                        <div class="hud-card">
+                        <div class="hud-card" id="hud-card-interval">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowInterval')">−</button>
                             <div class="hud-label">INTERVAL</div>
                             <div id="hud-interval" class="hud-value">-</div>
                         </div>
                         
-                        <div class="hud-card">
+                        <div class="hud-card" id="hud-card-consistency">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowConsistency')">−</button>
                             <div class="hud-label">CONSISTENCY</div>
                             <div id="hud-consistency" class="hud-value">-</div>
                         </div>
@@ -118,8 +133,11 @@
                         </div>
                     </div>
                     
-                    <div class="hud-lap-history">
-                        <h3 class="hud-history-title">Lap History</h3>
+                    <div class="hud-lap-history" id="hud-card-lap-history">
+                        <div class="hud-section-header">
+                            <h3 class="hud-history-title">Lap History</h3>
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowLapHistory')">−</button>
+                        </div>
                         <div id="hud-lap-list" class="hud-lap-list">
                             <div class="hud-no-laps">No lap data yet...</div>
                         </div>

@@ -506,7 +506,59 @@ html, body {
 .hud-header {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.hud-header-left {
+    flex: 1;
+}
+
+.hud-header-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.hud-stat-badge {
+    background: #1a1a1a;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.hud-stat-badge.improving {
+    background: #00ff88;
+    color: #000;
+}
+
+.hud-stat-badge.declining {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.hud-stat-badge.position-up {
+    background: #00ff88;
+    color: #000;
+}
+
+.hud-stat-badge.position-down {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.hud-stat-badge.gap-closing {
+    background: #00ff88;
+    color: #000;
+}
+
+.hud-stat-badge.gap-opening {
+    background: #ff6b6b;
+    color: #fff;
 }
 
 .hud-event-name {
@@ -558,10 +610,55 @@ html, body {
     border-radius: 12px;
     padding: 16px;
     text-align: center;
+    position: relative;
 }
 
 .hud-card.primary {
     padding: 24px;
+}
+
+.hud-card.hidden {
+    display: none;
+}
+
+.hud-toggle-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: #888;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.hud-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.hud-sub-value {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 6px;
+}
+
+.hud-sub-value.improving {
+    color: #00ff88;
+}
+
+.hud-sub-value.declining {
+    color: #ff6b6b;
 }
 
 .hud-label {
@@ -616,13 +713,24 @@ html, body {
     margin-top: 1rem;
     max-height: 300px;
     overflow-y: auto;
+    position: relative;
+}
+
+.hud-lap-history.hidden {
+    display: none;
+}
+
+.hud-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
 .hud-history-title {
     font-size: 1.2rem;
     color: #00ff88;
-    margin-bottom: 12px;
-    text-align: center;
+    margin: 0;
 }
 
 .hud-lap-list {

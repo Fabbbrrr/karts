@@ -674,11 +674,17 @@ function updateHUDView() {
     elements.hudEventName.textContent = state.sessionData.event_name;
     elements.hudLapInfo.textContent = `Lap ${state.sessionData.current_lap}/${state.sessionData.total_laps}`;
     
+    // Update header stat badges
+    updateHeaderBadges(mainDriver, run);
+    
     // Update position and kart
     const positionClass = run.pos <= 3 ? `p${run.pos}` : '';
     elements.hudPosition.className = `hud-position ${positionClass}`;
     elements.hudPosition.textContent = `P${run.pos}`;
     elements.hudKart.textContent = `KART ${run.kart_number}`;
+    
+    // Apply visibility settings to cards
+    applyHUDCardVisibility();
     
     // Update timing data
     elements.hudLastTime.textContent = run.last_time || '--.-';
@@ -688,12 +694,149 @@ function updateHUDView() {
     elements.hudInterval.textContent = run.int || '-';
     elements.hudConsistency.textContent = run.consistency_lap || '-';
     
+    // Update sub-values
+    updateHUDSubValues(mainDriver, run);
+    
     // Update footer
     elements.hudLaps.textContent = run.total_laps || '0';
     elements.hudTimeLeft.textContent = state.sessionData.time_left || '--:--';
     
     // Update lap history
     updateLapHistoryDisplay(mainDriver, run.best_time_raw);
+}
+
+// Update header stat badges
+function updateHeaderBadges(kartNumber, run) {
+    const paceTrendEl = document.getElementById('hud-pace-trend');
+    const positionChangeEl = document.getElementById('hud-position-change');
+    
+    if (!paceTrendEl || !positionChangeEl) return;
+    
+    // Pace Trend
+    if (state.settings.showPaceTrend) {
+        const paceTrend = calculatePaceTrend(kartNumber);
+        if (paceTrend) {
+            if (paceTrend.improving) {
+                paceTrendEl.className = 'hud-stat-badge improving';
+                paceTrendEl.textContent = `📈 Improving ${paceTrend.difference.toFixed(1)}s/lap`;
+            } else if (paceTrend.declining) {
+                paceTrendEl.className = 'hud-stat-badge declining';
+                paceTrendEl.textContent = `📉 Declining +${Math.abs(paceTrend.difference).toFixed(1)}s/lap`;
+            } else {
+                paceTrendEl.className = 'hud-stat-badge';
+                paceTrendEl.textContent = 'Steady pace';
+            }
+            paceTrendEl.style.display = 'block';
+        } else {
+            paceTrendEl.style.display = 'none';
+        }
+    } else {
+        paceTrendEl.style.display = 'none';
+    }
+    
+    // Position Changes
+    if (state.settings.showPositionChanges) {
+        const startPos = state.startingPositions[kartNumber];
+        if (startPos) {
+            const change = startPos - run.pos;
+            if (change > 0) {
+                positionChangeEl.className = 'hud-stat-badge position-up';
+                positionChangeEl.textContent = `↑ +${change} positions`;
+            } else if (change < 0) {
+                positionChangeEl.className = 'hud-stat-badge position-down';
+                positionChangeEl.textContent = `↓ ${change} positions`;
+            } else {
+                positionChangeEl.className = 'hud-stat-badge';
+                positionChangeEl.textContent = `P${startPos} → P${run.pos}`;
+            }
+            positionChangeEl.style.display = 'block';
+        } else {
+            positionChangeEl.style.display = 'none';
+        }
+    } else {
+        positionChangeEl.style.display = 'none';
+    }
+}
+
+// Update HUD sub-values
+function updateHUDSubValues(kartNumber, run) {
+    // Percentage off best
+    const pctOffBestEl = document.getElementById('hud-pct-off-best');
+    if (pctOffBestEl && state.settings.showPercentageOffBest) {
+        const pct = calculatePercentageOffBest(run.last_time_raw, run.best_time_raw);
+        if (pct > 0) {
+            pctOffBestEl.textContent = `+${pct}% off best`;
+            pctOffBestEl.className = 'hud-sub-value declining';
+        } else if (pct < 0) {
+            pctOffBestEl.textContent = `${pct}% faster`;
+            pctOffBestEl.className = 'hud-sub-value improving';
+        } else {
+            pctOffBestEl.textContent = 'Personal best!';
+            pctOffBestEl.className = 'hud-sub-value improving';
+        }
+    }
+    
+    // Session best comparison
+    const sessionBestEl = document.getElementById('hud-session-best');
+    if (sessionBestEl && state.sessionBest) {
+        if (state.sessionBest.kartNumber === kartNumber) {
+            sessionBestEl.textContent = '🏆 Session Best!';
+            sessionBestEl.className = 'hud-sub-value improving';
+        } else {
+            const diff = run.best_time_raw - state.sessionBest.timeRaw;
+            sessionBestEl.textContent = `+${(diff / 1000).toFixed(3)}s vs ${state.sessionBest.name}`;
+            sessionBestEl.className = 'hud-sub-value';
+        }
+    }
+    
+    // Gap trend
+    const gapTrendEl = document.getElementById('hud-gap-trend');
+    if (gapTrendEl && state.settings.showGapTrend) {
+        const gapTrend = calculateGapTrend(kartNumber);
+        if (gapTrend) {
+            if (gapTrend.closing) {
+                gapTrendEl.textContent = `Closing ${Math.abs(gapTrend.difference).toFixed(1)}s/lap`;
+                gapTrendEl.className = 'hud-sub-value improving';
+            } else if (gapTrend.opening) {
+                gapTrendEl.textContent = `Opening +${gapTrend.difference.toFixed(1)}s/lap`;
+                gapTrendEl.className = 'hud-sub-value declining';
+            } else {
+                gapTrendEl.textContent = 'Gap stable';
+                gapTrendEl.className = 'hud-sub-value';
+            }
+        }
+    }
+}
+
+// Apply HUD card visibility based on settings
+function applyHUDCardVisibility() {
+    const cardMap = {
+        'hudShowLastLap': 'hud-card-last-lap',
+        'hudShowBestLap': 'hud-card-best-lap',
+        'hudShowAvgLap': 'hud-card-avg',
+        'hudShowGap': 'hud-card-gap',
+        'hudShowInterval': 'hud-card-interval',
+        'hudShowConsistency': 'hud-card-consistency',
+        'hudShowLapHistory': 'hud-card-lap-history'
+    };
+    
+    Object.entries(cardMap).forEach(([setting, cardId]) => {
+        const card = document.getElementById(cardId);
+        if (card) {
+            if (state.settings[setting]) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        }
+    });
+}
+
+// Toggle HUD card visibility
+function toggleHUDCard(settingName) {
+    state.settings[settingName] = !state.settings[settingName];
+    saveSettings();
+    applyHUDCardVisibility();
 }
 
 function updateLapHistoryDisplay(kartNumber, bestTimeRaw) {
@@ -828,11 +971,12 @@ document.addEventListener('touchend', (event) => {
     lastTouchEnd = now;
 }, false);
 
-// Export for debugging
+// Export for debugging and HTML onclick
 window.kartingApp = {
     state,
     config: CONFIG,
     switchTab,
-    updateAllViews
+    updateAllViews,
+    toggleHUDCard
 };
  cli
