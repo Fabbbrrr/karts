@@ -150,7 +150,20 @@ const elements = {
     
     // HUD driver selectors
     hudDriverSelect: document.getElementById('hud-driver-select'),
-    hudQuickDriverSelect: document.getElementById('hud-quick-driver-select')
+    hudQuickDriverSelect: document.getElementById('hud-quick-driver-select'),
+    
+    // Results tab
+    resultsScreen: document.getElementById('results-screen'),
+    resultsNoData: document.getElementById('results-no-data'),
+    resultsContent: document.getElementById('results-content'),
+    resultsMethodSelect: document.getElementById('results-method-select'),
+    resultsMethodDescription: document.getElementById('results-method-description'),
+    resultsTableBody: document.getElementById('results-table-body'),
+    resultsChart: document.getElementById('results-chart'),
+    resultsStatsGrid: document.getElementById('results-stats-grid'),
+    podiumP1: document.getElementById('podium-p1'),
+    podiumP2: document.getElementById('podium-p2'),
+    podiumP3: document.getElementById('podium-p3')
 };
 
 // Initialize App
@@ -430,6 +443,13 @@ function setupEventListeners() {
             saveSettings();
             applySettings();
             updateAllViews();
+        });
+    }
+    
+    // Results method selector
+    if (elements.resultsMethodSelect) {
+        elements.resultsMethodSelect.addEventListener('change', () => {
+            updateResultsView();
         });
     }
     
@@ -2466,6 +2486,306 @@ function importAllAppData(file) {
     reader.readAsText(file);
 }
 
+// ============================
+// RESULTS VIEW FUNCTIONS
+// ============================
+
+// Scoring method descriptions
+const SCORING_METHODS = {
+    'fastest-lap': {
+        name: 'Fastest Lap',
+        description: 'Winner determined by single fastest lap time. Traditional sprint race format used by most venues.',
+        calculate: (runs) => {
+            return runs
+                .filter(run => run.best_time_raw && run.best_time_raw > 0)
+                .map(run => ({
+                    kart: run.kart_number,
+                    name: run.name,
+                    score: run.best_time_raw,
+                    displayScore: run.best_time,
+                    laps: run.total_laps
+                }))
+                .sort((a, b) => a.score - b.score);
+        }
+    },
+    'total-time': {
+        name: 'Total Time',
+        description: 'Sum of all lap times. Common in endurance racing - rewards consistency and completion of laps.',
+        calculate: (runs) => {
+            const results = [];
+            runs.forEach(run => {
+                const history = state.lapHistory[run.kart_number];
+                if (history && history.length > 0) {
+                    const totalTime = history.reduce((sum, lap) => sum + (lap.timeRaw || 0), 0);
+                    results.push({
+                        kart: run.kart_number,
+                        name: run.name,
+                        score: totalTime,
+                        displayScore: formatTime(totalTime),
+                        laps: history.length
+                    });
+                }
+            });
+            return results.sort((a, b) => a.score - b.score);
+        }
+    },
+    'average-lap': {
+        name: 'Average Lap Time',
+        description: 'Average of all completed laps. Rewards overall consistency throughout the entire session.',
+        calculate: (runs) => {
+            return runs
+                .filter(run => run.avg_lap_raw && run.avg_lap_raw > 0)
+                .map(run => ({
+                    kart: run.kart_number,
+                    name: run.name,
+                    score: run.avg_lap_raw,
+                    displayScore: run.avg_lap,
+                    laps: run.total_laps
+                }))
+                .sort((a, b) => a.score - b.score);
+        }
+    },
+    'best-3-avg': {
+        name: 'Best 3 Laps Average',
+        description: 'Average of your 3 fastest laps. Eliminates outliers while rewarding peak performance.',
+        calculate: (runs) => {
+            const results = [];
+            runs.forEach(run => {
+                const history = state.lapHistory[run.kart_number];
+                if (history && history.length >= 3) {
+                    const best3 = [...history]
+                        .filter(lap => lap.timeRaw > 0)
+                        .sort((a, b) => a.timeRaw - b.timeRaw)
+                        .slice(0, 3);
+                    if (best3.length === 3) {
+                        const avg = best3.reduce((sum, lap) => sum + lap.timeRaw, 0) / 3;
+                        results.push({
+                            kart: run.kart_number,
+                            name: run.name,
+                            score: avg,
+                            displayScore: formatTime(avg),
+                            laps: run.total_laps
+                        });
+                    }
+                }
+            });
+            return results.sort((a, b) => a.score - b.score);
+        }
+    },
+    'consistency': {
+        name: 'Consistency Score',
+        description: 'Rewards consistent lap times. Higher score = more consistent driving with less variation.',
+        calculate: (runs) => {
+            const results = [];
+            runs.forEach(run => {
+                const consistencyData = calculateConsistencyScore(run.kart_number);
+                if (consistencyData && consistencyData.score > 0) {
+                    results.push({
+                        kart: run.kart_number,
+                        name: run.name,
+                        score: consistencyData.score,
+                        displayScore: `${consistencyData.score}/100`,
+                        laps: run.total_laps,
+                        isHigherBetter: true // For consistency, higher is better
+                    });
+                }
+            });
+            // Sort descending for consistency (higher = better)
+            return results.sort((a, b) => b.score - a.score);
+        }
+    }
+};
+
+function updateResultsView() {
+    if (!state.sessionData || !state.sessionData.runs) {
+        if (elements.resultsNoData) elements.resultsNoData.style.display = 'block';
+        if (elements.resultsContent) elements.resultsContent.classList.add('hidden');
+        return;
+    }
+    
+    if (elements.resultsNoData) elements.resultsNoData.style.display = 'none';
+    if (elements.resultsContent) elements.resultsContent.classList.remove('hidden');
+    
+    const method = elements.resultsMethodSelect?.value || 'fastest-lap';
+    const methodConfig = SCORING_METHODS[method];
+    
+    // Update description
+    if (elements.resultsMethodDescription) {
+        elements.resultsMethodDescription.textContent = methodConfig.description;
+    }
+    
+    // Calculate results
+    const results = methodConfig.calculate(state.sessionData.runs);
+    
+    if (results.length === 0) {
+        if (elements.resultsTableBody) {
+            elements.resultsTableBody.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">Not enough data to calculate results with this method</div>';
+        }
+        return;
+    }
+    
+    // Update podium
+    updatePodium(results, methodConfig);
+    
+    // Update full rankings table
+    updateResultsTable(results, methodConfig);
+    
+    // Update bar chart
+    drawResultsChart(results, methodConfig);
+    
+    // Update statistics
+    updateResultsStats(results, methodConfig);
+}
+
+function updatePodium(results, methodConfig) {
+    const podiumElements = [elements.podiumP1, elements.podiumP2, elements.podiumP3];
+    
+    for (let i = 0; i < 3; i++) {
+        const podiumEl = podiumElements[i];
+        if (!podiumEl) continue;
+        
+        if (results[i]) {
+            const result = results[i];
+            const gap = i === 0 ? '' : formatGap(result.score - results[0].score, methodConfig.isHigherBetter);
+            
+            podiumEl.querySelector('.podium-kart').textContent = `Kart ${result.kart}`;
+            podiumEl.querySelector('.podium-name').textContent = result.name;
+            podiumEl.querySelector('.podium-time').textContent = `${result.displayScore}${gap ? ' (' + gap + ')' : ''}`;
+        } else {
+            podiumEl.querySelector('.podium-kart').textContent = '-';
+            podiumEl.querySelector('.podium-name').textContent = '-';
+            podiumEl.querySelector('.podium-time').textContent = '-';
+        }
+    }
+}
+
+function updateResultsTable(results, methodConfig) {
+    if (!elements.resultsTableBody) return;
+    
+    elements.resultsTableBody.innerHTML = '';
+    
+    results.forEach((result, index) => {
+        const gap = index === 0 ? '-' : formatGap(result.score - results[0].score, methodConfig.isHigherBetter);
+        
+        const row = document.createElement('div');
+        row.className = 'results-table-row';
+        if (index < 3) row.classList.add(`podium-${index + 1}`);
+        
+        row.innerHTML = `
+            <div class="results-col-pos">${index + 1}</div>
+            <div class="results-col-kart">${result.kart}</div>
+            <div class="results-col-name">${result.name}</div>
+            <div class="results-col-score">${result.displayScore}</div>
+            <div class="results-col-gap">${gap}</div>
+        `;
+        
+        elements.resultsTableBody.appendChild(row);
+    });
+}
+
+function drawResultsChart(results, methodConfig) {
+    if (!elements.resultsChart) return;
+    
+    const canvas = elements.resultsChart;
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const padding = 50;
+    const chartWidth = canvas.width - padding * 2;
+    const chartHeight = canvas.height - padding * 2;
+    
+    // Take top 10 for chart
+    const top10 = results.slice(0, 10);
+    const barHeight = chartHeight / top10.length;
+    
+    // Find max/min for scaling
+    const isHigherBetter = methodConfig.isHigherBetter;
+    const values = top10.map(r => r.score);
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+    const range = maxValue - minValue;
+    
+    // Draw bars
+    top10.forEach((result, index) => {
+        const y = padding + index * barHeight;
+        let barWidth;
+        
+        if (isHigherBetter) {
+            // For consistency: scale from 0 to max
+            barWidth = (result.score / maxValue) * chartWidth;
+        } else {
+            // For time: invert so fastest (lowest) gets longest bar
+            const normalized = range > 0 ? (maxValue - result.score) / range : 1;
+            barWidth = normalized * chartWidth;
+        }
+        
+        // Color gradient based on position
+        const colors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+        const color = index < 3 ? colors[index] : '#00ff88';
+        
+        // Draw bar
+        ctx.fillStyle = color;
+        ctx.fillRect(padding, y + 5, barWidth, barHeight - 10);
+        
+        // Draw kart number
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`#${result.kart}`, padding + 5, y + barHeight / 2 + 5);
+        
+        // Draw value
+        ctx.textAlign = 'right';
+        ctx.fillText(result.displayScore, canvas.width - padding - 5, y + barHeight / 2 + 5);
+    });
+}
+
+function updateResultsStats(results, methodConfig) {
+    if (!elements.resultsStatsGrid || results.length === 0) return;
+    
+    const winner = results[0];
+    const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+    const spread = results[results.length - 1].score - results[0].score;
+    
+    elements.resultsStatsGrid.innerHTML = `
+        <div class="results-stat-card">
+            <div class="results-stat-label">Winner</div>
+            <div class="results-stat-value">Kart ${winner.kart}</div>
+        </div>
+        <div class="results-stat-card">
+            <div class="results-stat-label">Winning Score</div>
+            <div class="results-stat-value">${winner.displayScore}</div>
+        </div>
+        <div class="results-stat-card">
+            <div class="results-stat-label">Field Average</div>
+            <div class="results-stat-value">${methodConfig.isHigherBetter ? avgScore.toFixed(1) : formatTime(avgScore)}</div>
+        </div>
+        <div class="results-stat-card">
+            <div class="results-stat-label">First to Last Gap</div>
+            <div class="results-stat-value">${formatGap(spread, methodConfig.isHigherBetter)}</div>
+        </div>
+        <div class="results-stat-card">
+            <div class="results-stat-label">Drivers Classified</div>
+            <div class="results-stat-value">${results.length}</div>
+        </div>
+    `;
+}
+
+function formatGap(gap, isHigherBetter) {
+    if (gap === 0) return '-';
+    if (isHigherBetter) {
+        return `-${gap.toFixed(1)} pts`;
+    }
+    return `+${(gap / 1000).toFixed(3)}s`;
+}
+
+function formatTime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const milliseconds = ms % 1000;
+    return `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+}
+
 // Update All Views (including compare and summary)
 function updateAllViews() {
     if (!state.sessionData) return;
@@ -2476,6 +2796,9 @@ function updateAllViews() {
     }
     if (state.currentTab === 'hud' && elements.hudScreen) {
         updateHUDView();
+    }
+    if (state.currentTab === 'results' && elements.resultsScreen) {
+        updateResultsView();
     }
     if (state.currentTab === 'compare' && elements.compareScreen) {
         updateCompareView();

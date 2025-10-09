@@ -40,6 +40,21 @@ Automatically saves your all-time best laps. Beat your record and get:
 - **Gap Trends** - Visual indicators showing if you're closing gaps
 - **Percentage Off Best** - Instant self-assessment after each lap
 
+### 🏆 **Multi-Method Race Results**
+Revolutionary 5-in-1 results system - see who REALLY won:
+- **🏁 Fastest Lap** - Traditional sprint racing (venue default)
+- **⏱️ Total Time** - Endurance racing format
+- **📈 Average Lap** - Overall consistency winner
+- **⭐ Best 3 Average** - Peak performance ranking
+- **🎯 Consistency Score** - Most consistent driver wins
+
+**Each method includes:**
+- Beautiful animated podium with gold/silver/bronze
+- Full standings table with gaps
+- Color-coded horizontal bar chart
+- Detailed statistics breakdown
+- Switch between methods instantly!
+
 ### 🔬 **Driver Comparison Mode**
 Side-by-side stats of any two drivers with:
 - Color-coded better/worse indicators
@@ -123,6 +138,7 @@ Mini toggle buttons on every component - hide what you don't need without diving
 |-----|---------------|
 | **🏁 Race** | All drivers, positions, gaps, and timing |
 | **🎮 HUD** | YOUR data only - huge numbers for racing |
+| **🏆 Results** | Winners by 5 different scoring methods with podium & graphs |
 | **⚖️ Compare** | Pick any 2 drivers to compare stats |
 | **📈 Summary** | Complete session analysis & records |
 | **⚙️ Settings** | Customize features and preferences |
@@ -135,9 +151,69 @@ Mini toggle buttons on every component - hide what you don't need without diving
 - **Add notes as you race** - Track setup changes and conditions
 - **Watch the position chart** - See who's gaining or losing positions
 - **Proximity alerts** - Get notified when opponents are within 1 second
+- **Compare scoring methods** - You might be 4th by fastest lap but 1st by consistency!
 - **Export session data** to analyze later on a computer
 - **Switch themes** in settings to match your style
 - **Consistency score** of 90+ = very consistent driving
+
+---
+
+## 🏆 Race Results Explained
+
+The **Results** tab shows final standings using 5 different scoring methods. Each method rewards different racing styles!
+
+### Scoring Methods:
+
+#### 🏁 **Fastest Lap (Venue Default)**
+- **How it works:** Winner = fastest single lap time
+- **Best for:** Sprint races, qualifying sessions
+- **Rewards:** Raw speed, perfect laps
+- **Example:** Your best lap was 42.156s? That's your score!
+
+#### ⏱️ **Total Time (Endurance)**
+- **How it works:** Sum of all lap times  
+- **Best for:** Endurance races, longer sessions
+- **Rewards:** Consistency + completing more laps
+- **Example:** 10 laps × ~43s each = 430s total
+
+#### 📈 **Average Lap Time**
+- **How it works:** Average of ALL completed laps
+- **Best for:** Fair comparison across different lap counts
+- **Rewards:** Overall consistency throughout session
+- **Example:** 10 laps totaling 430s = 43.0s average
+
+#### ⭐ **Best 3 Laps Average**
+- **How it works:** Average of your 3 fastest laps
+- **Best for:** Eliminating outliers (traffic, mistakes)
+- **Rewards:** Peak performance potential
+- **Example:** 42.1s + 42.3s + 42.5s = 42.3s average
+- **Note:** Requires minimum 3 completed laps
+
+#### 🎯 **Consistency Score**
+- **How it works:** Points for lap time consistency (0-100)
+- **Best for:** Rewarding smooth, predictable driving
+- **Rewards:** Low variance, repeatable lap times
+- **Example:** 95/100 = super consistent, 60/100 = erratic
+- **Higher score wins** (unlike time-based methods)
+
+### What's Included in Each Method:
+
+Every scoring method displays:
+- **🏆 Animated Podium** - Gold/silver/bronze with driver names
+- **📋 Full Rankings Table** - All drivers with gaps to winner
+- **📊 Bar Chart** - Visual comparison of top 10 drivers
+- **📈 Statistics** - Winner, field average, spread, driver count
+
+### Why Multiple Methods?
+
+Different methods can produce **completely different winners:**
+- Fastest Lap rewards the perfect single lap
+- Total Time rewards endurance and lap completion
+- Average rewards overall consistency
+- Best 3 eliminates bad luck/traffic
+- Consistency rewards smooth driving
+
+**Try them all!** See where you truly excel. 🏁
 
 ---
 
@@ -165,6 +241,7 @@ Tap "Show All HUD Components" in settings to bring back hidden items.
 Unlike basic timing displays, KartTimer Pro gives you:
 
 ✅ **Professional-grade analytics** without expensive equipment  
+✅ **5 scoring methods** - see results from every angle  
 ✅ **Works on any phone** - Android, iPhone, tablets  
 ✅ **Completely free** - no subscriptions, no ads  
 ✅ **Privacy first** - no account needed, data stays on your device  
@@ -241,6 +318,7 @@ Unlike basic timing displays, KartTimer Pro gives you:
 <td width="50%">
 
 ### 🔬 Race Analytics  
+- 5 scoring methods
 - Lap-by-lap deltas
 - Position tracking
 - Gap analysis
@@ -282,8 +360,9 @@ Unlike basic timing displays, KartTimer Pro gives you:
 
 ✅ **Practice Days** - Track your improvement lap by lap  
 ✅ **Competitive Racing** - Know exactly where you stand  
-✅ **Endurance Events** - Monitor consistency over long stints  
-✅ **Coaching** - Show students their data in real-time  
+✅ **Endurance Events** - Use Total Time or Average scoring  
+✅ **League Racing** - Compare results across different scoring methods  
+✅ **Coaching** - Show students where they excel (speed vs consistency)  
 ✅ **Team Racing** - Compare teammates' performance  
 ✅ **Personal Goals** - Beat your own records  
 

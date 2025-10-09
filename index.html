@@ -32,6 +32,7 @@
         <nav id="tab-nav" class="tab-nav hidden">
             <button class="tab-btn active" data-tab="race">Race</button>
             <button class="tab-btn" data-tab="hud">HUD</button>
+            <button class="tab-btn" data-tab="results">Results</button>
             <button class="tab-btn" data-tab="compare">Compare</button>
             <button class="tab-btn" data-tab="summary">Summary</button>
             <button class="tab-btn" data-tab="settings">Settings</button>
@@ -175,6 +176,97 @@
                     
                     <!-- Proximity Alert -->
                     <div id="proximity-alert" class="proximity-alert"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Tab -->
+        <div id="results-screen" class="screen tab-content">
+            <div class="results-container">
+                <h1>🏆 Race Results & Standings</h1>
+                
+                <div id="results-no-data" class="results-placeholder">
+                    <p>Waiting for session data to calculate results...</p>
+                </div>
+                
+                <div id="results-content" class="results-content hidden">
+                    <!-- Scoring Method Selector -->
+                    <div class="results-method-selector">
+                        <label for="results-method-select">📊 Scoring Method:</label>
+                        <select id="results-method-select" class="results-select">
+                            <option value="fastest-lap">🏁 Fastest Lap (Venue Default)</option>
+                            <option value="total-time">⏱️ Total Time (Endurance)</option>
+                            <option value="average-lap">📈 Average Lap Time</option>
+                            <option value="best-3-avg">⭐ Best 3 Laps Average</option>
+                            <option value="consistency">🎯 Consistency Score</option>
+                        </select>
+                        <p class="results-method-description" id="results-method-description"></p>
+                    </div>
+                    
+                    <!-- Podium Section -->
+                    <div class="results-podium">
+                        <h2>🏆 Podium</h2>
+                        <div class="podium-container">
+                            <div class="podium-place p2">
+                                <div class="podium-driver" id="podium-p2">
+                                    <div class="podium-position">2nd</div>
+                                    <div class="podium-kart">-</div>
+                                    <div class="podium-name">-</div>
+                                    <div class="podium-time">-</div>
+                                </div>
+                                <div class="podium-stand stand-2">2</div>
+                            </div>
+                            <div class="podium-place p1">
+                                <div class="podium-driver" id="podium-p1">
+                                    <div class="podium-position">🥇 1st</div>
+                                    <div class="podium-kart">-</div>
+                                    <div class="podium-name">-</div>
+                                    <div class="podium-time">-</div>
+                                </div>
+                                <div class="podium-stand stand-1">1</div>
+                            </div>
+                            <div class="podium-place p3">
+                                <div class="podium-driver" id="podium-p3">
+                                    <div class="podium-position">3rd</div>
+                                    <div class="podium-kart">-</div>
+                                    <div class="podium-name">-</div>
+                                    <div class="podium-time">-</div>
+                                </div>
+                                <div class="podium-stand stand-3">3</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Full Rankings Table -->
+                    <div class="results-rankings">
+                        <h2>📋 Full Standings</h2>
+                        <div class="results-table">
+                            <div class="results-table-header">
+                                <div class="results-col-pos">Pos</div>
+                                <div class="results-col-kart">Kart</div>
+                                <div class="results-col-name">Driver</div>
+                                <div class="results-col-score">Score</div>
+                                <div class="results-col-gap">Gap</div>
+                            </div>
+                            <div id="results-table-body" class="results-table-body">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparison Bar Chart -->
+                    <div class="results-chart-section">
+                        <h2>📊 Visual Comparison</h2>
+                        <canvas id="results-chart" width="800" height="400"></canvas>
+                    </div>
+                    
+                    <!-- Method Statistics -->
+                    <div class="results-stats">
+                        <h3>📈 Statistics</h3>
+                        <div class="results-stats-grid" id="results-stats-grid">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
