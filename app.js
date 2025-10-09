@@ -419,8 +419,9 @@ function createRaceItem(run) {
     }
     
     // Add click handler to select driver
-    div.style.cursor = 'pointer';
-    div.addEventListener('click', () => {
+    div.addEventListener('click', (e) => {
+        console.log('Driver clicked:', run.kart_number);
+        e.stopPropagation();
         state.settings.mainDriver = run.kart_number;
         saveSettings();
         applySettings();
@@ -662,3 +663,4 @@ window.kartingApp = {
     switchTab,
     updateAllViews
 };
+ cli
