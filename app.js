@@ -52,7 +52,8 @@ const state = {
     lastGap: {}, // Track last gap for delta calculation
     currentSessionId: null, // Track current session to detect changes
     audioContext: null, // Web Audio API context for sound alerts
-    lastPosition: {} // Track last position for position change alerts
+    lastPosition: {}, // Track last position for position change alerts
+    positionHistory: {} // Track position per lap for all karts: { kartNumber: [{lapNum, position}] }
 };
 
 // DOM Elements
@@ -118,6 +119,8 @@ const elements = {
     summaryNoData: document.getElementById('summary-no-data'),
     summaryContent: document.getElementById('summary-content'),
     summaryExport: document.getElementById('summary-export'),
+    positionChart: document.getElementById('position-chart'),
+    positionChartLegend: document.getElementById('position-chart-legend'),
     
     // Data management
     exportAllData: document.getElementById('export-all-data'),
@@ -722,6 +725,7 @@ function resetSessionData() {
     state.sessionBest = null;
     state.lastBestLap = {};
     state.lastGap = {};
+    state.positionHistory = {};
     console.log('✅ Session data reset complete!');
 }
 
@@ -776,6 +780,15 @@ function updateLapHistory() {
                 delta: 0,
                 position: run.pos
             };
+            
+            // Track position history for chart
+            if (!state.positionHistory[kartNumber]) {
+                state.positionHistory[kartNumber] = [];
+            }
+            state.positionHistory[kartNumber].push({
+                lapNum: lapCount,
+                position: run.pos
+            });
             
             // Calculate delta from best lap
             if (run.best_time_raw && run.last_time_raw) {
@@ -1835,6 +1848,9 @@ function updateSummaryView() {
             recordsListEl.appendChild(div);
         });
     }
+    
+    // Draw position chart
+    drawPositionChart();
 }
 
 function getLapColorHex(color) {
@@ -1845,6 +1861,162 @@ function getLapColorHex(color) {
         'red': '#ff6b6b'
     };
     return colors[color] || '#fff';
+}
+
+// Draw position chart showing position changes lap-by-lap
+function drawPositionChart() {
+    if (!elements.positionChart || !state.sessionData) return;
+    
+    const canvas = elements.positionChart;
+    const ctx = canvas.getContext('2d');
+    
+    // Get all drivers with position history
+    const drivers = Object.keys(state.positionHistory).filter(kartNumber => {
+        return state.positionHistory[kartNumber].length > 0;
+    });
+    
+    if (drivers.length === 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#666';
+        ctx.font = '16px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No position data available yet...', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Calculate chart dimensions
+    const padding = 50;
+    const chartWidth = canvas.width - padding * 2;
+    const chartHeight = canvas.height - padding * 2;
+    
+    // Find max lap number
+    let maxLap = 0;
+    drivers.forEach(kartNumber => {
+        const history = state.positionHistory[kartNumber];
+        if (history.length > 0) {
+            maxLap = Math.max(maxLap, history[history.length - 1].lapNum);
+        }
+    });
+    
+    // Find max position (highest position number, e.g., 10 for P10)
+    let maxPos = 0;
+    drivers.forEach(kartNumber => {
+        state.positionHistory[kartNumber].forEach(point => {
+            maxPos = Math.max(maxPos, point.position);
+        });
+    });
+    
+    // Draw grid
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 1;
+    
+    // Horizontal lines (positions)
+    for (let i = 0; i <= maxPos; i++) {
+        const y = padding + (i / maxPos) * chartHeight;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(padding + chartWidth, y);
+        ctx.stroke();
+        
+        // Position labels
+        ctx.fillStyle = '#666';
+        ctx.font = '12px "Inter", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`P${i + 1}`, padding - 10, y + 4);
+    }
+    
+    // Vertical lines (laps)
+    const lapStep = Math.ceil(maxLap / 10); // Show ~10 grid lines
+    for (let i = 0; i <= maxLap; i += lapStep) {
+        const x = padding + (i / maxLap) * chartWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, padding + chartHeight);
+        ctx.stroke();
+        
+        // Lap labels
+        ctx.fillStyle = '#666';
+        ctx.font = '12px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`L${i}`, x, canvas.height - padding + 20);
+    }
+    
+    // Generate colors for each driver
+    const colors = generateDriverColors(drivers.length);
+    
+    // Draw lines for each driver
+    drivers.forEach((kartNumber, index) => {
+        const history = state.positionHistory[kartNumber];
+        const color = colors[index];
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        
+        history.forEach((point, i) => {
+            const x = padding + (point.lapNum / maxLap) * chartWidth;
+            const y = padding + ((point.position - 1) / maxPos) * chartHeight;
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        
+        // Draw points
+        ctx.fillStyle = color;
+        history.forEach(point => {
+            const x = padding + (point.lapNum / maxLap) * chartWidth;
+            const y = padding + ((point.position - 1) / maxPos) * chartHeight;
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    });
+    
+    // Update legend
+    updateChartLegend(drivers, colors);
+}
+
+// Generate distinct colors for drivers
+function generateDriverColors(count) {
+    const baseColors = [
+        '#00ff88', '#ff6b6b', '#ffaa00', '#a855f7', 
+        '#3b82f6', '#ec4899', '#14b8a6', '#f59e0b',
+        '#8b5cf6', '#10b981', '#f43f5e', '#06b6d4'
+    ];
+    
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        colors.push(baseColors[i % baseColors.length]);
+    }
+    return colors;
+}
+
+// Update chart legend
+function updateChartLegend(drivers, colors) {
+    if (!elements.positionChartLegend) return;
+    
+    elements.positionChartLegend.innerHTML = '';
+    
+    drivers.forEach((kartNumber, index) => {
+        const run = state.sessionData.runs.find(r => r.kart_number === kartNumber);
+        if (!run) return;
+        
+        const div = document.createElement('div');
+        div.className = 'legend-item';
+        div.innerHTML = `
+            <div class="legend-color" style="background: ${colors[index]};"></div>
+            <span>Kart ${kartNumber} - ${run.name}</span>
+        `;
+        elements.positionChartLegend.appendChild(div);
+    });
 }
 
 function formatDelta(delta) {
