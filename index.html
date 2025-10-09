@@ -28,6 +28,13 @@
         <!-- Connection Indicator -->
         <div id="connection-indicator" class="disconnected"></div>
         
+        <!-- Tab Navigation -->
+        <nav id="tab-nav" class="tab-nav hidden">
+            <button class="tab-btn active" data-tab="race">Race</button>
+            <button class="tab-btn" data-tab="hud">HUD</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </nav>
+        
         <!-- Loading Screen -->
         <div id="loading-screen" class="screen active">
             <div class="loading-content">
@@ -37,74 +44,140 @@
             </div>
         </div>
         
-        <!-- Driver Selection Screen -->
-        <div id="selection-screen" class="screen">
+        <!-- Race Tab - All Drivers -->
+        <div id="race-screen" class="screen tab-content">
             <div class="header">
                 <h1 id="event-name">RaceFacer Live Timing</h1>
                 <div id="session-info" class="session-info"></div>
             </div>
             
-            <h2 class="selection-title">SELECT YOUR KART</h2>
-            
-            <div id="driver-list" class="driver-list">
+            <div id="race-list" class="race-list">
                 <!-- Populated by JavaScript -->
             </div>
         </div>
         
-        <!-- Main Driver View Screen -->
-        <div id="driver-screen" class="screen">
-            <div class="driver-header">
-                <button id="back-btn" class="back-btn">← BACK</button>
-                <div class="driver-session-info">
-                    <div id="driver-event-name" class="driver-event-name"></div>
-                    <div id="driver-lap-info" class="driver-lap-info"></div>
-                </div>
+        <!-- HUD Tab - Single Driver Focus -->
+        <div id="hud-screen" class="screen tab-content">
+            <div id="hud-no-driver" class="hud-placeholder">
+                <h2>No Driver Selected</h2>
+                <p>Go to Settings to select your kart number</p>
             </div>
             
-            <div class="driver-main">
-                <div class="position-kart">
-                    <div id="driver-position" class="driver-position">P1</div>
-                    <div id="driver-kart" class="driver-kart">KART 29</div>
+            <div id="hud-content" class="hud-content hidden">
+                <div class="hud-header">
+                    <div id="hud-event-name" class="hud-event-name"></div>
+                    <div id="hud-lap-info" class="hud-lap-info"></div>
                 </div>
                 
-                <div class="timing-cards">
-                    <div class="timing-card large">
-                        <div class="timing-label">LAST LAP</div>
-                        <div id="last-time" class="timing-value last">--.-</div>
+                <div class="hud-main">
+                    <div class="hud-position-row">
+                        <div id="hud-position" class="hud-position">P1</div>
+                        <div id="hud-kart" class="hud-kart">KART 29</div>
                     </div>
                     
-                    <div class="timing-card large">
-                        <div class="timing-label">BEST LAP</div>
-                        <div id="best-time" class="timing-value best">--.-</div>
-                    </div>
-                    
-                    <div class="timing-row">
-                        <div class="timing-card">
-                            <div class="timing-label">AVG LAP</div>
-                            <div id="avg-time" class="timing-value">--.-</div>
+                    <div class="hud-timing-grid">
+                        <div class="hud-card primary">
+                            <div class="hud-label">LAST LAP</div>
+                            <div id="hud-last-time" class="hud-value">--.-</div>
                         </div>
                         
-                        <div class="timing-card">
-                            <div class="timing-label">GAP</div>
-                            <div id="gap-time" class="timing-value">-</div>
+                        <div class="hud-card primary">
+                            <div class="hud-label">BEST LAP</div>
+                            <div id="hud-best-time" class="hud-value">--.-</div>
+                        </div>
+                        
+                        <div class="hud-card">
+                            <div class="hud-label">AVG</div>
+                            <div id="hud-avg-time" class="hud-value">--.-</div>
+                        </div>
+                        
+                        <div class="hud-card">
+                            <div class="hud-label">GAP</div>
+                            <div id="hud-gap" class="hud-value">-</div>
+                        </div>
+                        
+                        <div class="hud-card">
+                            <div class="hud-label">INTERVAL</div>
+                            <div id="hud-interval" class="hud-value">-</div>
+                        </div>
+                        
+                        <div class="hud-card">
+                            <div class="hud-label">CONSISTENCY</div>
+                            <div id="hud-consistency" class="hud-value">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="hud-footer">
+                        <div class="hud-info-item">
+                            <div class="hud-info-label">Laps</div>
+                            <div id="hud-laps" class="hud-info-value">0</div>
+                        </div>
+                        <div class="hud-info-item">
+                            <div class="hud-info-label">Time Left</div>
+                            <div id="hud-time-left" class="hud-info-value">--:--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="hud-lap-history">
+                        <h3 class="hud-history-title">Lap History</h3>
+                        <div id="hud-lap-list" class="hud-lap-list">
+                            <div class="hud-no-laps">No lap data yet...</div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div id="settings-screen" class="screen tab-content">
+            <div class="settings-container">
+                <h1>⚙️ Settings</h1>
                 
-                <div class="driver-footer">
-                    <div class="info-item">
-                        <div class="info-label">Laps</div>
-                        <div id="total-laps" class="info-value">0</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Consistency</div>
-                        <div id="consistency" class="info-value">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Time Left</div>
-                        <div id="time-left" class="info-value">--:--</div>
-                    </div>
+                <div class="settings-section">
+                    <h2>Driver Selection</h2>
+                    <label for="main-driver-select">Main Driver (Kart Number):</label>
+                    <select id="main-driver-select" class="settings-select">
+                        <option value="">-- Select Kart --</option>
+                    </select>
                 </div>
+                
+                <div class="settings-section">
+                    <h2>Display Options</h2>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-intervals" checked>
+                        <span>Show Intervals (time to car ahead)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-gaps" checked>
+                        <span>Show Gaps (time to leader)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-consistency" checked>
+                        <span>Show Consistency</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-avg-lap" checked>
+                        <span>Show Average Lap</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-last-lap" checked>
+                        <span>Show Last Lap</span>
+                    </label>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>About</h2>
+                    <p>Karting Live Timer v2.0</p>
+                    <p>Connected to: lemansentertainment</p>
+                    <p><a href="https://github.com/Fabbbrrr/karts" target="_blank">GitHub Repository</a></p>
+                </div>
+                
+                <button id="reset-settings" class="settings-btn-secondary">Reset to Defaults</button>
             </div>
         </div>
     </div>

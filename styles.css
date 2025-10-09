@@ -22,6 +22,48 @@ html, body {
     position: relative;
 }
 
+/* Tab Navigation */
+.tab-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    background: #1a1a1a;
+    border-top: 2px solid #00ff88;
+    z-index: 999;
+    padding: 0;
+}
+
+.tab-nav.hidden {
+    display: none;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 16px;
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover {
+    background: #252525;
+    color: #fff;
+}
+
+.tab-btn.active {
+    color: #00ff88;
+    border-bottom-color: #00ff88;
+    background: #0a0a0a;
+}
+
 /* Connection Indicator */
 #connection-indicator {
     position: fixed;
@@ -51,11 +93,20 @@ html, body {
     display: none;
     flex-direction: column;
     padding: 24px;
+    padding-bottom: 80px; /* Space for tab nav */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
 .screen.active {
+    display: flex;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
     display: flex;
 }
 
@@ -113,76 +164,104 @@ html, body {
     color: #fff;
 }
 
-.driver-list {
+/* Race Tab - Enhanced List */
+.race-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     padding-bottom: 20px;
 }
 
-.driver-item {
+.race-item {
     background: #1a1a1a;
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    justify-content: space-between;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    gap: 12px;
     align-items: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
     border: 2px solid transparent;
+    transition: all 0.2s ease;
 }
 
-.driver-item:hover {
-    background: #252525;
+.race-item.main-driver {
     border-color: #00ff88;
-    transform: translateX(4px);
+    background: #1a2a1a;
 }
 
-.driver-item:active {
-    transform: scale(0.98);
-}
-
-.driver-left {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.driver-position {
-    font-size: 2.5rem;
+.race-position {
+    font-size: 2rem;
     font-weight: bold;
-    min-width: 80px;
     text-align: center;
 }
 
-.driver-position.p1 { color: #ffd700; }
-.driver-position.p2 { color: #c0c0c0; }
-.driver-position.p3 { color: #cd7f32; }
+.race-position.p1 { color: #ffd700; }
+.race-position.p2 { color: #c0c0c0; }
+.race-position.p3 { color: #cd7f32; }
 
-.driver-info h3 {
-    font-size: 1.8rem;
-    color: #00ff88;
-    margin-bottom: 0.25rem;
+.race-driver-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.driver-info p {
-    font-size: 1rem;
+.race-driver-name {
+    font-size: 1.2rem;
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.race-driver-kart {
+    font-size: 0.9rem;
     color: #888;
 }
 
-.driver-right {
-    text-align: right;
+.race-driver-details {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    margin-top: 2px;
 }
 
-.driver-best {
-    font-size: 1.5rem;
-    color: #ffaa00;
-    margin-bottom: 0.25rem;
+.race-detail-item {
+    display: flex;
+    gap: 4px;
 }
 
-.driver-label {
-    font-size: 0.9rem;
+.race-detail-label {
     color: #666;
+}
+
+.race-detail-value {
+    color: #fff;
+    font-weight: bold;
+}
+
+.race-detail-value.best {
+    color: #00ff88;
+}
+
+.race-detail-value.last {
+    color: #ffaa00;
+}
+
+.race-timing {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.race-best-time {
+    font-size: 1.3rem;
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.race-gap {
+    font-size: 0.9rem;
+    color: #888;
 }
 
 /* Driver View Screen */
@@ -387,70 +466,552 @@ html, body {
     color: #fff;
 }
 
-/* Landscape Optimization */
+/* HUD Tab Styles */
+.hud-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #888;
+}
+
+.hud-placeholder h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.hud-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.hud-content.hidden {
+    display: none;
+}
+
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.hud-event-name {
+    font-size: 1.5rem;
+    color: #00ff88;
+}
+
+.hud-lap-info {
+    font-size: 1rem;
+    color: #888;
+}
+
+.hud-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.hud-position-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.hud-position {
+    font-size: 5rem;
+    font-weight: bold;
+}
+
+.hud-position.p1 { color: #ffd700; }
+.hud-position.p2 { color: #c0c0c0; }
+.hud-position.p3 { color: #cd7f32; }
+
+.hud-kart {
+    font-size: 3.5rem;
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.hud-timing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.hud-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+}
+
+.hud-card.primary {
+    padding: 24px;
+}
+
+.hud-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.hud-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.hud-card.primary .hud-value {
+    font-size: 3.5rem;
+}
+
+.hud-card:nth-child(1) .hud-value {
+    color: #ffaa00;
+}
+
+.hud-card:nth-child(2) .hud-value {
+    color: #00ff88;
+}
+
+.hud-footer {
+    display: flex;
+    justify-content: space-around;
+    padding: 1rem 0;
+}
+
+.hud-info-item {
+    text-align: center;
+}
+
+.hud-info-label {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.hud-info-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+/* Lap History */
+.hud-lap-history {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.hud-history-title {
+    font-size: 1.2rem;
+    color: #00ff88;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.hud-lap-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hud-no-laps {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-size: 0.9rem;
+}
+
+.hud-lap-item {
+    display: grid;
+    grid-template-columns: 60px 1fr 80px;
+    gap: 12px;
+    align-items: center;
+    background: #0a0a0a;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.hud-lap-item.best {
+    border: 2px solid #00ff88;
+    background: #0a1a0a;
+}
+
+.hud-lap-number {
+    font-weight: bold;
+    color: #888;
+    text-align: center;
+}
+
+.hud-lap-time {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.hud-lap-item.best .hud-lap-time {
+    color: #00ff88;
+}
+
+.hud-lap-delta {
+    text-align: right;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.hud-lap-delta.positive {
+    color: #ff6b6b;
+}
+
+.hud-lap-delta.negative {
+    color: #00ff88;
+}
+
+.hud-lap-delta.neutral {
+    color: #888;
+}
+
+/* Settings Tab Styles */
+.settings-container {
+    flex: 1;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.settings-container h1 {
+    font-size: 2.5rem;
+    color: #00ff88;
+    margin-bottom: 2rem;
+}
+
+.settings-section {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 1.5rem;
+}
+
+.settings-section h2 {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+.settings-section label {
+    display: block;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.settings-select {
+    width: 100%;
+    background: #0a0a0a;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    margin-top: 0.5rem;
+    cursor: pointer;
+}
+
+.settings-select:focus {
+    outline: none;
+    border-color: #00ff88;
+}
+
+.settings-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #0a0a0a;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-checkbox:hover {
+    background: #151515;
+}
+
+.settings-checkbox input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: #00ff88;
+}
+
+.settings-checkbox span {
+    flex: 1;
+    font-size: 1rem;
+}
+
+.settings-section p {
+    color: #888;
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.settings-section a {
+    color: #00ff88;
+    text-decoration: none;
+}
+
+.settings-section a:hover {
+    text-decoration: underline;
+}
+
+.settings-btn-secondary {
+    width: 100%;
+    background: #1a1a1a;
+    color: #ff4444;
+    border: 2px solid #ff4444;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+}
+
+.settings-btn-secondary:hover {
+    background: #ff4444;
+    color: #000;
+}
+
+/* Responsive Design - Landscape */
 @media (orientation: landscape) {
-    .position-kart {
-        margin-bottom: 1rem;
+    /* HUD optimizations for landscape */
+    .hud-position-row {
+        margin-bottom: 0.5rem;
     }
     
-    .timing-cards {
-        flex-direction: row;
-        flex-wrap: wrap;
+    .hud-position {
+        font-size: 4rem;
     }
     
-    .timing-card.large {
-        flex: 1;
-        min-width: 200px;
+    .hud-kart {
+        font-size: 3rem;
     }
     
-    .timing-row {
-        width: 100%;
+    .hud-timing-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .hud-card {
+        padding: 12px;
+    }
+    
+    .hud-card.primary {
+        padding: 16px;
+    }
+    
+    .hud-value {
+        font-size: 2rem;
+    }
+    
+    .hud-card.primary .hud-value {
+        font-size: 2.8rem;
+    }
+    
+    .hud-lap-history {
+        max-height: 200px;
+    }
+    
+    /* Race tab landscape */
+    .race-item {
+        grid-template-columns: 50px 1fr auto;
+        padding: 10px 12px;
+    }
+    
+    .race-position {
+        font-size: 1.6rem;
+    }
+    
+    .race-driver-name {
+        font-size: 1.1rem;
+    }
+    
+    .race-best-time {
+        font-size: 1.2rem;
+    }
+}
+
+/* Responsive Design - Portrait */
+@media (orientation: portrait) {
+    /* Larger fonts for portrait */
+    .hud-position {
+        font-size: 6rem;
+    }
+    
+    .hud-kart {
+        font-size: 4rem;
+    }
+    
+    .hud-timing-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .hud-value {
+        font-size: 3rem;
+    }
+    
+    .hud-card.primary .hud-value {
+        font-size: 4rem;
+    }
+    
+    .hud-lap-history {
+        max-height: 400px;
+    }
+    
+    /* Race tab portrait */
+    .race-item {
+        grid-template-columns: 70px 1fr;
+        gap: 10px;
+    }
+    
+    .race-timing {
+        grid-column: 2;
+        justify-self: end;
+    }
+    
+    .race-position {
+        font-size: 2.2rem;
     }
 }
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
     .header h1 {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
     
-    .driver-position {
-        font-size: 5rem;
+    .session-info {
+        font-size: 1rem;
     }
     
-    .driver-kart {
-        font-size: 3rem;
-    }
-    
-    .timing-card.large .timing-value {
-        font-size: 3rem;
+    .tab-btn {
+        font-size: 0.9rem;
+        padding: 14px;
     }
 }
 
 @media (max-width: 480px) {
     .screen {
-        padding: 16px;
+        padding: 12px;
+        padding-bottom: 70px;
     }
     
-    .driver-item {
-        padding: 16px;
+    .header h1 {
+        font-size: 1.5rem;
     }
     
-    .driver-left {
-        gap: 16px;
+    .hud-position {
+        font-size: 4.5rem;
     }
     
-    .driver-position {
-        font-size: 2rem;
-        min-width: 60px;
+    .hud-kart {
+        font-size: 2.8rem;
     }
     
-    .driver-info h3 {
-        font-size: 1.4rem;
+    .hud-card.primary .hud-value {
+        font-size: 3rem;
     }
     
-    .driver-best {
-        font-size: 1.2rem;
+    .hud-value {
+        font-size: 2.2rem;
+    }
+    
+    .tab-btn {
+        font-size: 0.85rem;
+        padding: 12px 8px;
+    }
+    
+    .race-item {
+        padding: 10px;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+    .hud-position {
+        font-size: 3.5rem;
+    }
+    
+    .hud-kart {
+        font-size: 2.2rem;
+    }
+    
+    .hud-card.primary .hud-value {
+        font-size: 2.5rem;
+    }
+    
+    .hud-value {
+        font-size: 1.8rem;
+    }
+}
+
+/* Orientation change handling */
+@media (orientation: landscape) and (max-height: 500px) {
+    /* Very short landscape screens (phones) */
+    .screen {
+        padding: 10px;
+        padding-bottom: 60px;
+    }
+    
+    .hud-position {
+        font-size: 3rem;
+    }
+    
+    .hud-kart {
+        font-size: 2.5rem;
+    }
+    
+    .hud-timing-grid {
+        gap: 8px;
+    }
+    
+    .hud-card {
+        padding: 8px;
+    }
+    
+    .hud-card.primary {
+        padding: 12px;
+    }
+    
+    .hud-value {
+        font-size: 1.8rem;
+    }
+    
+    .hud-card.primary .hud-value {
+        font-size: 2.5rem;
+    }
+    
+    .hud-lap-history {
+        max-height: 150px;
+        padding: 10px;
+    }
+    
+    .tab-nav {
+        padding: 0;
+    }
+    
+    .tab-btn {
+        padding: 10px 8px;
+        font-size: 0.85rem;
     }
 }
 
