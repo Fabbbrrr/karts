@@ -48,7 +48,8 @@ const state = {
     sessionBest: null, // Track fastest lap of session
     personalRecords: null, // Load from localStorage
     lastBestLap: {}, // Track last best lap time per kart for celebration
-    lastGap: {} // Track last gap for delta calculation
+    lastGap: {}, // Track last gap for delta calculation
+    currentSessionId: null // Track current session to detect changes
 };
 
 // DOM Elements
@@ -514,6 +515,9 @@ function onSessionData(data) {
         if (data && data.data) {
             state.sessionData = data.data;
             
+            // Detect session change and reset
+            detectAndResetSession();
+            
             // Track lap history
             updateLapHistory();
             
@@ -533,6 +537,51 @@ function onSessionData(data) {
     } catch (error) {
         console.error('Error parsing session data:', error);
     }
+}
+
+// Detect session change and reset data
+function detectAndResetSession() {
+    if (!state.sessionData) return;
+    
+    // Create a session identifier from available data
+    // Use event_name + current_lap combination as session ID
+    // When current_lap goes back to 0/1 from a higher number, it's a new session
+    const sessionId = `${state.sessionData.event_name}_${state.sessionData.session_name || 'default'}`;
+    const currentLap = state.sessionData.current_lap || 0;
+    
+    // Check if this is a new session
+    if (state.currentSessionId && state.currentSessionId !== sessionId) {
+        console.log('🔄 New session detected! Resetting lap data...');
+        console.log(`Previous: ${state.currentSessionId}, New: ${sessionId}`);
+        resetSessionData();
+    } 
+    // Also detect session restart if lap count goes back to start
+    else if (state.currentSessionId === sessionId) {
+        // Check if we went from lap 3+ back to lap 0-2 (session restart)
+        const hadLapData = Object.keys(state.lapHistory).some(kart => 
+            state.lapHistory[kart] && state.lapHistory[kart].length > 3
+        );
+        
+        if (hadLapData && currentLap <= 2) {
+            console.log('🔄 Session restart detected (lap counter reset)! Resetting lap data...');
+            resetSessionData();
+        }
+    }
+    
+    // Update current session ID
+    state.currentSessionId = sessionId;
+}
+
+// Reset session-specific data
+function resetSessionData() {
+    console.log('Resetting session data...');
+    state.lapHistory = {};
+    state.startingPositions = {};
+    state.gapHistory = {};
+    state.sessionBest = null;
+    state.lastBestLap = {};
+    state.lastGap = {};
+    console.log('✅ Session data reset complete!');
 }
 
 // Track lap history with deltas
@@ -1026,6 +1075,9 @@ function updateHUDView() {
     elements.hudEventName.textContent = state.sessionData.event_name;
     elements.hudLapInfo.textContent = `Lap ${state.sessionData.current_lap}/${state.sessionData.total_laps}`;
     
+    // Update session timer
+    updateSessionTimer(state.sessionData.time_left);
+    
     // Update header stat badges
     updateHeaderBadges(mainDriver, run);
     
@@ -1074,6 +1126,35 @@ function updateHUDView() {
     
     // Update lap history
     updateLapHistoryDisplay(mainDriver, run.best_time_raw);
+}
+
+// Update session timer with warnings
+function updateSessionTimer(timeLeft) {
+    const timerEl = document.getElementById('hud-session-timer');
+    if (!timerEl || !timeLeft) return;
+    
+    // Parse time (format: "MM:SS" or "H:MM:SS")
+    const parts = timeLeft.split(':');
+    let totalSeconds = 0;
+    
+    if (parts.length === 2) {
+        // MM:SS
+        totalSeconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    } else if (parts.length === 3) {
+        // H:MM:SS
+        totalSeconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+    }
+    
+    // Update display
+    timerEl.textContent = timeLeft;
+    
+    // Apply warning styles
+    timerEl.className = 'hud-session-timer';
+    if (totalSeconds <= 60 && totalSeconds > 30) {
+        timerEl.classList.add('warning');
+    } else if (totalSeconds <= 30) {
+        timerEl.classList.add('critical');
+    }
 }
 
 // Update header stat badges
