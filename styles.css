@@ -654,6 +654,44 @@ html, body {
     background: #0a1a0a;
 }
 
+/* F1-style lap colors */
+.hud-lap-item.lap-purple .hud-lap-time {
+    color: #a855f7;
+    font-weight: bold;
+}
+
+.hud-lap-item.lap-green .hud-lap-time {
+    color: #00ff88;
+}
+
+.hud-lap-item.lap-yellow .hud-lap-time {
+    color: #ffaa00;
+}
+
+.hud-lap-item.lap-red .hud-lap-time {
+    color: #ff6b6b;
+}
+
+/* Best Lap Celebration */
+#hud-screen.best-lap-celebration {
+    animation: celebratePulse 2s ease-in-out;
+}
+
+@keyframes celebratePulse {
+    0%, 100% {
+        border: none;
+        box-shadow: none;
+    }
+    10%, 30%, 50% {
+        border: 3px solid #00ff88;
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+    }
+    20%, 40% {
+        border: 3px solid #a855f7;
+        box-shadow: 0 0 30px rgba(168, 85, 247, 0.6);
+    }
+}
+
 .hud-lap-number {
     font-weight: bold;
     color: #888;

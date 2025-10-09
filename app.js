@@ -716,6 +716,10 @@ function updateLapHistoryDisplay(kartNumber, bestTimeRaw) {
         const div = document.createElement('div');
         div.className = 'hud-lap-item';
         
+        // F1-style color coding
+        const lapColor = getLapColor(lap, bestTimeRaw);
+        div.classList.add(`lap-${lapColor}`);
+        
         // Mark best lap
         if (bestTimeRaw && lap.timeRaw === bestTimeRaw) {
             div.classList.add('best');
