@@ -47,7 +47,8 @@ const state = {
     gapHistory: {}, // Track gap trends: { kartNumber: [{timestamp, gap}] }
     sessionBest: null, // Track fastest lap of session
     personalRecords: null, // Load from localStorage
-    lastBestLap: {} // Track last best lap time per kart for celebration
+    lastBestLap: {}, // Track last best lap time per kart for celebration
+    lastGap: {} // Track last gap for delta calculation
 };
 
 // DOM Elements
@@ -661,6 +662,34 @@ function trackGapTrend(kartNumber, gap) {
     }
 }
 
+// Calculate delta to leader (gaining/losing time)
+function calculateDeltaToLeader(kartNumber, currentGap) {
+    if (!currentGap || currentGap === '-') return null;
+    
+    // Parse current gap
+    const match = currentGap.match(/\+?([\d.]+)/);
+    if (!match) return null;
+    
+    const currentGapValue = parseFloat(match[1]);
+    const lastGapValue = state.lastGap[kartNumber];
+    
+    // Update last gap
+    state.lastGap[kartNumber] = currentGapValue;
+    
+    // Need at least 2 data points
+    if (lastGapValue === undefined) return null;
+    
+    // Calculate delta (negative = closing, positive = opening)
+    const delta = currentGapValue - lastGapValue;
+    
+    return {
+        value: delta,
+        closing: delta < -0.05, // Closing by > 0.05s
+        opening: delta > 0.05,  // Opening by > 0.05s
+        text: delta < 0 ? `△ ${delta.toFixed(2)}s` : `▽ +${delta.toFixed(2)}s`
+    };
+}
+
 // Calculate pace trend
 function calculatePaceTrend(kartNumber) {
     const history = state.lapHistory[kartNumber];
@@ -685,6 +714,71 @@ function calculatePaceTrend(kartNumber) {
 function calculatePercentageOffBest(lastTimeRaw, bestTimeRaw) {
     if (!lastTimeRaw || !bestTimeRaw || lastTimeRaw === bestTimeRaw) return 0;
     return (((lastTimeRaw - bestTimeRaw) / bestTimeRaw) * 100).toFixed(1);
+}
+
+// Calculate ideal/theoretical lap time
+function calculateIdealLapTime(kartNumber) {
+    const history = state.lapHistory[kartNumber];
+    if (!history || history.length < 2) return null;
+    
+    // Get best 3 laps and average them for "ideal" pace
+    const sortedLaps = [...history]
+        .filter(lap => lap.timeRaw > 0)
+        .sort((a, b) => a.timeRaw - b.timeRaw);
+    
+    if (sortedLaps.length < 2) return null;
+    
+    const top3 = sortedLaps.slice(0, Math.min(3, sortedLaps.length));
+    const idealTimeRaw = top3.reduce((sum, lap) => sum + lap.timeRaw, 0) / top3.length;
+    
+    // Format time
+    const minutes = Math.floor(idealTimeRaw / 60000);
+    const seconds = ((idealTimeRaw % 60000) / 1000).toFixed(3);
+    const idealTime = minutes > 0 ? `${minutes}:${seconds.padStart(6, '0')}` : seconds;
+    
+    return {
+        timeRaw: idealTimeRaw,
+        time: idealTime,
+        improvement: sortedLaps[0].timeRaw - idealTimeRaw // Potential gain
+    };
+}
+
+// Calculate consistency score (0-100)
+function calculateConsistencyScore(kartNumber) {
+    const history = state.lapHistory[kartNumber];
+    if (!history || history.length < 3) return null;
+    
+    // Only use valid lap times (exclude outliers > 10s off average)
+    const validLaps = history.filter(lap => lap.timeRaw > 0);
+    if (validLaps.length < 3) return null;
+    
+    const times = validLaps.map(lap => lap.timeRaw);
+    const average = times.reduce((sum, time) => sum + time, 0) / times.length;
+    
+    // Calculate standard deviation
+    const squaredDiffs = times.map(time => Math.pow(time - average, 2));
+    const variance = squaredDiffs.reduce((sum, diff) => sum + diff, 0) / times.length;
+    const stdDev = Math.sqrt(variance);
+    
+    // Convert to percentage of average (coefficient of variation)
+    const coefficientOfVariation = (stdDev / average) * 100;
+    
+    // Convert to 0-100 score (lower CV = higher score)
+    // CV of 0.5% = 100 score, CV of 5% = 0 score
+    const score = Math.max(0, Math.min(100, 100 - (coefficientOfVariation * 20)));
+    
+    let rating = 'Poor';
+    if (score >= 90) rating = 'Excellent';
+    else if (score >= 75) rating = 'Very Good';
+    else if (score >= 60) rating = 'Good';
+    else if (score >= 40) rating = 'Average';
+    
+    return {
+        score: Math.round(score),
+        rating,
+        stdDev: (stdDev / 1000).toFixed(3), // Convert to seconds
+        text: `${Math.round(score)}/100 - ${rating}`
+    };
 }
 
 // Calculate gap trend
@@ -952,6 +1046,25 @@ function updateHUDView() {
     elements.hudInterval.textContent = run.int || '-';
     elements.hudConsistency.textContent = run.consistency_lap || '-';
     
+    // Update consistency score
+    const consistencyScoreEl = document.getElementById('hud-consistency-score');
+    if (consistencyScoreEl) {
+        const consistencyScore = calculateConsistencyScore(mainDriver);
+        if (consistencyScore) {
+            consistencyScoreEl.textContent = consistencyScore.text;
+            if (consistencyScore.score >= 75) {
+                consistencyScoreEl.className = 'hud-sub-value improving';
+            } else if (consistencyScore.score < 50) {
+                consistencyScoreEl.className = 'hud-sub-value declining';
+            } else {
+                consistencyScoreEl.className = 'hud-sub-value';
+            }
+        } else {
+            consistencyScoreEl.textContent = 'Need 3+ laps';
+            consistencyScoreEl.className = 'hud-sub-value';
+        }
+    }
+    
     // Update sub-values
     updateHUDSubValues(mainDriver, run);
     
@@ -1034,6 +1147,24 @@ function updateHUDSubValues(kartNumber, run) {
         }
     }
     
+    // Ideal lap time
+    const idealLapEl = document.getElementById('hud-ideal-lap');
+    if (idealLapEl) {
+        const idealLap = calculateIdealLapTime(kartNumber);
+        if (idealLap && run.best_time_raw) {
+            const diff = run.best_time_raw - idealLap.timeRaw;
+            if (diff > 10) { // More than 0.01s difference
+                idealLapEl.textContent = `Ideal: ${idealLap.time} (-${(diff / 1000).toFixed(3)}s possible)`;
+                idealLapEl.className = 'hud-sub-value';
+            } else {
+                idealLapEl.textContent = 'At ideal pace!';
+                idealLapEl.className = 'hud-sub-value improving';
+            }
+        } else {
+            idealLapEl.textContent = '';
+        }
+    }
+    
     // Session best comparison
     const sessionBestEl = document.getElementById('hud-session-best');
     if (sessionBestEl && state.sessionBest) {
@@ -1047,21 +1178,24 @@ function updateHUDSubValues(kartNumber, run) {
         }
     }
     
-    // Gap trend
+    // Gap trend + Delta to leader
     const gapTrendEl = document.getElementById('hud-gap-trend');
-    if (gapTrendEl && state.settings.showGapTrend) {
-        const gapTrend = calculateGapTrend(kartNumber);
-        if (gapTrend) {
-            if (gapTrend.closing) {
-                gapTrendEl.textContent = `Closing ${Math.abs(gapTrend.difference).toFixed(1)}s/lap`;
+    if (gapTrendEl) {
+        const delta = calculateDeltaToLeader(kartNumber, run.gap);
+        
+        if (state.settings.showGapTrend && delta) {
+            if (delta.closing) {
+                gapTrendEl.textContent = `${delta.text} - Closing!`;
                 gapTrendEl.className = 'hud-sub-value improving';
-            } else if (gapTrend.opening) {
-                gapTrendEl.textContent = `Opening +${gapTrend.difference.toFixed(1)}s/lap`;
+            } else if (delta.opening) {
+                gapTrendEl.textContent = `${delta.text} - Opening`;
                 gapTrendEl.className = 'hud-sub-value declining';
             } else {
-                gapTrendEl.textContent = 'Gap stable';
+                gapTrendEl.textContent = `${delta.text} - Stable`;
                 gapTrendEl.className = 'hud-sub-value';
             }
+        } else if (!state.settings.showGapTrend) {
+            gapTrendEl.textContent = '';
         }
     }
 }
@@ -1642,4 +1776,3 @@ window.kartingApp = {
     updateAllViews,
     toggleHUDCard
 };
- cli
