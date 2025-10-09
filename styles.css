@@ -1,0 +1,456 @@
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    background: #000000;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Connection Indicator */
+#connection-indicator {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ff4444;
+    box-shadow: 0 0 12px rgba(255, 68, 68, 0.5);
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+#connection-indicator.connected {
+    background: #00ff88;
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.5);
+}
+
+/* Screen Management */
+.screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+    flex-direction: column;
+    padding: 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Loading Screen */
+#loading-screen {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.loading-content h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: #00ff88;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #1a1a1a;
+    border-top-color: #00ff88;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 2rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+#loading-status {
+    font-size: 1.2rem;
+    color: #888;
+}
+
+/* Selection Screen */
+.header {
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    color: #00ff88;
+    margin-bottom: 0.5rem;
+}
+
+.session-info {
+    font-size: 1.2rem;
+    color: #888;
+}
+
+.selection-title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: #fff;
+}
+
+.driver-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 20px;
+}
+
+.driver-item {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.driver-item:hover {
+    background: #252525;
+    border-color: #00ff88;
+    transform: translateX(4px);
+}
+
+.driver-item:active {
+    transform: scale(0.98);
+}
+
+.driver-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.driver-position {
+    font-size: 2.5rem;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: center;
+}
+
+.driver-position.p1 { color: #ffd700; }
+.driver-position.p2 { color: #c0c0c0; }
+.driver-position.p3 { color: #cd7f32; }
+
+.driver-info h3 {
+    font-size: 1.8rem;
+    color: #00ff88;
+    margin-bottom: 0.25rem;
+}
+
+.driver-info p {
+    font-size: 1rem;
+    color: #888;
+}
+
+.driver-right {
+    text-align: right;
+}
+
+.driver-best {
+    font-size: 1.5rem;
+    color: #ffaa00;
+    margin-bottom: 0.25rem;
+}
+
+.driver-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Driver View Screen */
+.driver-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.back-btn {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1.5rem;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+    background: #252525;
+    transform: translateX(-4px);
+}
+
+.back-btn:active {
+    transform: scale(0.95);
+}
+
+.driver-session-info {
+    text-align: right;
+}
+
+.driver-event-name {
+    font-size: 1.5rem;
+    color: #00ff88;
+    margin-bottom: 0.25rem;
+}
+
+.driver-lap-info {
+    font-size: 1rem;
+    color: #888;
+}
+
+.driver-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.position-kart {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.driver-position {
+    font-size: 6rem;
+    font-weight: bold;
+}
+
+.driver-position.p1 { color: #ffd700; }
+.driver-position.p2 { color: #c0c0c0; }
+.driver-position.p3 { color: #cd7f32; }
+
+.driver-kart {
+    font-size: 4rem;
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.timing-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.timing-card {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.timing-card.large {
+    padding: 30px;
+}
+
+.timing-label {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.timing-value {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+.timing-card.large .timing-value {
+    font-size: 4rem;
+}
+
+.timing-value.last {
+    color: #ffaa00;
+}
+
+.timing-value.best {
+    color: #00ff88;
+}
+
+.timing-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.driver-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto;
+}
+
+.info-item {
+    text-align: center;
+}
+
+.info-label {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 0.25rem;
+}
+
+.info-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Install Prompt */
+.install-prompt {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a1a;
+    border: 2px solid #00ff88;
+    border-radius: 12px;
+    padding: 16px 24px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+}
+
+.install-prompt.hidden {
+    display: none;
+}
+
+.install-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.install-content p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.install-btn {
+    background: #00ff88;
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    font-family: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.install-btn:hover {
+    background: #00dd77;
+    transform: scale(1.05);
+}
+
+.dismiss-btn {
+    background: transparent;
+    color: #888;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 8px;
+}
+
+.dismiss-btn:hover {
+    color: #fff;
+}
+
+/* Landscape Optimization */
+@media (orientation: landscape) {
+    .position-kart {
+        margin-bottom: 1rem;
+    }
+    
+    .timing-cards {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .timing-card.large {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .timing-row {
+        width: 100%;
+    }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 2rem;
+    }
+    
+    .driver-position {
+        font-size: 5rem;
+    }
+    
+    .driver-kart {
+        font-size: 3rem;
+    }
+    
+    .timing-card.large .timing-value {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .screen {
+        padding: 16px;
+    }
+    
+    .driver-item {
+        padding: 16px;
+    }
+    
+    .driver-left {
+        gap: 16px;
+    }
+    
+    .driver-position {
+        font-size: 2rem;
+        min-width: 60px;
+    }
+    
+    .driver-info h3 {
+        font-size: 1.4rem;
+    }
+    
+    .driver-best {
+        font-size: 1.2rem;
+    }
+}
+

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Real-time go-karting session viewer">
+    
+    <title>Karting Live Timer</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Connection Indicator -->
+        <div id="connection-indicator" class="disconnected"></div>
+        
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading-content">
+                <h1>🏎️ Karting Live Timer</h1>
+                <div class="spinner"></div>
+                <p id="loading-status">Connecting to RaceFacer...</p>
+            </div>
+        </div>
+        
+        <!-- Driver Selection Screen -->
+        <div id="selection-screen" class="screen">
+            <div class="header">
+                <h1 id="event-name">RaceFacer Live Timing</h1>
+                <div id="session-info" class="session-info"></div>
+            </div>
+            
+            <h2 class="selection-title">SELECT YOUR KART</h2>
+            
+            <div id="driver-list" class="driver-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Main Driver View Screen -->
+        <div id="driver-screen" class="screen">
+            <div class="driver-header">
+                <button id="back-btn" class="back-btn">← BACK</button>
+                <div class="driver-session-info">
+                    <div id="driver-event-name" class="driver-event-name"></div>
+                    <div id="driver-lap-info" class="driver-lap-info"></div>
+                </div>
+            </div>
+            
+            <div class="driver-main">
+                <div class="position-kart">
+                    <div id="driver-position" class="driver-position">P1</div>
+                    <div id="driver-kart" class="driver-kart">KART 29</div>
+                </div>
+                
+                <div class="timing-cards">
+                    <div class="timing-card large">
+                        <div class="timing-label">LAST LAP</div>
+                        <div id="last-time" class="timing-value last">--.-</div>
+                    </div>
+                    
+                    <div class="timing-card large">
+                        <div class="timing-label">BEST LAP</div>
+                        <div id="best-time" class="timing-value best">--.-</div>
+                    </div>
+                    
+                    <div class="timing-row">
+                        <div class="timing-card">
+                            <div class="timing-label">AVG LAP</div>
+                            <div id="avg-time" class="timing-value">--.-</div>
+                        </div>
+                        
+                        <div class="timing-card">
+                            <div class="timing-label">GAP</div>
+                            <div id="gap-time" class="timing-value">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="driver-footer">
+                    <div class="info-item">
+                        <div class="info-label">Laps</div>
+                        <div id="total-laps" class="info-value">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Consistency</div>
+                        <div id="consistency" class="info-value">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Time Left</div>
+                        <div id="time-left" class="info-value">--:--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Install Prompt -->
+    <div id="install-prompt" class="install-prompt hidden">
+        <div class="install-content">
+            <p>📱 Install this app for full-screen experience!</p>
+            <button id="install-btn" class="install-btn">Install</button>
+            <button id="dismiss-install" class="dismiss-btn">×</button>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
+
