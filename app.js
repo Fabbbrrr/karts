@@ -150,6 +150,21 @@ function setupEventListeners() {
         });
     }
     
+    // Race item click - event delegation (single listener for all items)
+    if (elements.raceList) {
+        elements.raceList.addEventListener('click', (e) => {
+            const raceItem = e.target.closest('.race-item');
+            if (raceItem && raceItem.dataset.kartNumber) {
+                const kartNumber = raceItem.dataset.kartNumber;
+                console.log('Driver clicked:', kartNumber);
+                state.settings.mainDriver = kartNumber;
+                saveSettings();
+                applySettings();
+                switchTab('hud');
+            }
+        });
+    }
+    
     // Settings - add listeners only if elements exist
     if (elements.mainDriverSelect) {
         elements.mainDriverSelect.addEventListener('change', (e) => {
@@ -681,22 +696,50 @@ function updateRaceView() {
     elements.eventName.textContent = event_name || 'RaceFacer Live Timing';
     elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}`;
     
-    // Update race list
-    elements.raceList.innerHTML = '';
-    
     const activeRuns = runs.filter(run => run.kart_number && run.kart_number !== '');
     
-    activeRuns.forEach(run => {
-        const raceItem = createRaceItem(run);
-        elements.raceList.appendChild(raceItem);
+    // Efficient update: reuse existing elements
+    const existingItems = Array.from(elements.raceList.children);
+    
+    activeRuns.forEach((run, index) => {
+        const existingItem = existingItems[index];
+        const kartNumber = run.kart_number;
+        
+        // Check if we can reuse existing element
+        if (existingItem && existingItem.dataset.kartNumber === kartNumber) {
+            // Update existing element content (no recreate = no blink)
+            updateRaceItemContent(existingItem, run);
+        } else {
+            // Create new element
+            const newItem = createRaceItem(run);
+            if (existingItem) {
+                elements.raceList.replaceChild(newItem, existingItem);
+            } else {
+                elements.raceList.appendChild(newItem);
+            }
+        }
     });
+    
+    // Remove extra items if any
+    while (elements.raceList.children.length > activeRuns.length) {
+        elements.raceList.removeChild(elements.raceList.lastChild);
+    }
 }
 
 function createRaceItem(run) {
     const div = document.createElement('div');
     div.className = 'race-item';
+    div.dataset.kartNumber = run.kart_number; // Track kart number for efficient updates
     
-    // Highlight main driver
+    // Build initial content
+    updateRaceItemContent(div, run);
+    
+    return div;
+}
+
+function updateRaceItemContent(div, run) {
+    // Update classes
+    div.className = 'race-item';
     if (state.settings.mainDriver && run.kart_number === state.settings.mainDriver) {
         div.classList.add('main-driver');
     }
@@ -734,7 +777,7 @@ function createRaceItem(run) {
         </div>`);
     }
     
-    // Set content FIRST
+    // Update content
     div.innerHTML = `
         <div class="race-position ${positionClass}">P${run.pos}</div>
         <div class="race-driver-info">
@@ -749,18 +792,6 @@ function createRaceItem(run) {
             ${state.settings.showGaps ? `<div class="race-gap">${run.gap}</div>` : ''}
         </div>
     `;
-    
-    // Add click handler AFTER innerHTML (so it doesn't get wiped)
-    div.addEventListener('click', (e) => {
-        console.log('Driver clicked:', run.kart_number);
-        e.stopPropagation();
-        state.settings.mainDriver = run.kart_number;
-        saveSettings();
-        applySettings();
-        switchTab('hud');
-    });
-    
-    return div;
 }
 
 function updateHUDView() {
