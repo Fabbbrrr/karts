@@ -57,7 +57,10 @@ const state = {
     lastPosition: {}, // Track last position for position change alerts
     positionHistory: {}, // Track position per lap for all karts: { kartNumber: [{lapNum, position}] }
     driverNotes: {}, // Track driver notes: { kartNumber: [{lapNum, note, timestamp}] }
-    lastProximityAlert: null // Track last proximity alert timestamp to avoid spam
+    lastProximityAlert: null, // Track last proximity alert timestamp to avoid spam
+    isReplayMode: false, // Are we viewing a recorded session?
+    recordedSessions: [], // List of recorded sessions
+    replayData: null // Current replay session data
 };
 
 // DOM Elements
@@ -163,7 +166,12 @@ const elements = {
     resultsStatsGrid: document.getElementById('results-stats-grid'),
     podiumP1: document.getElementById('podium-p1'),
     podiumP2: document.getElementById('podium-p2'),
-    podiumP3: document.getElementById('podium-p3')
+    podiumP3: document.getElementById('podium-p3'),
+    
+    // Session selector
+    sessionSelectorBar: document.getElementById('session-selector-bar'),
+    sessionSelector: document.getElementById('session-selector'),
+    goLiveBtn: document.getElementById('go-live-btn')
 };
 
 // Initialize App
@@ -178,6 +186,12 @@ function init() {
     
     // Load driver notes
     loadDriverNotes();
+    
+    // Load recorded sessions
+    loadRecordedSessions();
+    
+    // Update session selector UI
+    updateSessionSelector();
     
     // Enable always-on display mode
     enableAlwaysOnDisplay();
@@ -450,6 +464,23 @@ function setupEventListeners() {
     if (elements.resultsMethodSelect) {
         elements.resultsMethodSelect.addEventListener('change', () => {
             updateResultsView();
+        });
+    }
+    
+    // Session selector
+    if (elements.sessionSelector) {
+        elements.sessionSelector.addEventListener('change', (e) => {
+            const sessionId = e.target.value;
+            if (sessionId) {
+                loadReplaySession(sessionId);
+            }
+        });
+    }
+    
+    // Go Live button
+    if (elements.goLiveBtn) {
+        elements.goLiveBtn.addEventListener('click', () => {
+            goLive();
         });
     }
     
@@ -793,6 +824,8 @@ function onConnect() {
     console.log('Connected to RaceFacer');
     state.isConnected = true;
     updateConnectionIndicator(true);
+    updateConnectionStatus();
+    updateSessionSelector();
     updateLoadingStatus('Connected! Waiting for data...');
     
     // Join the channel (use configured channel from settings)
@@ -805,6 +838,8 @@ function onDisconnect() {
     console.log('Disconnected from RaceFacer');
     state.isConnected = false;
     updateConnectionIndicator(false);
+    updateConnectionStatus();
+    updateSessionSelector();
 }
 
 function onConnectError(error) {
@@ -815,6 +850,11 @@ function onConnectError(error) {
 
 function onSessionData(data) {
     try {
+        // Ignore live data if in replay mode
+        if (state.isReplayMode) {
+            return;
+        }
+        
         if (data && data.data) {
             state.sessionData = data.data;
             
@@ -829,6 +869,7 @@ function onSessionData(data) {
                 elements.loadingScreen.classList.remove('active');
                 elements.tabNav.classList.remove('hidden');
                 switchTab('race');
+                updateSessionSelector(); // Show/hide session selector
             }
             
             // Update driver dropdown in settings
@@ -879,6 +920,12 @@ function detectAndResetSession() {
 // Reset session-specific data
 function resetSessionData() {
     console.log('Resetting session data...');
+    
+    // Save current session before resetting (if we have data)
+    if (state.sessionData && state.currentSessionId && !state.isReplayMode) {
+        saveCurrentSession();
+    }
+    
     state.lapHistory = {};
     state.startingPositions = {};
     state.gapHistory = {};
@@ -1204,6 +1251,62 @@ function updateConnectionIndicator(connected) {
     } else {
         elements.connectionIndicator.classList.remove('connected');
     }
+}
+
+function updateConnectionStatus() {
+    // Update connection indicator based on mode
+    if (state.isReplayMode) {
+        elements.connectionIndicator.classList.remove('connected');
+        elements.connectionIndicator.classList.add('replay-mode');
+        elements.connectionIndicator.textContent = '📼 REPLAY MODE';
+    } else if (state.isConnected) {
+        elements.connectionIndicator.classList.add('connected');
+        elements.connectionIndicator.classList.remove('replay-mode');
+        elements.connectionIndicator.textContent = '';
+    } else {
+        elements.connectionIndicator.classList.remove('connected', 'replay-mode');
+        elements.connectionIndicator.textContent = '';
+    }
+}
+
+function updateSessionSelector() {
+    if (!elements.sessionSelector || !elements.sessionSelectorBar) return;
+    
+    // Show selector bar if:
+    // 1. We're in replay mode, OR
+    // 2. We have no live data and have recorded sessions
+    const shouldShow = state.isReplayMode || (!state.sessionData && state.recordedSessions.length > 0);
+    
+    if (shouldShow) {
+        elements.sessionSelectorBar.classList.remove('hidden');
+    } else {
+        elements.sessionSelectorBar.classList.add('hidden');
+    }
+    
+    // Show Go Live button only in replay mode
+    if (elements.goLiveBtn) {
+        if (state.isReplayMode) {
+            elements.goLiveBtn.classList.remove('hidden');
+        } else {
+            elements.goLiveBtn.classList.add('hidden');
+        }
+    }
+    
+    // Populate session selector
+    elements.sessionSelector.innerHTML = '<option value="">Select a recorded session...</option>';
+    
+    state.recordedSessions.forEach(session => {
+        const option = document.createElement('option');
+        option.value = session.id;
+        const date = new Date(session.timestamp);
+        option.textContent = `${session.eventName} - ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+        
+        if (state.isReplayMode && session.id === state.currentSessionId) {
+            option.selected = true;
+        }
+        
+        elements.sessionSelector.appendChild(option);
+    });
 }
 
 function updateLoadingStatus(message) {
@@ -1802,6 +1905,127 @@ function loadDriverNotes() {
         console.error('Error loading driver notes:', error);
         state.driverNotes = {};
     }
+}
+
+// ============================
+// SESSION RECORDING & REPLAY
+// ============================
+
+function saveCurrentSession() {
+    if (!state.sessionData || !state.currentSessionId) return;
+    
+    try {
+        const sessionRecord = {
+            id: state.currentSessionId,
+            timestamp: Date.now(),
+            eventName: state.sessionData.event_name,
+            channel: CONFIG.CHANNEL,
+            sessionData: state.sessionData,
+            lapHistory: state.lapHistory,
+            positionHistory: state.positionHistory,
+            startingPositions: state.startingPositions,
+            sessionBest: state.sessionBest,
+            driverNotes: state.driverNotes
+        };
+        
+        // Load existing sessions
+        const saved = localStorage.getItem('karting-recorded-sessions');
+        let sessions = saved ? JSON.parse(saved) : [];
+        
+        // Check if this session already exists
+        const existingIndex = sessions.findIndex(s => s.id === state.currentSessionId);
+        if (existingIndex >= 0) {
+            // Update existing session
+            sessions[existingIndex] = sessionRecord;
+        } else {
+            // Add new session
+            sessions.unshift(sessionRecord); // Add to beginning
+        }
+        
+        // Keep only last 20 sessions to avoid localStorage bloat
+        sessions = sessions.slice(0, 20);
+        
+        localStorage.setItem('karting-recorded-sessions', JSON.stringify(sessions));
+        state.recordedSessions = sessions;
+        
+        console.log(`📼 Session recorded: ${state.sessionData.event_name} (${new Date(sessionRecord.timestamp).toLocaleString()})`);
+    } catch (error) {
+        console.error('Error saving session:', error);
+    }
+}
+
+function loadRecordedSessions() {
+    try {
+        const saved = localStorage.getItem('karting-recorded-sessions');
+        if (saved) {
+            state.recordedSessions = JSON.parse(saved);
+            console.log(`📼 Loaded ${state.recordedSessions.length} recorded sessions`);
+        }
+    } catch (error) {
+        console.error('Error loading recorded sessions:', error);
+        state.recordedSessions = [];
+    }
+}
+
+function loadReplaySession(sessionId) {
+    const session = state.recordedSessions.find(s => s.id === sessionId);
+    if (!session) {
+        console.error('Session not found:', sessionId);
+        return;
+    }
+    
+    console.log(`🎬 Loading replay: ${session.eventName}`);
+    
+    // Enter replay mode
+    state.isReplayMode = true;
+    state.replayData = session;
+    
+    // Restore session data
+    state.sessionData = session.sessionData;
+    state.lapHistory = session.lapHistory;
+    state.positionHistory = session.positionHistory;
+    state.startingPositions = session.startingPositions;
+    state.sessionBest = session.sessionBest;
+    state.driverNotes = session.driverNotes || {};
+    state.currentSessionId = session.id;
+    
+    // Update UI
+    updateConnectionStatus();
+    updateSessionSelector();
+    updateAllViews();
+    
+    console.log('✅ Replay loaded successfully');
+}
+
+function goLive() {
+    console.log('🔴 Going live...');
+    
+    // Exit replay mode
+    state.isReplayMode = false;
+    state.replayData = null;
+    
+    // Clear current data (will be replaced by live feed)
+    state.sessionData = null;
+    state.lapHistory = {};
+    state.positionHistory = {};
+    state.startingPositions = {};
+    state.gapHistory = {};
+    state.sessionBest = null;
+    state.lastBestLap = {};
+    state.lastGap = {};
+    state.lastPosition = {};
+    state.currentSessionId = null;
+    
+    // Update UI
+    updateConnectionStatus();
+    updateSessionSelector();
+    
+    // If we have live data, update views
+    if (state.sessionData) {
+        updateAllViews();
+    }
+    
+    console.log('✅ Now listening to live feed');
 }
 
 function updateLapHistoryDisplay(kartNumber, bestTimeRaw) {

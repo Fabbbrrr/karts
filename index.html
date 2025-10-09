@@ -28,6 +28,17 @@
         <!-- Connection Indicator -->
         <div id="connection-indicator" class="disconnected"></div>
         
+        <!-- Session Selector (shown when in replay mode or no live data) -->
+        <div id="session-selector-bar" class="session-selector-bar hidden">
+            <div class="session-selector-content">
+                <span class="session-selector-label">📼 Session:</span>
+                <select id="session-selector" class="session-selector-dropdown">
+                    <option value="">Select a recorded session...</option>
+                </select>
+                <button id="go-live-btn" class="go-live-btn hidden">🔴 Go Live</button>
+            </div>
+        </div>
+        
         <!-- Tab Navigation -->
         <nav id="tab-nav" class="tab-nav hidden">
             <button class="tab-btn active" data-tab="race">Race</button>
