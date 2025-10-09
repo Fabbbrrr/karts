@@ -53,7 +53,8 @@ const state = {
     currentSessionId: null, // Track current session to detect changes
     audioContext: null, // Web Audio API context for sound alerts
     lastPosition: {}, // Track last position for position change alerts
-    positionHistory: {} // Track position per lap for all karts: { kartNumber: [{lapNum, position}] }
+    positionHistory: {}, // Track position per lap for all karts: { kartNumber: [{lapNum, position}] }
+    driverNotes: {} // Track driver notes: { kartNumber: [{lapNum, note, timestamp}] }
 };
 
 // DOM Elements
@@ -1481,6 +1482,11 @@ function toggleHUDCard(settingName) {
     saveSettings();
     applyHUDCardVisibility();
 }
+
+// Expose toggleHUDCard to global scope for onclick handlers
+window.kartingApp = {
+    toggleHUDCard: toggleHUDCard
+};
 
 function updateLapHistoryDisplay(kartNumber, bestTimeRaw) {
     const hudLapList = document.getElementById('hud-lap-list');
