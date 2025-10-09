@@ -207,7 +207,7 @@ function playSound(frequency, duration, type = 'sine') {
 }
 
 // Sound alert for personal best
-function playbest LapSound() {
+function playBestLapSound() {
     // Happy ascending chime
     playSound(523, 0.1); // C
     setTimeout(() => playSound(659, 0.1), 100); // E
