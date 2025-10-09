@@ -149,6 +149,20 @@
                             <div class="hud-no-laps">No lap data yet...</div>
                         </div>
                     </div>
+                    
+                    <div class="hud-notes-card" id="hud-notes-card">
+                        <div class="hud-card-header">
+                            <span>📝 Driver Notes</span>
+                        </div>
+                        <div class="hud-note-input-container">
+                            <input type="text" id="hud-note-input" class="hud-note-input" placeholder="Add note for current lap...">
+                            <button id="hud-add-note-btn" class="hud-add-note-btn">Add Note</button>
+                        </div>
+                        <div id="hud-notes-list" class="hud-notes-list"></div>
+                    </div>
+                    
+                    <!-- Proximity Alert -->
+                    <div id="proximity-alert" class="proximity-alert"></div>
                 </div>
             </div>
         </div>
@@ -369,6 +383,11 @@
                     <label class="settings-checkbox">
                         <input type="checkbox" id="enable-best-lap-celebration" checked>
                         <span>🎊 Best Lap Celebration (animation + vibration)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="enable-proximity-alert" checked>
+                        <span>⚠️ Opponent Proximity Alert (sound + visual)</span>
                     </label>
                 </div>
                 

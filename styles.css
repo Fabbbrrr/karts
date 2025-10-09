@@ -1476,3 +1476,155 @@ html, body {
     }
 }
 
+/* ============================
+   DRIVER NOTES
+   ============================ */
+
+.hud-notes-card {
+    background: #1a1a1a;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border: 2px solid #333;
+}
+
+.hud-note-input-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.hud-note-input {
+    flex: 1;
+    background: #0a0a0a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    color: #fff;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.hud-note-input:focus {
+    outline: none;
+    border-color: #00ff88;
+}
+
+.hud-add-note-btn {
+    background: #00ff88;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.hud-add-note-btn:hover {
+    background: #00dd77;
+    transform: scale(1.02);
+}
+
+.hud-add-note-btn:active {
+    transform: scale(0.98);
+}
+
+.hud-notes-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.hud-note-item {
+    background: #0a0a0a;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid #00ff88;
+}
+
+.hud-note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: #00ff88;
+}
+
+.hud-note-lap {
+    font-weight: bold;
+}
+
+.hud-note-time {
+    color: #666;
+}
+
+.hud-note-text {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.hud-note-delete {
+    background: #ff6b6b;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: all 0.2s;
+}
+
+.hud-note-delete:hover {
+    background: #ff5252;
+}
+
+.hud-notes-empty {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* ============================
+   PROXIMITY ALERT
+   ============================ */
+
+.proximity-alert {
+    display: none;
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    box-shadow: 0 8px 32px rgba(255, 107, 107, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border: 2px solid #fff;
+}
+
+.proximity-alert-active {
+    opacity: 1;
+    animation: pulse-alert 1s ease-in-out infinite;
+}
+
+@keyframes pulse-alert {
+    0%, 100% {
+        transform: translateX(-50%) scale(1);
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.5);
+    }
+    50% {
+        transform: translateX(-50%) scale(1.05);
+        box-shadow: 0 12px 48px rgba(255, 107, 107, 0.7);
+    }
+}
+

@@ -25,6 +25,8 @@ const DEFAULT_SETTINGS = {
     showGapTrend: true,
     showPositionChanges: true,
     enableBestLapCelebration: true,
+    enableProximityAlert: true, // Opponent proximity alerts
+    proximityThreshold: 1.0, // Alert threshold in seconds
     // HUD component visibility
     hudShowLastLap: true,
     hudShowBestLap: true,
@@ -54,7 +56,8 @@ const state = {
     audioContext: null, // Web Audio API context for sound alerts
     lastPosition: {}, // Track last position for position change alerts
     positionHistory: {}, // Track position per lap for all karts: { kartNumber: [{lapNum, position}] }
-    driverNotes: {} // Track driver notes: { kartNumber: [{lapNum, note, timestamp}] }
+    driverNotes: {}, // Track driver notes: { kartNumber: [{lapNum, note, timestamp}] }
+    lastProximityAlert: null // Track last proximity alert timestamp to avoid spam
 };
 
 // DOM Elements
@@ -106,6 +109,7 @@ const elements = {
     showGapTrend: document.getElementById('show-gap-trend'),
     showPositionChanges: document.getElementById('show-position-changes'),
     enableBestLapCelebration: document.getElementById('enable-best-lap-celebration'),
+    enableProximityAlert: document.getElementById('enable-proximity-alert'),
     resetSettings: document.getElementById('reset-settings'),
     
     // Compare tab
@@ -233,6 +237,71 @@ function playPositionUpSound() {
 function playPositionDownSound() {
     // Low warning tone
     playSound(300, 0.2);
+}
+
+// Sound alert for opponent proximity
+function playProximityAlertSound() {
+    // Alert beeps
+    playSound(600, 0.1);
+    setTimeout(() => playSound(600, 0.1), 150);
+}
+
+// Check for nearby opponents and alert
+function checkOpponentProximity() {
+    if (!state.settings.enableProximityAlert || !state.settings.mainDriver || !state.sessionData) return;
+    
+    const mainDriver = state.settings.mainDriver;
+    const run = state.sessionData.runs.find(r => r.kart_number === mainDriver);
+    if (!run || !run.int) return;
+    
+    // Parse interval (time to car ahead)
+    const intervalStr = run.int;
+    if (intervalStr === '-' || intervalStr === 'Leader') return;
+    
+    // Extract seconds from interval (e.g., "+1.234" or "1.234")
+    const intervalMatch = intervalStr.match(/[\+\-]?(\d+\.?\d*)/);
+    if (!intervalMatch) return;
+    
+    const intervalSeconds = parseFloat(intervalMatch[1]);
+    const threshold = state.settings.proximityThreshold;
+    
+    // Check if opponent is within threshold
+    if (intervalSeconds <= threshold) {
+        // Avoid spamming alerts - only alert once every 5 seconds
+        const now = Date.now();
+        if (!state.lastProximityAlert || (now - state.lastProximityAlert) > 5000) {
+            state.lastProximityAlert = now;
+            
+            // Visual alert (HUD element will show it)
+            showProximityAlert(intervalSeconds);
+            
+            // Sound alert
+            playProximityAlertSound();
+            
+            // Haptic feedback
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+        }
+    }
+}
+
+// Show proximity alert visual feedback
+function showProximityAlert(interval) {
+    const alertEl = document.getElementById('proximity-alert');
+    if (!alertEl) return;
+    
+    alertEl.textContent = `⚠️ Opponent ${interval.toFixed(1)}s ahead!`;
+    alertEl.style.display = 'block';
+    alertEl.classList.add('proximity-alert-active');
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+        alertEl.classList.remove('proximity-alert-active');
+        setTimeout(() => {
+            alertEl.style.display = 'none';
+        }, 300);
+    }, 3000);
 }
 
 // Enable always-on display (prevent screen sleep)
@@ -419,6 +488,13 @@ function setupEventListeners() {
         });
     }
     
+    if (elements.enableProximityAlert) {
+        elements.enableProximityAlert.addEventListener('change', (e) => {
+            state.settings.enableProximityAlert = e.target.checked;
+            saveSettings();
+        });
+    }
+    
     if (elements.resetSettings) {
         elements.resetSettings.addEventListener('click', () => {
             if (confirm('Reset all settings to defaults?')) {
@@ -567,6 +643,7 @@ function applySettings() {
     if (elements.showGapTrend) elements.showGapTrend.checked = state.settings.showGapTrend;
     if (elements.showPositionChanges) elements.showPositionChanges.checked = state.settings.showPositionChanges;
     if (elements.enableBestLapCelebration) elements.enableBestLapCelebration.checked = state.settings.enableBestLapCelebration;
+    if (elements.enableProximityAlert) elements.enableProximityAlert.checked = state.settings.enableProximityAlert;
     // HUD component visibility
     if (elements.hudShowLastLapCheckbox) elements.hudShowLastLapCheckbox.checked = state.settings.hudShowLastLap;
     if (elements.hudShowBestLapCheckbox) elements.hudShowBestLapCheckbox.checked = state.settings.hudShowBestLap;
@@ -1324,6 +1401,9 @@ function updateHUDView() {
     
     // Update driver notes
     updateDriverNotesList();
+    
+    // Check for opponent proximity
+    checkOpponentProximity();
 }
 
 // Update session timer with warnings
