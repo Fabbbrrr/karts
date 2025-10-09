@@ -68,6 +68,14 @@ Complete session summary with:
 - Full timing statistics
 - Export data as JSON for deep analysis
 
+### 📼 **Session Replay System**
+Never miss analyzing a session:
+- **Auto-saves last 20 sessions** - All data preserved automatically
+- **No live data? No problem** - Selector appears with recorded sessions
+- **Full replay mode** - View any past session with complete data
+- **🔴 Go Live button** - Return to live feed anytime
+- **Perfect for analysis** - Review races when venue is closed
+
 ### 💤 **Always-On Display**
 Screen stays awake during races - no more fumbling to unlock mid-session!
 
@@ -152,6 +160,7 @@ Mini toggle buttons on every component - hide what you don't need without diving
 - **Watch the position chart** - See who's gaining or losing positions
 - **Proximity alerts** - Get notified when opponents are within 1 second
 - **Compare scoring methods** - You might be 4th by fastest lap but 1st by consistency!
+- **Replay past sessions** - When no live data, select from 20 auto-saved sessions
 - **Export session data** to analyze later on a computer
 - **Switch themes** in settings to match your style
 - **Consistency score** of 90+ = very consistent driving
@@ -242,6 +251,7 @@ Unlike basic timing displays, KartTimer Pro gives you:
 
 ✅ **Professional-grade analytics** without expensive equipment  
 ✅ **5 scoring methods** - see results from every angle  
+✅ **Session replay** - auto-saves last 20 sessions for review  
 ✅ **Works on any phone** - Android, iPhone, tablets  
 ✅ **Completely free** - no subscriptions, no ads  
 ✅ **Privacy first** - no account needed, data stays on your device  
@@ -253,6 +263,8 @@ Unlike basic timing displays, KartTimer Pro gives you:
 ## 💾 Your Data is Safe
 
 - **Local Storage** - All settings & records saved on your device
+- **Auto-Save Sessions** - Last 20 sessions recorded automatically
+- **Session Replay** - Review any past session anytime
 - **Export Anytime** - Download complete backup as JSON file
 - **Import Anywhere** - Restore your data on any device
 - **No Cloud Required** - Works 100% offline after first load
@@ -265,10 +277,12 @@ Unlike basic timing displays, KartTimer Pro gives you:
 |---------|----------|
 | **No connection** | Check WiFi, refresh page |
 | **Wrong venue** | Go to Settings → Track Configuration to change venue |
-| **No data showing** | Make sure there's an active session at your venue |
+| **No data showing** | Use session selector to view recorded sessions |
+| **Want to review past race** | Session selector appears when no live data available |
 | **Screen sleeps** | Install as PWA (Add to Home Screen) for Always-On Display |
 | **Can't select driver** | Use HUD screen selector OR tap driver name in Race tab |
 | **Updates feel slow** | Refresh the page - updates are instant via websocket |
+| **Stuck in replay** | Click red "🔴 Go Live" button to return to live feed |
 
 ---
 
