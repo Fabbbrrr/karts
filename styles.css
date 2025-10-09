@@ -1628,3 +1628,151 @@ html, body {
     }
 }
 
+/* ============================
+   COLOR THEMES
+   ============================ */
+
+/* Dark Theme (Default) - already defined as base styles */
+
+/* Light Theme */
+body.theme-light {
+    background: #f5f5f5;
+    color: #000;
+}
+
+body.theme-light .screen,
+body.theme-light .race-item,
+body.theme-light .hud-card,
+body.theme-light .hud-lap-history,
+body.theme-light .hud-notes-card,
+body.theme-light .settings-section,
+body.theme-light .compare-row,
+body.theme-light .summary-stat-card,
+body.theme-light .summary-lap-table,
+body.theme-light .summary-position-chart {
+    background: #fff;
+    color: #000;
+    border-color: #ddd;
+}
+
+body.theme-light .race-item-details,
+body.theme-light .hud-info-row,
+body.theme-light .hud-note-item,
+body.theme-light .summary-lap-item {
+    background: #f9f9f9;
+}
+
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3 {
+    color: #000;
+}
+
+body.theme-light .connection-indicator.connected {
+    background: #00cc70;
+}
+
+body.theme-light #position-chart,
+body.theme-light .settings-select,
+body.theme-light .settings-input {
+    background: #f9f9f9;
+    color: #000;
+    border-color: #ddd;
+}
+
+/* F1 Red Theme */
+body.theme-f1-red {
+    background: linear-gradient(135deg, #1a0000, #000000);
+}
+
+body.theme-f1-red .race-item,
+body.theme-f1-red .hud-card,
+body.theme-f1-red .hud-lap-history,
+body.theme-f1-red .hud-notes-card,
+body.theme-f1-red .settings-section {
+    background: rgba(30, 0, 0, 0.8);
+    border-color: #ff0000;
+}
+
+body.theme-f1-red .race-position,
+body.theme-f1-red .hud-position,
+body.theme-f1-red .connection-indicator.connected,
+body.theme-f1-red .hud-add-note-btn {
+    background: #ff0000;
+}
+
+body.theme-f1-red h1,
+body.theme-f1-red h2,
+body.theme-f1-red .race-item-name,
+body.theme-f1-red .hud-kart,
+body.theme-f1-red .summary-stat-value {
+    color: #ff0000;
+}
+
+body.theme-f1-red .tab-btn.active {
+    background: #ff0000;
+    color: #000;
+}
+
+body.theme-f1-red .settings-btn-secondary:hover,
+body.theme-f1-red .hud-add-note-btn:hover {
+    background: #cc0000;
+}
+
+/* Racing Green Theme */
+body.theme-racing-green {
+    background: linear-gradient(135deg, #001a00, #000000);
+}
+
+body.theme-racing-green .race-item,
+body.theme-racing-green .hud-card,
+body.theme-racing-green .hud-lap-history,
+body.theme-racing-green .hud-notes-card,
+body.theme-racing-green .settings-section {
+    background: rgba(0, 30, 0, 0.8);
+    border-color: #00ff00;
+}
+
+body.theme-racing-green .race-position,
+body.theme-racing-green .hud-position,
+body.theme-racing-green .connection-indicator.connected,
+body.theme-racing-green .hud-add-note-btn {
+    background: #00ff00;
+    color: #000;
+}
+
+body.theme-racing-green h1,
+body.theme-racing-green h2,
+body.theme-racing-green .race-item-name,
+body.theme-racing-green .hud-kart,
+body.theme-racing-green .summary-stat-value {
+    color: #00ff00;
+}
+
+body.theme-racing-green .tab-btn.active {
+    background: #00ff00;
+    color: #000;
+}
+
+body.theme-racing-green .settings-btn-secondary:hover,
+body.theme-racing-green .hud-add-note-btn:hover {
+    background: #00cc00;
+}
+
+/* Maintain good contrast for timing data across themes */
+body.theme-light .race-time,
+body.theme-light .race-details-item,
+body.theme-light .hud-value {
+    color: #000;
+}
+
+body.theme-f1-red .race-time,
+body.theme-f1-red .hud-value {
+    color: #ff6666;
+}
+
+body.theme-racing-green .race-time,
+body.theme-racing-green .hud-value {
+    color: #66ff66;
+}
+

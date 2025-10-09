@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
     enableBestLapCelebration: true,
     enableProximityAlert: true, // Opponent proximity alerts
     proximityThreshold: 1.0, // Alert threshold in seconds
+    colorTheme: 'dark', // Color theme: 'dark', 'light', 'f1-red', 'racing-green'
     // HUD component visibility
     hudShowLastLap: true,
     hudShowBestLap: true,
@@ -110,6 +111,7 @@ const elements = {
     showPositionChanges: document.getElementById('show-position-changes'),
     enableBestLapCelebration: document.getElementById('enable-best-lap-celebration'),
     enableProximityAlert: document.getElementById('enable-proximity-alert'),
+    colorThemeSelect: document.getElementById('color-theme-select'),
     resetSettings: document.getElementById('reset-settings'),
     
     // Compare tab
@@ -495,6 +497,14 @@ function setupEventListeners() {
         });
     }
     
+    if (elements.colorThemeSelect) {
+        elements.colorThemeSelect.addEventListener('change', (e) => {
+            state.settings.colorTheme = e.target.value;
+            saveSettings();
+            applyTheme(e.target.value);
+        });
+    }
+    
     if (elements.resetSettings) {
         elements.resetSettings.addEventListener('click', () => {
             if (confirm('Reset all settings to defaults?')) {
@@ -644,6 +654,11 @@ function applySettings() {
     if (elements.showPositionChanges) elements.showPositionChanges.checked = state.settings.showPositionChanges;
     if (elements.enableBestLapCelebration) elements.enableBestLapCelebration.checked = state.settings.enableBestLapCelebration;
     if (elements.enableProximityAlert) elements.enableProximityAlert.checked = state.settings.enableProximityAlert;
+    if (elements.colorThemeSelect) elements.colorThemeSelect.value = state.settings.colorTheme || 'dark';
+    
+    // Apply theme
+    applyTheme(state.settings.colorTheme || 'dark');
+    
     // HUD component visibility
     if (elements.hudShowLastLapCheckbox) elements.hudShowLastLapCheckbox.checked = state.settings.hudShowLastLap;
     if (elements.hudShowBestLapCheckbox) elements.hudShowBestLapCheckbox.checked = state.settings.hudShowBestLap;
@@ -1595,6 +1610,17 @@ window.kartingApp = {
     toggleHUDCard: toggleHUDCard,
     deleteDriverNote: (kartNumber, timestamp) => deleteDriverNote(kartNumber, timestamp)
 };
+
+// Apply color theme
+function applyTheme(theme) {
+    // Remove all theme classes
+    document.body.classList.remove('theme-dark', 'theme-light', 'theme-f1-red', 'theme-racing-green');
+    
+    // Add selected theme class
+    document.body.classList.add(`theme-${theme}`);
+    
+    console.log(`🎨 Theme applied: ${theme}`);
+}
 
 // Driver Notes Functions
 function addDriverNote() {
