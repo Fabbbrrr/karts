@@ -92,6 +92,12 @@ const elements = {
     showConsistency: document.getElementById('show-consistency'),
     showAvgLap: document.getElementById('show-avg-lap'),
     showLastLap: document.getElementById('show-last-lap'),
+    // New settings
+    showPaceTrend: document.getElementById('show-pace-trend'),
+    showPercentageOffBest: document.getElementById('show-percentage-off-best'),
+    showGapTrend: document.getElementById('show-gap-trend'),
+    showPositionChanges: document.getElementById('show-position-changes'),
+    enableBestLapCelebration: document.getElementById('enable-best-lap-celebration'),
     resetSettings: document.getElementById('reset-settings')
 };
 
@@ -177,6 +183,46 @@ function setupEventListeners() {
         });
     }
     
+    // New feature settings
+    if (elements.showPaceTrend) {
+        elements.showPaceTrend.addEventListener('change', (e) => {
+            state.settings.showPaceTrend = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showPercentageOffBest) {
+        elements.showPercentageOffBest.addEventListener('change', (e) => {
+            state.settings.showPercentageOffBest = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showGapTrend) {
+        elements.showGapTrend.addEventListener('change', (e) => {
+            state.settings.showGapTrend = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showPositionChanges) {
+        elements.showPositionChanges.addEventListener('change', (e) => {
+            state.settings.showPositionChanges = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.enableBestLapCelebration) {
+        elements.enableBestLapCelebration.addEventListener('change', (e) => {
+            state.settings.enableBestLapCelebration = e.target.checked;
+            saveSettings();
+        });
+    }
+    
     if (elements.resetSettings) {
         elements.resetSettings.addEventListener('click', () => {
             if (confirm('Reset all settings to defaults?')) {
@@ -220,6 +266,12 @@ function applySettings() {
     if (elements.showConsistency) elements.showConsistency.checked = state.settings.showConsistency;
     if (elements.showAvgLap) elements.showAvgLap.checked = state.settings.showAvgLap;
     if (elements.showLastLap) elements.showLastLap.checked = state.settings.showLastLap;
+    // New settings
+    if (elements.showPaceTrend) elements.showPaceTrend.checked = state.settings.showPaceTrend;
+    if (elements.showPercentageOffBest) elements.showPercentageOffBest.checked = state.settings.showPercentageOffBest;
+    if (elements.showGapTrend) elements.showGapTrend.checked = state.settings.showGapTrend;
+    if (elements.showPositionChanges) elements.showPositionChanges.checked = state.settings.showPositionChanges;
+    if (elements.enableBestLapCelebration) elements.enableBestLapCelebration.checked = state.settings.enableBestLapCelebration;
 }
 
 // Tab Navigation
