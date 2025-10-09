@@ -101,55 +101,71 @@ function init() {
 // Event Listeners
 function setupEventListeners() {
     // Tab navigation
-    elements.tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
+    if (elements.tabBtns) {
+        elements.tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+    }
     
-    // Settings
-    elements.mainDriverSelect.addEventListener('change', (e) => {
-        state.settings.mainDriver = e.target.value || null;
-        saveSettings();
-        updateAllViews();
-    });
-    
-    elements.showIntervals.addEventListener('change', (e) => {
-        state.settings.showIntervals = e.target.checked;
-        saveSettings();
-        updateAllViews();
-    });
-    
-    elements.showGaps.addEventListener('change', (e) => {
-        state.settings.showGaps = e.target.checked;
-        saveSettings();
-        updateAllViews();
-    });
-    
-    elements.showConsistency.addEventListener('change', (e) => {
-        state.settings.showConsistency = e.target.checked;
-        saveSettings();
-        updateAllViews();
-    });
-    
-    elements.showAvgLap.addEventListener('change', (e) => {
-        state.settings.showAvgLap = e.target.checked;
-        saveSettings();
-        updateAllViews();
-    });
-    
-    elements.showLastLap.addEventListener('change', (e) => {
-        state.settings.showLastLap = e.target.checked;
-        saveSettings();
-        updateAllViews();
-    });
-    
-    elements.resetSettings.addEventListener('click', () => {
-        if (confirm('Reset all settings to defaults?')) {
-            state.settings = { ...DEFAULT_SETTINGS };
+    // Settings - add listeners only if elements exist
+    if (elements.mainDriverSelect) {
+        elements.mainDriverSelect.addEventListener('change', (e) => {
+            state.settings.mainDriver = e.target.value || null;
             saveSettings();
-            applySettings();
             updateAllViews();
-        }
-    });
+        });
+    }
+    
+    if (elements.showIntervals) {
+        elements.showIntervals.addEventListener('change', (e) => {
+            state.settings.showIntervals = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showGaps) {
+        elements.showGaps.addEventListener('change', (e) => {
+            state.settings.showGaps = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showConsistency) {
+        elements.showConsistency.addEventListener('change', (e) => {
+            state.settings.showConsistency = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showAvgLap) {
+        elements.showAvgLap.addEventListener('change', (e) => {
+            state.settings.showAvgLap = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showLastLap) {
+        elements.showLastLap.addEventListener('change', (e) => {
+            state.settings.showLastLap = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.resetSettings) {
+        elements.resetSettings.addEventListener('click', () => {
+            if (confirm('Reset all settings to defaults?')) {
+                state.settings = { ...DEFAULT_SETTINGS };
+                saveSettings();
+                applySettings();
+                updateAllViews();
+            }
+        });
+    }
 }
 
 // Settings Management
@@ -174,15 +190,15 @@ function saveSettings() {
 }
 
 function applySettings() {
-    // Apply to form elements
-    if (elements.mainDriverSelect.value !== state.settings.mainDriver) {
+    // Apply to form elements - check if they exist first
+    if (elements.mainDriverSelect && elements.mainDriverSelect.value !== state.settings.mainDriver) {
         elements.mainDriverSelect.value = state.settings.mainDriver || '';
     }
-    elements.showIntervals.checked = state.settings.showIntervals;
-    elements.showGaps.checked = state.settings.showGaps;
-    elements.showConsistency.checked = state.settings.showConsistency;
-    elements.showAvgLap.checked = state.settings.showAvgLap;
-    elements.showLastLap.checked = state.settings.showLastLap;
+    if (elements.showIntervals) elements.showIntervals.checked = state.settings.showIntervals;
+    if (elements.showGaps) elements.showGaps.checked = state.settings.showGaps;
+    if (elements.showConsistency) elements.showConsistency.checked = state.settings.showConsistency;
+    if (elements.showAvgLap) elements.showAvgLap.checked = state.settings.showAvgLap;
+    if (elements.showLastLap) elements.showLastLap.checked = state.settings.showLastLap;
 }
 
 // Tab Navigation
