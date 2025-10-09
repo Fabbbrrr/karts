@@ -49,7 +49,9 @@ const state = {
     personalRecords: null, // Load from localStorage
     lastBestLap: {}, // Track last best lap time per kart for celebration
     lastGap: {}, // Track last gap for delta calculation
-    currentSessionId: null // Track current session to detect changes
+    currentSessionId: null, // Track current session to detect changes
+    audioContext: null, // Web Audio API context for sound alerts
+    lastPosition: {} // Track last position for position change alerts
 };
 
 // DOM Elements
@@ -141,6 +143,12 @@ function init() {
     // Load personal records
     loadPersonalRecords();
     
+    // Enable always-on display mode
+    enableAlwaysOnDisplay();
+    
+    // Initialize audio for sound alerts
+    initializeAudio();
+    
     // Register service worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js')
@@ -156,6 +164,93 @@ function init() {
     
     // Connect to WebSocket
     connectWebSocket();
+}
+
+// Initialize Audio Context for sound alerts
+function initializeAudio() {
+    try {
+        state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('🔊 Audio context initialized');
+    } catch (err) {
+        console.error('Audio initialization error:', err);
+    }
+}
+
+// Play sound alert
+function playSound(frequency, duration, type = 'sine') {
+    if (!state.audioContext || !state.settings.enableBestLapCelebration) return;
+    
+    try {
+        const oscillator = state.audioContext.createOscillator();
+        const gainNode = state.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(state.audioContext.destination);
+        
+        oscillator.frequency.value = frequency;
+        oscillator.type = type;
+        
+        gainNode.gain.setValueAtTime(0.3, state.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, state.audioContext.currentTime + duration);
+        
+        oscillator.start(state.audioContext.currentTime);
+        oscillator.stop(state.audioContext.currentTime + duration);
+    } catch (err) {
+        console.error('Sound playback error:', err);
+    }
+}
+
+// Sound alert for personal best
+function playbest LapSound() {
+    // Happy ascending chime
+    playSound(523, 0.1); // C
+    setTimeout(() => playSound(659, 0.1), 100); // E
+    setTimeout(() => playSound(784, 0.2), 200); // G
+}
+
+// Sound alert for position gain
+function playPositionUpSound() {
+    // Quick double beep
+    playSound(800, 0.1);
+    setTimeout(() => playSound(1000, 0.15), 120);
+}
+
+// Sound alert for position loss
+function playPositionDownSound() {
+    // Low warning tone
+    playSound(300, 0.2);
+}
+
+// Enable always-on display (prevent screen sleep)
+function enableAlwaysOnDisplay() {
+    if ('wakeLock' in navigator) {
+        let wakeLock = null;
+        
+        const requestWakeLock = async () => {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                console.log('🔆 Always-on display enabled (Wake Lock active)');
+                
+                wakeLock.addEventListener('release', () => {
+                    console.log('Wake Lock released');
+                });
+            } catch (err) {
+                console.error('Wake Lock error:', err);
+            }
+        };
+        
+        // Request wake lock
+        requestWakeLock();
+        
+        // Re-request wake lock when page becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+    } else {
+        console.log('⚠️ Wake Lock API not supported');
+    }
 }
 
 // Event Listeners
@@ -598,6 +693,19 @@ function updateLapHistory() {
             state.startingPositions[kartNumber] = run.pos;
         }
         
+        // Check for position changes and play sounds
+        if (kartNumber === state.settings.mainDriver && state.lastPosition[kartNumber]) {
+            const lastPos = state.lastPosition[kartNumber];
+            if (run.pos < lastPos) {
+                // Position improved
+                playPositionUpSound();
+            } else if (run.pos > lastPos) {
+                // Position lost
+                playPositionDownSound();
+            }
+        }
+        state.lastPosition[kartNumber] = run.pos;
+        
         // Initialize history for this kart if needed
         if (!state.lapHistory[kartNumber]) {
             state.lapHistory[kartNumber] = [];
@@ -674,6 +782,9 @@ function triggerBestLapCelebration(kartNumber) {
     if (!hudScreen) return;
     
     hudScreen.classList.add('best-lap-celebration');
+    
+    // Play sound
+    playBestLapSound();
     
     // Vibrate if available
     if (navigator.vibrate) {
