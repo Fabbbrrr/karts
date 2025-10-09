@@ -94,8 +94,8 @@ function onConnect() {
     updateConnectionIndicator(true);
     updateLoadingStatus('Connected! Waiting for data...');
     
-    // Subscribe to channel
-    state.socket.emit('subscribe', CONFIG.CHANNEL);
+    // Join the channel (not subscribe!)
+    state.socket.emit('join', CONFIG.CHANNEL);
 }
 
 function onDisconnect() {
