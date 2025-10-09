@@ -111,7 +111,22 @@ const elements = {
     summaryScreen: document.getElementById('summary-screen'),
     summaryNoData: document.getElementById('summary-no-data'),
     summaryContent: document.getElementById('summary-content'),
-    summaryExport: document.getElementById('summary-export')
+    summaryExport: document.getElementById('summary-export'),
+    
+    // Data management
+    exportAllData: document.getElementById('export-all-data'),
+    importAllData: document.getElementById('import-all-data'),
+    importFileInput: document.getElementById('import-file-input'),
+    
+    // HUD component toggles in settings
+    hudShowLastLapCheckbox: document.getElementById('hud-show-last-lap'),
+    hudShowBestLapCheckbox: document.getElementById('hud-show-best-lap'),
+    hudShowAvgLapCheckbox: document.getElementById('hud-show-avg-lap'),
+    hudShowGapCheckbox: document.getElementById('hud-show-gap'),
+    hudShowIntervalCheckbox: document.getElementById('hud-show-interval'),
+    hudShowConsistencyCheckbox: document.getElementById('hud-show-consistency'),
+    hudShowLapHistoryCheckbox: document.getElementById('hud-show-lap-history'),
+    showAllHud: document.getElementById('show-all-hud')
 };
 
 // Initialize App
@@ -284,6 +299,67 @@ function setupEventListeners() {
             exportSessionData();
         });
     }
+    
+    // Data management listeners
+    if (elements.exportAllData) {
+        elements.exportAllData.addEventListener('click', () => {
+            exportAllAppData();
+        });
+    }
+    
+    if (elements.importAllData) {
+        elements.importAllData.addEventListener('click', () => {
+            elements.importFileInput.click();
+        });
+    }
+    
+    if (elements.importFileInput) {
+        elements.importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importAllAppData(file);
+                e.target.value = ''; // Reset input
+            }
+        });
+    }
+    
+    // HUD component toggles in settings
+    const hudCheckboxes = [
+        { el: elements.hudShowLastLapCheckbox, setting: 'hudShowLastLap' },
+        { el: elements.hudShowBestLapCheckbox, setting: 'hudShowBestLap' },
+        { el: elements.hudShowAvgLapCheckbox, setting: 'hudShowAvgLap' },
+        { el: elements.hudShowGapCheckbox, setting: 'hudShowGap' },
+        { el: elements.hudShowIntervalCheckbox, setting: 'hudShowInterval' },
+        { el: elements.hudShowConsistencyCheckbox, setting: 'hudShowConsistency' },
+        { el: elements.hudShowLapHistoryCheckbox, setting: 'hudShowLapHistory' }
+    ];
+    
+    hudCheckboxes.forEach(({ el, setting }) => {
+        if (el) {
+            el.addEventListener('change', (e) => {
+                state.settings[setting] = e.target.checked;
+                saveSettings();
+                applyHUDCardVisibility();
+            });
+        }
+    });
+    
+    // Show all HUD components button
+    if (elements.showAllHud) {
+        elements.showAllHud.addEventListener('click', () => {
+            state.settings.hudShowLastLap = true;
+            state.settings.hudShowBestLap = true;
+            state.settings.hudShowAvgLap = true;
+            state.settings.hudShowGap = true;
+            state.settings.hudShowInterval = true;
+            state.settings.hudShowConsistency = true;
+            state.settings.hudShowLapHistory = true;
+            saveSettings();
+            applySettings();
+            applyHUDCardVisibility();
+            alert('All HUD components restored! ✅');
+        });
+    }
 }
 
 // Settings Management
@@ -323,6 +399,14 @@ function applySettings() {
     if (elements.showGapTrend) elements.showGapTrend.checked = state.settings.showGapTrend;
     if (elements.showPositionChanges) elements.showPositionChanges.checked = state.settings.showPositionChanges;
     if (elements.enableBestLapCelebration) elements.enableBestLapCelebration.checked = state.settings.enableBestLapCelebration;
+    // HUD component visibility
+    if (elements.hudShowLastLapCheckbox) elements.hudShowLastLapCheckbox.checked = state.settings.hudShowLastLap;
+    if (elements.hudShowBestLapCheckbox) elements.hudShowBestLapCheckbox.checked = state.settings.hudShowBestLap;
+    if (elements.hudShowAvgLapCheckbox) elements.hudShowAvgLapCheckbox.checked = state.settings.hudShowAvgLap;
+    if (elements.hudShowGapCheckbox) elements.hudShowGapCheckbox.checked = state.settings.hudShowGap;
+    if (elements.hudShowIntervalCheckbox) elements.hudShowIntervalCheckbox.checked = state.settings.hudShowInterval;
+    if (elements.hudShowConsistencyCheckbox) elements.hudShowConsistencyCheckbox.checked = state.settings.hudShowConsistency;
+    if (elements.hudShowLapHistoryCheckbox) elements.hudShowLapHistoryCheckbox.checked = state.settings.hudShowLapHistory;
 }
 
 // Tab Navigation
@@ -1412,6 +1496,96 @@ function exportSessionData() {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+}
+
+// Export ALL App Data (settings, lap history, personal records)
+function exportAllAppData() {
+    const exportData = {
+        version: '2.0',
+        exportDate: new Date().toISOString(),
+        settings: state.settings,
+        lapHistory: state.lapHistory,
+        personalRecords: state.personalRecords,
+        startingPositions: state.startingPositions
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `karting-backup-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    alert('✅ All data exported successfully!\n\nFile: ' + exportFileDefaultName);
+}
+
+// Import ALL App Data
+function importAllAppData(file) {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Validate data structure
+            if (!importedData.version) {
+                throw new Error('Invalid backup file format');
+            }
+            
+            // Confirm import
+            const confirmation = confirm(
+                `Import backup from ${new Date(importedData.exportDate).toLocaleString()}?\n\n` +
+                'This will replace:\n' +
+                '- All settings\n' +
+                '- Lap history\n' +
+                '- Personal records\n\n' +
+                'Current data will be overwritten!'
+            );
+            
+            if (!confirmation) return;
+            
+            // Import settings
+            if (importedData.settings) {
+                state.settings = { ...DEFAULT_SETTINGS, ...importedData.settings };
+                saveSettings();
+            }
+            
+            // Import lap history
+            if (importedData.lapHistory) {
+                state.lapHistory = importedData.lapHistory;
+            }
+            
+            // Import personal records
+            if (importedData.personalRecords) {
+                state.personalRecords = importedData.personalRecords;
+                savePersonalRecords();
+            }
+            
+            // Import starting positions
+            if (importedData.startingPositions) {
+                state.startingPositions = importedData.startingPositions;
+            }
+            
+            // Apply settings to UI
+            applySettings();
+            applyHUDCardVisibility();
+            updateAllViews();
+            
+            alert('✅ Data imported successfully!\n\nAll your settings, lap history, and personal records have been restored.');
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('❌ Import failed!\n\nThe file may be corrupted or in an invalid format.\n\nError: ' + error.message);
+        }
+    };
+    
+    reader.onerror = () => {
+        alert('❌ Failed to read file!');
+    };
+    
+    reader.readAsText(file);
 }
 
 // Update All Views (including compare and summary)

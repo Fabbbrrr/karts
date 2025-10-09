@@ -347,6 +347,72 @@
                 </div>
                 
                 <div class="settings-section">
+                    <h2>Data Management</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Backup and restore your lap history, personal records, and settings
+                    </p>
+                    
+                    <button id="export-all-data" class="settings-btn-secondary">
+                        📦 Export All Data
+                    </button>
+                    
+                    <button id="import-all-data" class="settings-btn-secondary" style="margin-top: 8px;">
+                        📥 Import Data from File
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                    
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 12px;">
+                        💾 Exports include: lap history, personal records, and settings
+                    </p>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>HUD Components</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Toggle visibility of HUD components (or use mini buttons on HUD)
+                    </p>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-last-lap" checked>
+                        <span>Show Last Lap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-best-lap" checked>
+                        <span>Show Best Lap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-avg-lap" checked>
+                        <span>Show Average Lap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-gap" checked>
+                        <span>Show Gap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-interval" checked>
+                        <span>Show Interval Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-consistency" checked>
+                        <span>Show Consistency Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-lap-history" checked>
+                        <span>Show Lap History</span>
+                    </label>
+                    
+                    <button id="show-all-hud" class="settings-btn-secondary" style="margin-top: 12px;">
+                        ✅ Show All HUD Components
+                    </button>
+                </div>
+                
+                <div class="settings-section">
                     <h2>About</h2>
                     <p>Karting Live Timer v2.0</p>
                     <p>Connected to: lemansentertainment</p>
