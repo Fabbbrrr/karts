@@ -151,11 +151,15 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
  * @param {Object} kartAnalysisData - Kart analysis data
  */
 export function showKartDetails(kartNumber, elements, kartAnalysisData) {
+    console.log('🔍 showKartDetails in analysis.view.js', { kartNumber, hasElements: !!elements, hasData: !!kartAnalysisData });
+    
     const normalized = AnalysisService.calculateNormalizedIndex(kartNumber, kartAnalysisData);
     const percentile = AnalysisService.calculatePercentileRanking(kartNumber, kartAnalysisData);
     const stats = AnalysisService.getKartStats(kartNumber, kartAnalysisData);
     const confidence = AnalysisService.calculateConfidence(kartNumber, kartAnalysisData);
     const { crossKartDrivers } = AnalysisService.findCrossKartDrivers(kartAnalysisData);
+    
+    console.log('🔍 Analysis results:', { normalized, percentile, stats, confidence });
     
     if (!normalized || !stats) {
         alert('No data available for this kart');

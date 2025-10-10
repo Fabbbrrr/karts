@@ -223,8 +223,10 @@ function setupEventListeners() {
     // Race item click - select driver and switch to HUD
     if (elements.raceList) {
         const handleDriverSelect = (e) => {
-            // Prevent default to avoid any conflicts
-            e.preventDefault();
+            console.log('🔍 Race list clicked', e.target);
+            
+            // Don't prevent default initially - let it bubble
+            // e.preventDefault();
             
             // Find the race item - check multiple levels
             let raceItem = e.target;
@@ -232,6 +234,7 @@ function setupEventListeners() {
             // Traverse up to 5 levels to find .race-item
             for (let i = 0; i < 5 && raceItem; i++) {
                 if (raceItem.classList && raceItem.classList.contains('race-item')) {
+                    console.log('🎯 Found race item at level', i);
                     break;
                 }
                 raceItem = raceItem.parentElement;
@@ -259,13 +262,20 @@ function setupEventListeners() {
                 // Switch to HUD tab to show the selected driver
                 switchTab('hud');
             } else {
-                console.log('⚠️ Click outside race item or no kart number found');
+                console.log('⚠️ Click outside race item or no kart number found', {
+                    hasRaceItem: !!raceItem,
+                    hasDataset: raceItem?.dataset,
+                    kartNumber: raceItem?.dataset?.kartNumber
+                });
             }
         };
         
         // Use both click and touchend for better mobile support
         elements.raceList.addEventListener('click', handleDriverSelect);
         elements.raceList.addEventListener('touchend', handleDriverSelect);
+        console.log('✅ Race list event listeners attached');
+    } else {
+        console.warn('⚠️ Race list element not found!');
     }
     
     // Channel input - change track/venue
@@ -1235,8 +1245,16 @@ window.kartingApp = {
     state,
     switchTab,
     updateAllViews,
-    showKartDetails: (kartNumber) => AnalysisView.showKartDetails(kartNumber, elements, state.kartAnalysisData),
-    closeKartDetails: () => AnalysisView.closeKartDetails(elements),
+    showKartDetails: (kartNumber) => {
+        console.log('🔍 showKartDetails called for kart:', kartNumber);
+        console.log('Elements:', elements);
+        console.log('Analysis data:', state.kartAnalysisData);
+        return AnalysisView.showKartDetails(kartNumber, elements, state.kartAnalysisData);
+    },
+    closeKartDetails: () => {
+        console.log('🔍 closeKartDetails called');
+        return AnalysisView.closeKartDetails(elements);
+    },
     deleteDriverNote,
     resetKartAnalysisData: () => {
         if (confirm('Are you sure you want to reset all kart analysis data? This cannot be undone.')) {
