@@ -81,6 +81,7 @@ const elements = {
     connectionIndicator: document.getElementById('connection-indicator'),
     loadingScreen: document.getElementById('loading-screen'),
     loadingStatus: document.getElementById('loading-status'),
+    skipLoadingBtn: document.getElementById('skip-loading-btn'),
     
     // Race tab
     raceScreen: document.getElementById('race-screen'),
@@ -221,6 +222,14 @@ function init() {
     // Initialize audio for sound alerts
     initializeAudio();
     
+    // Auto-show app after 5 seconds even without connection
+    setTimeout(() => {
+        if (elements.loadingScreen.classList.contains('active')) {
+            console.log('⏱️ Auto-showing app (no data after 5s)');
+            showApp();
+        }
+    }, 5000);
+    
     // Register service worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js')
@@ -236,6 +245,14 @@ function init() {
     
     // Connect to WebSocket
     connectWebSocket();
+}
+
+// Show the app (remove loading screen, show tabs)
+function showApp() {
+    elements.loadingScreen.classList.remove('active');
+    elements.tabNav.classList.remove('hidden');
+    switchTab('race');
+    updateSessionSelector();
 }
 
 // Initialize Audio Context for sound alerts
@@ -392,6 +409,14 @@ function enableAlwaysOnDisplay() {
 
 // Event Listeners
 function setupEventListeners() {
+    // Skip loading button
+    if (elements.skipLoadingBtn) {
+        elements.skipLoadingBtn.addEventListener('click', () => {
+            console.log('⏭️ User skipped loading screen');
+            showApp();
+        });
+    }
+    
     // Tab navigation
     if (elements.tabBtns) {
         elements.tabBtns.forEach(btn => {
@@ -905,10 +930,7 @@ function onSessionData(data) {
             
             // First time receiving data - show tabs and switch to race view
             if (elements.loadingScreen.classList.contains('active')) {
-                elements.loadingScreen.classList.remove('active');
-                elements.tabNav.classList.remove('hidden');
-                switchTab('race');
-                updateSessionSelector(); // Show/hide session selector
+                showApp();
             }
             
             // Update driver dropdown in settings
@@ -3780,5 +3802,6 @@ window.kartingApp = {
     closeKartDetails,
     resetKartAnalysisData,
     exportKartAnalysisData,
-    importKartAnalysisData
+    importKartAnalysisData,
+    showApp
 };

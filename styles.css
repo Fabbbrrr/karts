@@ -178,6 +178,30 @@ html, body {
     color: #888;
 }
 
+.skip-loading-btn {
+    background: linear-gradient(135deg, #00ff88, #00cc70);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 2rem;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+.skip-loading-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+}
+
+.skip-loading-btn:active {
+    transform: translateY(0);
+}
+
 /* Selection Screen */
 .header {
     margin-bottom: 2rem;
