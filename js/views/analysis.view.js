@@ -212,7 +212,10 @@ export function showKartDetails(kartNumber, elements, kartAnalysisData) {
     
     // Populate modal
     const modal = elements.analysisDetails;
-    if (!modal) return;
+    if (!modal) {
+        console.error('❌ Modal element not found');
+        return;
+    }
     
     // Performance indicator
     const pctFaster = normalized.percentageFaster;
@@ -226,75 +229,81 @@ export function showKartDetails(kartNumber, elements, kartAnalysisData) {
         perfClass = 'negative';
     }
     
-    modal.querySelector('.kart-details-content').innerHTML = `
-        <div class="kart-details-header">
-            <h2>Kart #${kartNumber} Analysis</h2>
-            <button class="close-btn" onclick="window.kartingApp.closeKartDetails()">✕</button>
-        </div>
-        
-        <div class="details-section">
-            <h3>Performance Summary</h3>
-            <div class="metrics-grid">
-                <div class="metric">
-                    <div class="metric-label">Normalized Index</div>
-                    <div class="metric-value">${normalized.index.toFixed(3)}</div>
+    // Set the entire modal content (not just a child element)
+    modal.innerHTML = `
+        <div class="kart-details-modal">
+            <div class="kart-details-header">
+                <h2>Kart #${kartNumber} Analysis</h2>
+                <button class="close-btn" onclick="window.kartingApp.closeKartDetails()">✕</button>
+            </div>
+            
+            <div class="kart-details-content">
+                <div class="details-section">
+                    <h3>Performance Summary</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Normalized Index</div>
+                            <div class="metric-value">${normalized.index.toFixed(3)}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Performance</div>
+                            <div class="metric-value ${perfClass}">${perfText}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Avg Percentile</div>
+                            <div class="metric-value">${percentile ? percentile.avgPercentile.toFixed(1) : 'N/A'}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Confidence</div>
+                            <div class="metric-value">${confidence.level} (${confidence.score}/100)</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="metric">
-                    <div class="metric-label">Performance</div>
-                    <div class="metric-value ${perfClass}">${perfText}</div>
+                
+                <div class="details-section">
+                    <h3>Lap Statistics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Total Laps</div>
+                            <div class="metric-value">${stats.totalLaps}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Best Lap</div>
+                            <div class="metric-value">${formatTime(stats.bestLapTime)}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Average Lap</div>
+                            <div class="metric-value">${formatTime(stats.avgLapTime)}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Consistency</div>
+                            <div class="metric-value">${stats.consistency.toFixed(1)}%</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="metric">
-                    <div class="metric-label">Avg Percentile</div>
-                    <div class="metric-value">${percentile ? percentile.avgPercentile.toFixed(1) : 'N/A'}</div>
+                
+                <div class="details-section">
+                    <h3>Driver Data</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Unique Drivers</div>
+                            <div class="metric-value">${stats.uniqueDriverCount}</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Cross-Kart Drivers</div>
+                            <div class="metric-value">${normalized.crossKartDriverCount}</div>
+                        </div>
+                    </div>
+                    ${crossKartInfo}
                 </div>
-                <div class="metric">
-                    <div class="metric-label">Confidence</div>
-                    <div class="metric-value">${confidence.level} (${confidence.score}/100)</div>
-                </div>
+                
+                ${warningsHtml}
             </div>
         </div>
-        
-        <div class="details-section">
-            <h3>Lap Statistics</h3>
-            <div class="metrics-grid">
-                <div class="metric">
-                    <div class="metric-label">Total Laps</div>
-                    <div class="metric-value">${stats.totalLaps}</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">Best Lap</div>
-                    <div class="metric-value">${formatTime(stats.bestLapTime)}</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">Average Lap</div>
-                    <div class="metric-value">${formatTime(stats.avgLapTime)}</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">Consistency</div>
-                    <div class="metric-value">${stats.consistency.toFixed(1)}%</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="details-section">
-            <h3>Driver Data</h3>
-            <div class="metrics-grid">
-                <div class="metric">
-                    <div class="metric-label">Unique Drivers</div>
-                    <div class="metric-value">${stats.uniqueDriverCount}</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">Cross-Kart Drivers</div>
-                    <div class="metric-value">${normalized.crossKartDriverCount}</div>
-                </div>
-            </div>
-            ${crossKartInfo}
-        </div>
-        
-        ${warningsHtml}
     `;
     
     modal.classList.remove('hidden');
+    console.log('✅ Modal populated and shown');
 }
 
 /**
