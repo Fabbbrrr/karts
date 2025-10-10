@@ -711,7 +711,13 @@
         </div>
     </div>
     
-    <script src="app.js"></script>
+    <!-- Main App Module (ES6 Modules) -->
+    <script type="module" src="js/app.main.js"></script>
+    
+    <!-- Fallback for old browsers without module support -->
+    <script nomodule>
+        alert('Your browser does not support JavaScript modules. Please use a modern browser (Chrome, Firefox, Safari, Edge).');
+    </script>
 </body>
 </html>
 
