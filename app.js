@@ -60,7 +60,15 @@ const state = {
     lastProximityAlert: null, // Track last proximity alert timestamp to avoid spam
     isReplayMode: false, // Are we viewing a recorded session?
     recordedSessions: [], // List of recorded sessions
-    replayData: null // Current replay session data
+    replayData: null, // Current replay session data
+    // Kart Analysis Data
+    kartAnalysisData: {
+        laps: [],  // All lap records: [{timestamp, sessionId, kartNumber, driverName, lapTime, lapTimeRaw, position, lapNum}]
+        drivers: {},  // { driverName: { totalLaps, totalTime, kartHistory: { kartNumber: lapCount } } }
+        karts: {},    // { kartNumber: { totalLaps, bestLap, driverHistory: { driverName: lapCount } } }
+        sessions: {}  // Session metadata for context
+    },
+    lastLapCount: {} // Track last lap count per kart to detect new laps
 };
 
 // DOM Elements
@@ -135,6 +143,8 @@ const elements = {
     exportAllData: document.getElementById('export-all-data'),
     importAllData: document.getElementById('import-all-data'),
     importFileInput: document.getElementById('import-file-input'),
+    importAnalysisBtn: document.getElementById('import-analysis-btn'),
+    importAnalysisFileInput: document.getElementById('import-analysis-file-input'),
     
     // HUD component toggles in settings
     hudShowLastLapCheckbox: document.getElementById('hud-show-last-lap'),
@@ -171,7 +181,16 @@ const elements = {
     // Session selector
     sessionSelectorBar: document.getElementById('session-selector-bar'),
     sessionSelector: document.getElementById('session-selector'),
-    goLiveBtn: document.getElementById('go-live-btn')
+    goLiveBtn: document.getElementById('go-live-btn'),
+    
+    // Kart Analysis tab
+    analysisScreen: document.getElementById('analysis-screen'),
+    analysisNoData: document.getElementById('analysis-no-data'),
+    analysisContent: document.getElementById('analysis-content'),
+    analysisStats: document.getElementById('analysis-stats'),
+    analysisTable: document.getElementById('analysis-table'),
+    analysisTableBody: document.getElementById('analysis-table-body'),
+    analysisDetails: document.getElementById('analysis-details')
 };
 
 // Initialize App
@@ -189,6 +208,9 @@ function init() {
     
     // Load recorded sessions
     loadRecordedSessions();
+    
+    // Load kart analysis data
+    loadKartAnalysisData();
     
     // Update session selector UI
     updateSessionSelector();
@@ -633,6 +655,23 @@ function setupEventListeners() {
         });
     }
     
+    // Kart analysis import
+    if (elements.importAnalysisBtn) {
+        elements.importAnalysisBtn.addEventListener('click', () => {
+            elements.importAnalysisFileInput.click();
+        });
+    }
+    
+    if (elements.importAnalysisFileInput) {
+        elements.importAnalysisFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importKartAnalysisData(file);
+                e.target.value = ''; // Reset input
+            }
+        });
+    }
+    
     // HUD component toggles in settings
     const hudCheckboxes = [
         { el: elements.hudShowLastLapCheckbox, setting: 'hudShowLastLap' },
@@ -978,6 +1017,9 @@ function updateLapHistory() {
             if (state.settings.enableBestLapCelebration) {
                 checkBestLapCelebration(kartNumber, run.best_time_raw);
             }
+            
+            // Collect lap for kart analysis
+            collectKartAnalysisLap(run, lapCount);
             
             // Add new lap to history
             const lapData = {
@@ -1381,22 +1423,6 @@ function updateDriverDropdown() {
             elements.compareDriver2Select.appendChild(option2);
         }
     });
-}
-
-function updateAllViews() {
-    if (!state.sessionData) return;
-    
-    switch (state.currentTab) {
-        case 'race':
-            updateRaceView();
-            break;
-        case 'hud':
-            updateHUDView();
-            break;
-        case 'settings':
-            // Settings view is static
-            break;
-    }
 }
 
 function updateRaceView() {
@@ -2231,6 +2257,717 @@ function checkAndUpdateRecords(kartNumber, run) {
     return newRecords;
 }
 
+// ============================================================================
+// KART ANALYSIS SYSTEM
+// ============================================================================
+
+// Load kart analysis data from localStorage
+function loadKartAnalysisData() {
+    try {
+        const saved = localStorage.getItem('kartAnalysisData');
+        if (saved) {
+            state.kartAnalysisData = JSON.parse(saved);
+            console.log('📊 Kart analysis data loaded:', {
+                laps: state.kartAnalysisData.laps.length,
+                karts: Object.keys(state.kartAnalysisData.karts).length,
+                drivers: Object.keys(state.kartAnalysisData.drivers).length
+            });
+        } else {
+            // Initialize fresh structure
+            state.kartAnalysisData = {
+                laps: [],
+                drivers: {},
+                karts: {},
+                sessions: {}
+            };
+        }
+    } catch (error) {
+        console.error('Error loading kart analysis data:', error);
+        state.kartAnalysisData = {
+            laps: [],
+            drivers: {},
+            karts: {},
+            sessions: {}
+        };
+    }
+}
+
+// Save kart analysis data to localStorage
+function saveKartAnalysisData() {
+    try {
+        localStorage.setItem('kartAnalysisData', JSON.stringify(state.kartAnalysisData));
+    } catch (error) {
+        console.error('Error saving kart analysis data:', error);
+    }
+}
+
+// Collect lap data for kart analysis (called when new lap detected)
+function collectKartAnalysisLap(run, lapNum) {
+    if (!run || !run.kart_number || !run.last_time_raw) return;
+    
+    const kartNumber = run.kart_number;
+    const driverName = run.name || `Driver ${kartNumber}`;
+    const sessionId = state.currentSessionId || 'unknown';
+    
+    // Create lap record
+    const lapRecord = {
+        timestamp: Date.now(),
+        sessionId: sessionId,
+        kartNumber: kartNumber,
+        driverName: driverName,
+        lapTime: run.last_time,
+        lapTimeRaw: run.last_time_raw,
+        position: run.pos,
+        lapNum: lapNum
+    };
+    
+    // Add to laps array
+    state.kartAnalysisData.laps.push(lapRecord);
+    
+    // Update driver aggregates
+    if (!state.kartAnalysisData.drivers[driverName]) {
+        state.kartAnalysisData.drivers[driverName] = {
+            totalLaps: 0,
+            totalTime: 0,
+            kartHistory: {}
+        };
+    }
+    const driver = state.kartAnalysisData.drivers[driverName];
+    driver.totalLaps++;
+    driver.totalTime += run.last_time_raw;
+    if (!driver.kartHistory[kartNumber]) {
+        driver.kartHistory[kartNumber] = 0;
+    }
+    driver.kartHistory[kartNumber]++;
+    
+    // Update kart aggregates
+    if (!state.kartAnalysisData.karts[kartNumber]) {
+        state.kartAnalysisData.karts[kartNumber] = {
+            totalLaps: 0,
+            bestLap: Infinity,
+            bestLapDriver: null,
+            driverHistory: {}
+        };
+    }
+    const kart = state.kartAnalysisData.karts[kartNumber];
+    kart.totalLaps++;
+    if (run.last_time_raw < kart.bestLap) {
+        kart.bestLap = run.last_time_raw;
+        kart.bestLapDriver = driverName;
+    }
+    if (!kart.driverHistory[driverName]) {
+        kart.driverHistory[driverName] = 0;
+    }
+    kart.driverHistory[driverName]++;
+    
+    // Update session metadata
+    if (!state.kartAnalysisData.sessions[sessionId]) {
+        state.kartAnalysisData.sessions[sessionId] = {
+            eventName: state.sessionData?.event_name || 'Unknown',
+            startTime: Date.now(),
+            lapCount: 0
+        };
+    }
+    state.kartAnalysisData.sessions[sessionId].lapCount++;
+    
+    // Save to localStorage
+    saveKartAnalysisData();
+    
+    console.log(`📊 Kart analysis lap collected: ${driverName} in Kart #${kartNumber} - ${run.last_time}`);
+}
+
+// Find drivers who have used multiple karts (most valuable data)
+function findCrossKartDrivers() {
+    const crossKartDrivers = {};
+    const comparisonPairs = [];
+    
+    Object.entries(state.kartAnalysisData.drivers).forEach(([driverName, driverData]) => {
+        const karts = Object.keys(driverData.kartHistory);
+        if (karts.length >= 2) {
+            crossKartDrivers[driverName] = karts;
+            
+            // Generate comparison pairs
+            for (let i = 0; i < karts.length; i++) {
+                for (let j = i + 1; j < karts.length; j++) {
+                    comparisonPairs.push({
+                        driver: driverName,
+                        kart1: karts[i],
+                        kart2: karts[j]
+                    });
+                }
+            }
+        }
+    });
+    
+    return { crossKartDrivers, comparisonPairs };
+}
+
+// Calculate Driver-Normalized Performance Index for a kart
+function calculateNormalizedIndex(kartNumber) {
+    const kart = state.kartAnalysisData.karts[kartNumber];
+    if (!kart || kart.totalLaps === 0) {
+        return null;
+    }
+    
+    // Get all laps for this kart
+    const kartLaps = state.kartAnalysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    
+    if (kartLaps.length === 0) {
+        return null;
+    }
+    
+    // Calculate ratio for each lap (lap time / driver's overall average)
+    const ratios = [];
+    const crossKartDriverLaps = [];
+    
+    kartLaps.forEach(lap => {
+        const driver = state.kartAnalysisData.drivers[lap.driverName];
+        if (!driver || driver.totalLaps === 0) return;
+        
+        const driverAverage = driver.totalTime / driver.totalLaps;
+        if (driverAverage === 0) return;
+        
+        const ratio = lap.lapTimeRaw / driverAverage;
+        ratios.push(ratio);
+        
+        // Check if this driver used multiple karts (higher confidence)
+        if (Object.keys(driver.kartHistory).length >= 2) {
+            crossKartDriverLaps.push(ratio);
+        }
+    });
+    
+    if (ratios.length === 0) {
+        return null;
+    }
+    
+    // Calculate index - weight cross-kart driver data more heavily
+    let index;
+    if (crossKartDriverLaps.length >= 3) {
+        // If we have enough cross-kart data, weight it 70%
+        const crossKartAvg = crossKartDriverLaps.reduce((a, b) => a + b, 0) / crossKartDriverLaps.length;
+        const allAvg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+        index = (crossKartAvg * 0.7) + (allAvg * 0.3);
+    } else {
+        // Otherwise use all data equally
+        index = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+    }
+    
+    const percentageFaster = (1 - index) * 100; // Negative = slower, positive = faster
+    
+    return {
+        index: index,
+        percentageFaster: percentageFaster,
+        lapCount: kartLaps.length,
+        driverCount: Object.keys(kart.driverHistory).length,
+        crossKartDriverCount: crossKartDriverLaps.length > 0 ? 
+            new Set(kartLaps.filter(lap => {
+                const d = state.kartAnalysisData.drivers[lap.driverName];
+                return d && Object.keys(d.kartHistory).length >= 2;
+            }).map(lap => lap.driverName)).size : 0
+    };
+}
+
+// Calculate percentile-based ranking for a kart
+function calculatePercentileRanking(kartNumber) {
+    const kartLaps = state.kartAnalysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    
+    if (kartLaps.length === 0) {
+        return null;
+    }
+    
+    // Group laps by session
+    const sessionGroups = {};
+    kartLaps.forEach(lap => {
+        if (!sessionGroups[lap.sessionId]) {
+            sessionGroups[lap.sessionId] = [];
+        }
+        sessionGroups[lap.sessionId].push(lap);
+    });
+    
+    const percentiles = [];
+    
+    // Calculate percentile for each session
+    Object.entries(sessionGroups).forEach(([sessionId, laps]) => {
+        // Get all laps in this session
+        const allSessionLaps = state.kartAnalysisData.laps.filter(l => l.sessionId === sessionId);
+        
+        laps.forEach(lap => {
+            // Count how many laps were slower
+            const slowerCount = allSessionLaps.filter(l => l.lapTimeRaw > lap.lapTimeRaw).length;
+            const percentile = (slowerCount / allSessionLaps.length) * 100;
+            percentiles.push(percentile);
+        });
+    });
+    
+    if (percentiles.length === 0) {
+        return null;
+    }
+    
+    return {
+        avgPercentile: percentiles.reduce((a, b) => a + b, 0) / percentiles.length,
+        bestPercentile: Math.max(...percentiles),
+        worstPercentile: Math.min(...percentiles)
+    };
+}
+
+// Get comprehensive statistics for a kart
+function getKartStats(kartNumber) {
+    const kart = state.kartAnalysisData.karts[kartNumber];
+    if (!kart) {
+        return null;
+    }
+    
+    const kartLaps = state.kartAnalysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    
+    // Calculate average lap time
+    const avgLapTime = kartLaps.length > 0 ?
+        kartLaps.reduce((sum, lap) => sum + lap.lapTimeRaw, 0) / kartLaps.length : 0;
+    
+    // Get driver list with their stats
+    const driverList = Object.entries(kart.driverHistory).map(([driverName, lapCount]) => {
+        const driverLaps = kartLaps.filter(lap => lap.driverName === driverName);
+        const bestLap = driverLaps.length > 0 ?
+            Math.min(...driverLaps.map(lap => lap.lapTimeRaw)) : Infinity;
+        
+        return {
+            name: driverName,
+            lapCount: lapCount,
+            bestLap: bestLap
+        };
+    }).sort((a, b) => a.bestLap - b.bestLap);
+    
+    return {
+        bestLapTime: kart.bestLap,
+        bestLapDriver: kart.bestLapDriver,
+        avgLapTime: avgLapTime,
+        uniqueDriverCount: Object.keys(kart.driverHistory).length,
+        totalLaps: kart.totalLaps,
+        driverList: driverList
+    };
+}
+
+// Calculate confidence score for kart analysis
+function calculateConfidence(kartNumber) {
+    const kart = state.kartAnalysisData.karts[kartNumber];
+    if (!kart) {
+        return { level: 'Low', score: 0, warnings: [], crossKartDrivers: 0 };
+    }
+    
+    const kartLaps = state.kartAnalysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    const driverCount = Object.keys(kart.driverHistory).length;
+    
+    // Count cross-kart drivers for this kart
+    const crossKartDrivers = kartLaps.filter(lap => {
+        const driver = state.kartAnalysisData.drivers[lap.driverName];
+        return driver && Object.keys(driver.kartHistory).length >= 2;
+    });
+    const uniqueCrossKartDrivers = new Set(crossKartDrivers.map(lap => lap.driverName)).size;
+    
+    // Calculate variance in lap times
+    if (kartLaps.length === 0) {
+        return { level: 'Low', score: 0, warnings: ['No lap data'], crossKartDrivers: 0 };
+    }
+    
+    const avgLapTime = kartLaps.reduce((sum, lap) => sum + lap.lapTimeRaw, 0) / kartLaps.length;
+    const variance = kartLaps.reduce((sum, lap) => sum + Math.pow(lap.lapTimeRaw - avgLapTime, 2), 0) / kartLaps.length;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = (stdDev / avgLapTime) * 100; // Percentage
+    
+    // Calculate confidence score (0-100)
+    let score = 0;
+    const warnings = [];
+    
+    // Lap count factor (max 40 points)
+    if (kartLaps.length >= 50) {
+        score += 40;
+    } else if (kartLaps.length >= 20) {
+        score += 25;
+        warnings.push(`⚠️ Moderate lap count (${kartLaps.length} laps)`);
+    } else {
+        score += Math.min(20, kartLaps.length * 0.4);
+        warnings.push(`⚠️ Low lap count (${kartLaps.length} laps)`);
+    }
+    
+    // Driver count factor (max 30 points)
+    if (driverCount >= 5) {
+        score += 30;
+    } else if (driverCount >= 3) {
+        score += 20;
+        warnings.push(`⚠️ Moderate driver variety (${driverCount} drivers)`);
+    } else {
+        score += driverCount * 5;
+        warnings.push(`⚠️ Few drivers (${driverCount} drivers)`);
+    }
+    
+    // Cross-kart drivers bonus (max 20 points)
+    if (uniqueCrossKartDrivers >= 3) {
+        score += 20;
+    } else if (uniqueCrossKartDrivers >= 1) {
+        score += uniqueCrossKartDrivers * 6;
+    }
+    
+    // Consistency factor (max 10 points)
+    if (coefficientOfVariation < 5) {
+        score += 10; // Very consistent
+    } else if (coefficientOfVariation < 10) {
+        score += 5; // Moderate consistency
+    } else {
+        warnings.push(`⚠️ High variance detected (${coefficientOfVariation.toFixed(1)}% CV)`);
+    }
+    
+    // Determine level
+    let level;
+    if (score >= 70) {
+        level = 'High';
+    } else if (score >= 40) {
+        level = 'Medium';
+    } else {
+        level = 'Low';
+    }
+    
+    return {
+        level: level,
+        score: Math.round(score),
+        warnings: warnings,
+        crossKartDrivers: uniqueCrossKartDrivers
+    };
+}
+
+// Update kart analysis view
+function updateKartAnalysisView() {
+    if (!elements.analysisScreen) return;
+    
+    const karts = state.kartAnalysisData.karts;
+    const kartNumbers = Object.keys(karts);
+    
+    // Show no data message if empty
+    if (kartNumbers.length === 0) {
+        if (elements.analysisNoData) {
+            elements.analysisNoData.classList.remove('hidden');
+        }
+        if (elements.analysisContent) {
+            elements.analysisContent.classList.add('hidden');
+        }
+        return;
+    }
+    
+    // Show content
+    if (elements.analysisNoData) {
+        elements.analysisNoData.classList.add('hidden');
+    }
+    if (elements.analysisContent) {
+        elements.analysisContent.classList.remove('hidden');
+    }
+    
+    // Update summary stats
+    updateAnalysisSummaryStats();
+    
+    // Update rankings table
+    updateAnalysisRankingsTable();
+}
+
+// Update summary statistics
+function updateAnalysisSummaryStats() {
+    if (!elements.analysisStats) return;
+    
+    const totalLaps = state.kartAnalysisData.laps.length;
+    const totalKarts = Object.keys(state.kartAnalysisData.karts).length;
+    const totalDrivers = Object.keys(state.kartAnalysisData.drivers).length;
+    const { crossKartDrivers } = findCrossKartDrivers();
+    const crossKartCount = Object.keys(crossKartDrivers).length;
+    
+    elements.analysisStats.innerHTML = `
+        <div class="analysis-stat-card">
+            <div class="analysis-stat-value">${totalLaps}</div>
+            <div class="analysis-stat-label">Total Laps Collected</div>
+        </div>
+        <div class="analysis-stat-card">
+            <div class="analysis-stat-value">${totalKarts}</div>
+            <div class="analysis-stat-label">Karts Analyzed</div>
+        </div>
+        <div class="analysis-stat-card">
+            <div class="analysis-stat-value">${totalDrivers}</div>
+            <div class="analysis-stat-label">Drivers Tracked</div>
+        </div>
+        <div class="analysis-stat-card">
+            <div class="analysis-stat-value">${crossKartCount}</div>
+            <div class="analysis-stat-label">Cross-Kart Drivers</div>
+        </div>
+    `;
+}
+
+// Update rankings table
+function updateAnalysisRankingsTable() {
+    if (!elements.analysisTableBody) return;
+    
+    const karts = state.kartAnalysisData.karts;
+    const kartNumbers = Object.keys(karts);
+    
+    // Calculate analysis for all karts
+    const kartAnalysis = kartNumbers.map(kartNumber => {
+        const normalized = calculateNormalizedIndex(kartNumber);
+        const percentile = calculatePercentileRanking(kartNumber);
+        const stats = getKartStats(kartNumber);
+        const confidence = calculateConfidence(kartNumber);
+        
+        return {
+            kartNumber,
+            normalized,
+            percentile,
+            stats,
+            confidence
+        };
+    }).filter(k => k.normalized !== null);
+    
+    // Sort by normalized index (lower = faster)
+    kartAnalysis.sort((a, b) => a.normalized.index - b.normalized.index);
+    
+    // Generate table rows
+    elements.analysisTableBody.innerHTML = '';
+    
+    kartAnalysis.forEach((kart, index) => {
+        const row = document.createElement('tr');
+        row.className = 'analysis-table-row';
+        
+        // Rank
+        const rank = index + 1;
+        let rankClass = '';
+        if (rank === 1) rankClass = 'rank-gold';
+        else if (rank === 2) rankClass = 'rank-silver';
+        else if (rank === 3) rankClass = 'rank-bronze';
+        
+        // Performance indicator
+        const pctFaster = kart.normalized.percentageFaster;
+        let perfClass = 'perf-neutral';
+        let perfIcon = '−';
+        if (pctFaster > 1) {
+            perfClass = 'perf-faster';
+            perfIcon = '↑';
+        } else if (pctFaster < -1) {
+            perfClass = 'perf-slower';
+            perfIcon = '↓';
+        }
+        
+        // Confidence badge
+        const confLevel = kart.confidence.level;
+        let confClass = 'conf-low';
+        let confIcon = '🔴';
+        if (confLevel === 'High') {
+            confClass = 'conf-high';
+            confIcon = '🟢';
+        } else if (confLevel === 'Medium') {
+            confClass = 'conf-medium';
+            confIcon = '🟡';
+        }
+        
+        // Format best lap time
+        const bestLapFormatted = formatTime(kart.stats.bestLapTime);
+        
+        row.innerHTML = `
+            <td class="rank ${rankClass}">${rank}</td>
+            <td class="kart-number">#${kart.kartNumber}</td>
+            <td class="norm-index">${kart.normalized.index.toFixed(3)}</td>
+            <td class="perf-diff ${perfClass}">${perfIcon} ${Math.abs(pctFaster).toFixed(1)}%</td>
+            <td class="percentile">${kart.percentile ? kart.percentile.avgPercentile.toFixed(1) : 'N/A'}</td>
+            <td class="lap-count">${kart.stats.totalLaps}</td>
+            <td class="driver-count">${kart.stats.uniqueDriverCount}</td>
+            <td class="confidence ${confClass}">${confIcon} ${confLevel}</td>
+            <td class="details-btn-cell">
+                <button class="details-btn" onclick="window.kartingApp.showKartDetails('${kart.kartNumber}')">
+                    Details
+                </button>
+            </td>
+        `;
+        
+        elements.analysisTableBody.appendChild(row);
+    });
+}
+
+// Show detailed stats for a specific kart
+function showKartDetails(kartNumber) {
+    const normalized = calculateNormalizedIndex(kartNumber);
+    const percentile = calculatePercentileRanking(kartNumber);
+    const stats = getKartStats(kartNumber);
+    const confidence = calculateConfidence(kartNumber);
+    
+    if (!normalized || !stats) {
+        alert('No data available for this kart');
+        return;
+    }
+    
+    // Format times
+    const bestLapFormatted = formatTime(stats.bestLapTime);
+    const avgLapFormatted = formatTime(stats.avgLapTime);
+    
+    // Build driver list HTML
+    const driverListHTML = stats.driverList.map(driver => {
+        const bestLap = formatTime(driver.bestLap);
+        const crossKartDriver = state.kartAnalysisData.drivers[driver.name] &&
+            Object.keys(state.kartAnalysisData.drivers[driver.name].kartHistory).length >= 2;
+        const crossKartBadge = crossKartDriver ? ' <span class="cross-kart-badge">✓ Multi-kart</span>' : '';
+        
+        return `
+            <div class="driver-item">
+                <span class="driver-name">${driver.name}${crossKartBadge}</span>
+                <span class="driver-stats">${driver.lapCount} laps | Best: ${bestLap}</span>
+            </div>
+        `;
+    }).join('');
+    
+    // Build warnings HTML
+    const warningsHTML = confidence.warnings.length > 0 ?
+        `<div class="warnings-section">
+            ${confidence.warnings.map(w => `<div class="warning-item">${w}</div>`).join('')}
+        </div>` : '';
+    
+    // Create modal content
+    const detailsHTML = `
+        <div class="kart-details-modal">
+            <div class="kart-details-header">
+                <h2>Kart #${kartNumber} Analysis</h2>
+                <button class="close-btn" onclick="window.kartingApp.closeKartDetails()">×</button>
+            </div>
+            <div class="kart-details-content">
+                <div class="details-section">
+                    <h3>Performance Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-label">Normalized Index:</span>
+                            <span class="metric-value">${normalized.index.toFixed(3)}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">vs Average:</span>
+                            <span class="metric-value ${normalized.percentageFaster > 0 ? 'positive' : 'negative'}">
+                                ${normalized.percentageFaster > 0 ? '+' : ''}${normalized.percentageFaster.toFixed(2)}%
+                            </span>
+                        </div>
+                        ${percentile ? `
+                        <div class="metric">
+                            <span class="metric-label">Avg Percentile:</span>
+                            <span class="metric-value">${percentile.avgPercentile.toFixed(1)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="metric">
+                            <span class="metric-label">Confidence:</span>
+                            <span class="metric-value">${confidence.level} (${confidence.score}/100)</span>
+                        </div>
+                    </div>
+                    ${warningsHTML}
+                </div>
+                
+                <div class="details-section">
+                    <h3>Lap Statistics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-label">Best Lap:</span>
+                            <span class="metric-value">${bestLapFormatted}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Best Lap By:</span>
+                            <span class="metric-value">${stats.bestLapDriver || 'N/A'}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Average Lap:</span>
+                            <span class="metric-value">${avgLapFormatted}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Laps:</span>
+                            <span class="metric-value">${stats.totalLaps}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="details-section">
+                    <h3>Driver History (${stats.uniqueDriverCount} drivers)</h3>
+                    ${confidence.crossKartDrivers > 0 ? 
+                        `<p class="cross-kart-info">✓ ${confidence.crossKartDrivers} driver(s) used multiple karts (high confidence data)</p>` : ''}
+                    <div class="driver-list">
+                        ${driverListHTML}
+                    </div>
+                </div>
+                
+                <div class="details-section">
+                    <h3>Analysis Explanation</h3>
+                    <p><strong>Normalized Index:</strong> Compares how drivers perform in this kart relative to their overall average. 
+                    Lower is better. Index of 1.000 = average performance, < 1.000 = faster than average, > 1.000 = slower than average.</p>
+                    <p><strong>vs Average:</strong> Percentage difference from average kart performance. Positive means this kart is faster than average.</p>
+                    ${percentile ? '<p><strong>Percentile:</strong> Average ranking position across all sessions (higher is better).</p>' : ''}
+                    <p><strong>Cross-Kart Drivers:</strong> Drivers who used multiple karts provide the most valuable comparison data.</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (elements.analysisDetails) {
+        elements.analysisDetails.innerHTML = detailsHTML;
+        elements.analysisDetails.classList.remove('hidden');
+    }
+}
+
+// Close kart details modal
+function closeKartDetails() {
+    if (elements.analysisDetails) {
+        elements.analysisDetails.classList.add('hidden');
+    }
+}
+
+// Reset all kart analysis data
+function resetKartAnalysisData() {
+    if (confirm('Are you sure you want to reset all kart analysis data? This cannot be undone.')) {
+        state.kartAnalysisData = {
+            laps: [],
+            drivers: {},
+            karts: {},
+            sessions: {}
+        };
+        saveKartAnalysisData();
+        updateKartAnalysisView();
+        alert('Kart analysis data has been reset.');
+    }
+}
+
+// Export kart analysis data
+function exportKartAnalysisData() {
+    const exportData = {
+        kartAnalysisData: state.kartAnalysisData,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `kart-analysis-${Date.now()}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+}
+
+// Import kart analysis data
+function importKartAnalysisData(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (imported.kartAnalysisData) {
+                state.kartAnalysisData = imported.kartAnalysisData;
+                saveKartAnalysisData();
+                updateKartAnalysisView();
+                alert('Kart analysis data imported successfully!');
+            } else {
+                alert('Invalid kart analysis file format.');
+            }
+        } catch (error) {
+            console.error('Error importing kart analysis data:', error);
+            alert('Error importing data. Please check the file format.');
+        }
+    };
+    reader.readAsText(file);
+}
+
 // Compare View
 function updateCompareView() {
     if (!state.sessionData) return;
@@ -3030,6 +3767,9 @@ function updateAllViews() {
     if (state.currentTab === 'summary' && elements.summaryScreen) {
         updateSummaryView();
     }
+    if (state.currentTab === 'analysis' && elements.analysisScreen) {
+        updateKartAnalysisView();
+    }
 }
 
 // Export for debugging and HTML onclick
@@ -3038,5 +3778,10 @@ window.kartingApp = {
     config: CONFIG,
     switchTab,
     updateAllViews,
-    toggleHUDCard
+    toggleHUDCard,
+    showKartDetails,
+    closeKartDetails,
+    resetKartAnalysisData,
+    exportKartAnalysisData,
+    importKartAnalysisData
 };

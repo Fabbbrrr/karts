@@ -98,6 +98,41 @@ Beautiful F1-style visualization showing:
 - Color-coded lines for each driver
 - See who you're battling with at a glance
 
+### 📊 **Kart Performance Analysis** ⭐ NEW!
+Scientific analysis to determine which karts are actually faster:
+- **Driver-Normalized Index** - Accounts for driver skill differences
+- **Percentile Rankings** - See how karts perform across all sessions
+- **Cross-Kart Driver Detection** - Identifies drivers who used multiple karts (most valuable data)
+- **Confidence Scoring** - Shows data quality (🟢 High / 🟡 Medium / 🔴 Low)
+- **Automatic Collection** - Gathers data passively as drivers complete laps
+- **Detailed Statistics** - Best lap times, average performance, driver history per kart
+
+**How It Works:**
+1. **Leave app running** during sessions to collect lap data automatically
+2. System tracks every lap with driver name, kart number, and lap time
+3. Advanced algorithms normalize for driver skill (fast drivers vs slow drivers)
+4. Prioritizes data from drivers who used multiple karts (70% weight)
+5. Displays rankings with confidence metrics based on data quality
+
+**Example Output:**
+```
+Kart Rankings:
+1. 🥇 Kart #12 - Index: 0.972 (↑ 2.8% faster) - 🟢 High Confidence
+   Best Lap: 26.123s by John Doe | 47 laps | 6 drivers | 3 cross-kart
+   
+2. 🥈 Kart #5  - Index: 0.985 (↑ 1.5% faster) - 🟢 High Confidence
+   Best Lap: 26.287s by Jane Smith | 52 laps | 5 drivers | 2 cross-kart
+   
+3. 🥉 Kart #8  - Index: 0.998 (↑ 0.2% faster) - 🟡 Medium Confidence
+   Best Lap: 26.445s by Mike Johnson | 23 laps | 3 drivers | 1 cross-kart
+```
+
+**Perfect For:**
+- Track owners identifying maintenance needs
+- Competitive racers choosing the best karts
+- League organizers ensuring fairness
+- Data enthusiasts analyzing performance trends
+
 ### 🎨 **Color Themes**
 Choose your vibe:
 - 🌙 **Dark** - Easy on the eyes (default)
@@ -149,6 +184,7 @@ Mini toggle buttons on every component - hide what you don't need without diving
 | **🏆 Results** | Winners by 5 different scoring methods with podium & graphs |
 | **⚖️ Compare** | Pick any 2 drivers to compare stats |
 | **📈 Summary** | Complete session analysis & records |
+| **📊 Analysis** | Kart performance rankings with statistical analysis |
 | **⚙️ Settings** | Customize features and preferences |
 
 ### 💡 Pro Tips:
@@ -164,6 +200,9 @@ Mini toggle buttons on every component - hide what you don't need without diving
 - **Export session data** to analyze later on a computer
 - **Switch themes** in settings to match your style
 - **Consistency score** of 90+ = very consistent driving
+- **Leave app running** - Collect kart performance data across multiple sessions
+- **Check Analysis tab** - See which karts are truly fastest with statistical confidence
+- **Look for cross-kart drivers** - Their data is most valuable (they've used multiple karts)
 
 ---
 
@@ -251,23 +290,27 @@ Unlike basic timing displays, KartTimer Pro gives you:
 
 ✅ **Professional-grade analytics** without expensive equipment  
 ✅ **5 scoring methods** - see results from every angle  
+✅ **Kart performance analysis** - scientifically determine which karts are faster  
 ✅ **Session replay** - auto-saves last 20 sessions for review  
 ✅ **Works on any phone** - Android, iPhone, tablets  
 ✅ **Completely free** - no subscriptions, no ads  
 ✅ **Privacy first** - no account needed, data stays on your device  
 ✅ **Battle-tested** - built by racers, for racers  
 ✅ **Smart session detection** - automatically resets between races  
+✅ **Long-term data collection** - leave running to gather insights over days/weeks  
 
 ---
 
 ## 💾 Your Data is Safe
 
-- **Local Storage** - All settings & records saved on your device
+- **Local Storage** - All settings, records, and kart analysis data saved on your device
 - **Auto-Save Sessions** - Last 20 sessions recorded automatically
 - **Session Replay** - Review any past session anytime
-- **Export Anytime** - Download complete backup as JSON file
+- **Kart Analysis Persistence** - Collected performance data survives browser restarts
+- **Export Anytime** - Download complete backup as JSON file (includes kart analysis)
 - **Import Anywhere** - Restore your data on any device
 - **No Cloud Required** - Works 100% offline after first load
+- **Separate Exports** - Export kart analysis data independently for sharing
 
 ---
 

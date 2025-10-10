@@ -2311,3 +2311,512 @@ body.theme-racing-green .hud-value {
     }
 }
 
+/* ============================================================================ */
+/* KART ANALYSIS STYLES */
+/* ============================================================================ */
+
+/* Analysis Tab Container */
+#analysis-screen {
+    padding-bottom: 80px;
+}
+
+.header-subtitle {
+    color: #888;
+    font-size: 0.95rem;
+    margin-top: 8px;
+}
+
+/* No Data Placeholder */
+.analysis-no-data {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.analysis-no-data h2 {
+    color: #00ff88;
+    margin-bottom: 20px;
+}
+
+.analysis-no-data p {
+    color: #888;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    max-width: 600px;
+}
+
+.analysis-info-box {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 30px;
+    max-width: 700px;
+    text-align: left;
+}
+
+.analysis-info-box h3 {
+    color: #00ff88;
+    margin-bottom: 15px;
+}
+
+.analysis-info-box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.analysis-info-box li {
+    color: #ccc;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.analysis-info-box li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #00ff88;
+}
+
+/* Summary Statistics Grid */
+.analysis-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.analysis-stat-card {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.analysis-stat-value {
+    color: #00ff88;
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.analysis-stat-label {
+    color: #888;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Rankings Table */
+.analysis-table-container {
+    padding: 20px;
+    overflow-x: auto;
+}
+
+.analysis-table-container h2 {
+    color: #00ff88;
+    margin-bottom: 20px;
+}
+
+.analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.analysis-table thead {
+    background: #0f0f0f;
+    border-bottom: 2px solid #00ff88;
+}
+
+.analysis-table th {
+    padding: 15px 12px;
+    text-align: left;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.analysis-table tbody tr {
+    border-bottom: 1px solid #333;
+    transition: background 0.2s;
+}
+
+.analysis-table tbody tr:hover {
+    background: #222;
+}
+
+.analysis-table td {
+    padding: 15px 12px;
+    font-size: 1rem;
+}
+
+/* Table Cell Styling */
+.rank {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #888;
+}
+
+.rank-gold {
+    color: #FFD700;
+}
+
+.rank-silver {
+    color: #C0C0C0;
+}
+
+.rank-bronze {
+    color: #CD7F32;
+}
+
+.kart-number {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #00ff88;
+}
+
+.norm-index {
+    font-family: 'Courier New', monospace;
+    color: #ccc;
+}
+
+.perf-diff {
+    font-weight: bold;
+}
+
+.perf-faster {
+    color: #00ff88;
+}
+
+.perf-slower {
+    color: #ff6b6b;
+}
+
+.perf-neutral {
+    color: #888;
+}
+
+.percentile {
+    color: #ccc;
+}
+
+.lap-count,
+.driver-count {
+    color: #888;
+}
+
+.confidence {
+    font-weight: bold;
+}
+
+.conf-high {
+    color: #00ff88;
+}
+
+.conf-medium {
+    color: #ffaa00;
+}
+
+.conf-low {
+    color: #ff6b6b;
+}
+
+.details-btn-cell {
+    text-align: center;
+}
+
+.details-btn {
+    background: #00ff88;
+    color: #000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.details-btn:hover {
+    background: #00cc70;
+    transform: scale(1.05);
+}
+
+/* Kart Details Modal */
+.analysis-details-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.kart-details-modal {
+    background: #1a1a1a;
+    border: 2px solid #00ff88;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.kart-details-header {
+    background: #0f0f0f;
+    padding: 20px;
+    border-bottom: 2px solid #00ff88;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.kart-details-header h2 {
+    color: #00ff88;
+    margin: 0;
+}
+
+.close-btn {
+    background: transparent;
+    border: 2px solid #00ff88;
+    color: #00ff88;
+    font-size: 2rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #00ff88;
+    color: #000;
+    transform: rotate(90deg);
+}
+
+.kart-details-content {
+    padding: 20px;
+}
+
+.details-section {
+    margin-bottom: 30px;
+}
+
+.details-section h3 {
+    color: #00ff88;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.details-section p {
+    color: #ccc;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.metric {
+    background: #0f0f0f;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #333;
+}
+
+.metric-label {
+    color: #888;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.metric-value {
+    color: #fff;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.metric-value.positive {
+    color: #00ff88;
+}
+
+.metric-value.negative {
+    color: #ff6b6b;
+}
+
+/* Warnings Section */
+.warnings-section {
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid #ffaa00;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.warning-item {
+    color: #ffaa00;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.warning-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Driver List */
+.cross-kart-info {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid #00ff88;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 15px;
+    color: #00ff88;
+    font-size: 0.95rem;
+}
+
+.driver-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.driver-item {
+    background: #0f0f0f;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #333;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.driver-name {
+    color: #fff;
+    font-weight: bold;
+}
+
+.cross-kart-badge {
+    display: inline-block;
+    background: #00ff88;
+    color: #000;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.driver-stats {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+/* Settings Button Styles */
+.settings-btn-danger {
+    background: #ff6b6b;
+    color: #000;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.settings-btn-danger:hover {
+    background: #ff5252;
+    transform: scale(1.02);
+}
+
+/* Responsive Design for Analysis */
+@media (max-width: 768px) {
+    .analysis-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .analysis-stat-value {
+        font-size: 2rem;
+    }
+    
+    .analysis-table-container {
+        padding: 12px;
+    }
+    
+    .analysis-table {
+        font-size: 0.85rem;
+    }
+    
+    .analysis-table th,
+    .analysis-table td {
+        padding: 10px 8px;
+    }
+    
+    .rank {
+        font-size: 1.1rem;
+    }
+    
+    .kart-number {
+        font-size: 1rem;
+    }
+    
+    .details-btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .kart-details-modal {
+        max-width: 100%;
+        border-radius: 0;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Hide less important columns on mobile */
+    .analysis-table th:nth-child(3),
+    .analysis-table td:nth-child(3),
+    .analysis-table th:nth-child(5),
+    .analysis-table td:nth-child(5) {
+        display: none;
+    }
+}
+

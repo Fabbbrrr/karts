@@ -46,6 +46,7 @@
             <button class="tab-btn" data-tab="results">Results</button>
             <button class="tab-btn" data-tab="compare">Compare</button>
             <button class="tab-btn" data-tab="summary">Summary</button>
+            <button class="tab-btn" data-tab="analysis">Analysis</button>
             <button class="tab-btn" data-tab="settings">Settings</button>
         </nav>
         
@@ -418,6 +419,66 @@
             </div>
         </div>
         
+        <!-- Kart Analysis Tab -->
+        <div id="analysis-screen" class="screen tab-content">
+            <div class="header">
+                <h1>📊 Kart Performance Analysis</h1>
+                <p class="header-subtitle">Statistical analysis to determine which karts perform better</p>
+            </div>
+            
+            <!-- No Data Placeholder -->
+            <div id="analysis-no-data" class="analysis-no-data">
+                <h2>No Analysis Data Yet</h2>
+                <p>Kart analysis data will be collected automatically as drivers complete laps.</p>
+                <p>Keep the app running during sessions to collect data over time.</p>
+                <div class="analysis-info-box">
+                    <h3>How It Works:</h3>
+                    <ul>
+                        <li><strong>Driver-Normalized Index:</strong> Accounts for driver skill by comparing performance relative to each driver's average</li>
+                        <li><strong>Percentile Ranking:</strong> Shows how karts rank across all sessions</li>
+                        <li><strong>Cross-Kart Drivers:</strong> Drivers who use multiple karts provide the most valuable comparison data</li>
+                        <li><strong>Confidence Scores:</strong> Higher confidence with more laps and drivers</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Analysis Content -->
+            <div id="analysis-content" class="analysis-content hidden">
+                <!-- Summary Statistics -->
+                <div id="analysis-stats" class="analysis-stats-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+                
+                <!-- Rankings Table -->
+                <div class="analysis-table-container">
+                    <h2>Kart Rankings</h2>
+                    <table id="analysis-table" class="analysis-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Kart #</th>
+                                <th>Norm. Index</th>
+                                <th>vs Avg</th>
+                                <th>Percentile</th>
+                                <th>Laps</th>
+                                <th>Drivers</th>
+                                <th>Confidence</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="analysis-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Kart Details Modal -->
+            <div id="analysis-details" class="analysis-details-overlay hidden">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+        
         <!-- Settings Tab -->
         <div id="settings-screen" class="screen tab-content">
             <div class="settings-container">
@@ -537,6 +598,30 @@
                     
                     <p style="color: #666; font-size: 0.85rem; margin-top: 12px;">
                         💾 Exports include: lap history, personal records, and settings
+                    </p>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Kart Analysis Data</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Manage collected kart performance data
+                    </p>
+                    
+                    <button id="export-analysis-btn" class="settings-btn-secondary" onclick="window.kartingApp.exportKartAnalysisData()">
+                        📊 Export Kart Analysis Data
+                    </button>
+                    
+                    <button id="import-analysis-btn" class="settings-btn-secondary">
+                        📥 Import Analysis Data
+                    </button>
+                    <input type="file" id="import-analysis-file-input" accept=".json" style="display: none;">
+                    
+                    <button id="reset-analysis-btn" class="settings-btn-danger" onclick="window.kartingApp.resetKartAnalysisData()" style="margin-top: 20px;">
+                        🗑️ Reset All Analysis Data
+                    </button>
+                    
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 12px;">
+                        ⚠️ Reset will permanently delete all collected lap data
                     </p>
                 </div>
                 
