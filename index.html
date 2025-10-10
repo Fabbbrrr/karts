@@ -625,6 +625,16 @@
                     </button>
                     <input type="file" id="import-analysis-file-input" accept=".json" style="display: none;">
                     
+                    <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 16px;">
+                        <p style="color: #00ff88; font-size: 0.9rem; margin-bottom: 4px;">
+                            💾 <strong>Auto-Backup Active</strong>
+                        </p>
+                        <p style="color: #888; font-size: 0.85rem;">
+                            Data is automatically backed up to localStorage every 5 minutes while collecting data.
+                            Manual exports create downloadable JSON files for long-term storage and database imports.
+                        </p>
+                    </div>
+                    
                     <button id="reset-analysis-btn" class="settings-btn-danger" onclick="window.kartingApp.resetKartAnalysisData()" style="margin-top: 20px;">
                         🗑️ Reset All Analysis Data
                     </button>

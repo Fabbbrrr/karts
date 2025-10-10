@@ -68,7 +68,8 @@ const state = {
         karts: {},    // { kartNumber: { totalLaps, bestLap, driverHistory: { driverName: lapCount } } }
         sessions: {}  // Session metadata for context
     },
-    lastLapCount: {} // Track last lap count per kart to detect new laps
+    lastLapCount: {}, // Track last lap count per kart to detect new laps
+    lastAutoBackupTime: 0 // Track last auto-backup timestamp
 };
 
 // DOM Elements
@@ -212,6 +213,9 @@ function init() {
     
     // Load kart analysis data
     loadKartAnalysisData();
+    
+    // Start auto-backup for kart analysis data
+    startAutoBackup();
     
     // Update session selector UI
     updateSessionSelector();
@@ -2307,9 +2311,73 @@ function loadKartAnalysisData() {
 function saveKartAnalysisData() {
     try {
         localStorage.setItem('kartAnalysisData', JSON.stringify(state.kartAnalysisData));
+        
+        // Also save a recovery backup with timestamp
+        const backupData = {
+            data: state.kartAnalysisData,
+            timestamp: Date.now(),
+            lapCount: state.kartAnalysisData.laps.length
+        };
+        localStorage.setItem('kartAnalysisBackup', JSON.stringify(backupData));
     } catch (error) {
         console.error('Error saving kart analysis data:', error);
+        if (error.name === 'QuotaExceededError') {
+            console.warn('⚠️ LocalStorage quota exceeded. Consider exporting your data.');
+            // Try to at least keep the backup
+            try {
+                const backupData = {
+                    data: state.kartAnalysisData,
+                    timestamp: Date.now(),
+                    lapCount: state.kartAnalysisData.laps.length
+                };
+                localStorage.setItem('kartAnalysisBackup', JSON.stringify(backupData));
+            } catch (e) {
+                console.error('Could not save backup:', e);
+            }
+        }
     }
+}
+
+// Auto-export backup file (for crash recovery)
+function autoBackupKartAnalysisData() {
+    const lapCount = state.kartAnalysisData.laps.length;
+    
+    // Only backup if we have data and it's been at least 10 minutes since last backup
+    if (lapCount === 0) return;
+    
+    const lastBackup = state.lastAutoBackupTime || 0;
+    const now = Date.now();
+    const tenMinutes = 10 * 60 * 1000;
+    
+    if (now - lastBackup < tenMinutes) return;
+    
+    console.log('💾 Auto-backup triggered...');
+    state.lastAutoBackupTime = now;
+    
+    // Create backup in localStorage with extended metadata
+    const backupData = {
+        data: state.kartAnalysisData,
+        timestamp: now,
+        lapCount: lapCount,
+        autoBackup: true
+    };
+    
+    try {
+        localStorage.setItem('kartAnalysisAutoBackup', JSON.stringify(backupData));
+        console.log(`✅ Auto-backup completed: ${lapCount} laps saved`);
+    } catch (error) {
+        console.error('Auto-backup failed:', error);
+    }
+}
+
+// Start auto-backup timer
+function startAutoBackup() {
+    // Backup every 5 minutes
+    setInterval(() => {
+        autoBackupKartAnalysisData();
+    }, 5 * 60 * 1000);
+    
+    console.log('🔄 Auto-backup enabled (every 5 minutes)');
 }
 
 // Collect lap data for kart analysis (called when new lap detected)
@@ -2947,10 +3015,41 @@ function resetKartAnalysisData() {
 
 // Export kart analysis data
 function exportKartAnalysisData() {
+    const stats = {
+        totalLaps: state.kartAnalysisData.laps.length,
+        totalKarts: Object.keys(state.kartAnalysisData.karts).length,
+        totalDrivers: Object.keys(state.kartAnalysisData.drivers).length,
+        totalSessions: Object.keys(state.kartAnalysisData.sessions).length
+    };
+    
     const exportData = {
+        // Metadata for database imports
+        metadata: {
+            exportDate: new Date().toISOString(),
+            exportTimestamp: Date.now(),
+            version: '1.1',
+            appVersion: 'Karting Live Timer v2.0',
+            dataType: 'kart-performance-analysis',
+            statistics: stats
+        },
+        // Actual data
         kartAnalysisData: state.kartAnalysisData,
-        exportDate: new Date().toISOString(),
-        version: '1.0'
+        // Database-friendly format
+        database: {
+            laps: state.kartAnalysisData.laps,
+            karts: Object.entries(state.kartAnalysisData.karts).map(([kartNumber, data]) => ({
+                kartNumber,
+                ...data
+            })),
+            drivers: Object.entries(state.kartAnalysisData.drivers).map(([driverName, data]) => ({
+                driverName,
+                ...data
+            })),
+            sessions: Object.entries(state.kartAnalysisData.sessions).map(([sessionId, data]) => ({
+                sessionId,
+                ...data
+            }))
+        }
     };
     
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -2959,29 +3058,126 @@ function exportKartAnalysisData() {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `kart-analysis-${Date.now()}.json`;
+    const fileName = `kart-analysis-${new Date().toISOString().split('T')[0]}-${Date.now()}.json`;
+    link.download = fileName;
     link.click();
     
     URL.revokeObjectURL(url);
+    
+    console.log(`📊 Exported kart analysis data: ${stats.totalLaps} laps, ${stats.totalKarts} karts, ${stats.totalDrivers} drivers`);
 }
 
 // Import kart analysis data
-function importKartAnalysisData(file) {
+function importKartAnalysisData(file, mode = 'ask') {
     const reader = new FileReader();
     reader.onload = (e) => {
         try {
             const imported = JSON.parse(e.target.result);
-            if (imported.kartAnalysisData) {
-                state.kartAnalysisData = imported.kartAnalysisData;
-                saveKartAnalysisData();
-                updateKartAnalysisView();
-                alert('Kart analysis data imported successfully!');
-            } else {
-                alert('Invalid kart analysis file format.');
+            
+            // Validate imported data
+            if (!imported.kartAnalysisData) {
+                alert('Invalid kart analysis file format: missing kartAnalysisData.');
+                return;
             }
+            
+            const importedData = imported.kartAnalysisData;
+            const currentLaps = state.kartAnalysisData.laps.length;
+            const importedLaps = importedData.laps?.length || 0;
+            const importedKarts = Object.keys(importedData.karts || {}).length;
+            const importedDrivers = Object.keys(importedData.drivers || {}).length;
+            
+            console.log(`📥 Importing: ${importedLaps} laps, ${importedKarts} karts, ${importedDrivers} drivers`);
+            console.log(`📊 Metadata:`, imported.metadata);
+            
+            // Ask user whether to merge or replace
+            if (mode === 'ask' && currentLaps > 0) {
+                const choice = confirm(
+                    `Import Mode:\n\n` +
+                    `CURRENT DATA: ${currentLaps} laps, ${Object.keys(state.kartAnalysisData.karts).length} karts\n` +
+                    `IMPORT FILE: ${importedLaps} laps, ${importedKarts} karts\n\n` +
+                    `Click OK to MERGE (combine data)\n` +
+                    `Click CANCEL to REPLACE (overwrite existing data)`
+                );
+                mode = choice ? 'merge' : 'replace';
+            }
+            
+            if (mode === 'merge' && currentLaps > 0) {
+                // Merge mode: combine data intelligently
+                console.log('🔄 Merging imported data with existing data...');
+                
+                // Merge laps (avoid duplicates by checking timestamp + kartNumber + lapNumber)
+                const existingLapKeys = new Set(
+                    state.kartAnalysisData.laps.map(lap => 
+                        `${lap.timestamp}-${lap.kartNumber}-${lap.lapNumber}`
+                    )
+                );
+                
+                const newLaps = importedData.laps.filter(lap => 
+                    !existingLapKeys.has(`${lap.timestamp}-${lap.kartNumber}-${lap.lapNumber}`)
+                );
+                
+                state.kartAnalysisData.laps.push(...newLaps);
+                
+                // Merge karts (combine stats intelligently)
+                for (const [kartNumber, kartData] of Object.entries(importedData.karts || {})) {
+                    if (state.kartAnalysisData.karts[kartNumber]) {
+                        const existing = state.kartAnalysisData.karts[kartNumber];
+                        existing.totalLaps += kartData.totalLaps;
+                        existing.drivers = [...new Set([...existing.drivers, ...kartData.drivers])];
+                        existing.bestLap = Math.min(existing.bestLap, kartData.bestLap);
+                        existing.worstLap = Math.max(existing.worstLap, kartData.worstLap);
+                        existing.totalTime += kartData.totalTime;
+                        existing.lapTimes.push(...kartData.lapTimes);
+                    } else {
+                        state.kartAnalysisData.karts[kartNumber] = kartData;
+                    }
+                }
+                
+                // Merge drivers
+                for (const [driverName, driverData] of Object.entries(importedData.drivers || {})) {
+                    if (state.kartAnalysisData.drivers[driverName]) {
+                        const existing = state.kartAnalysisData.drivers[driverName];
+                        existing.totalLaps += driverData.totalLaps;
+                        existing.karts = [...new Set([...existing.karts, ...driverData.karts])];
+                        existing.bestLap = Math.min(existing.bestLap, driverData.bestLap);
+                        existing.totalTime += driverData.totalTime;
+                        existing.lapTimes.push(...driverData.lapTimes);
+                    } else {
+                        state.kartAnalysisData.drivers[driverName] = driverData;
+                    }
+                }
+                
+                // Merge sessions
+                for (const [sessionId, sessionData] of Object.entries(importedData.sessions || {})) {
+                    if (!state.kartAnalysisData.sessions[sessionId]) {
+                        state.kartAnalysisData.sessions[sessionId] = sessionData;
+                    }
+                }
+                
+                console.log(`✅ Merged ${newLaps.length} new laps (${importedLaps - newLaps.length} duplicates skipped)`);
+                alert(
+                    `Data merged successfully!\n\n` +
+                    `Added ${newLaps.length} new laps\n` +
+                    `Skipped ${importedLaps - newLaps.length} duplicate laps\n` +
+                    `Total: ${state.kartAnalysisData.laps.length} laps`
+                );
+            } else {
+                // Replace mode: overwrite everything
+                console.log('🔄 Replacing all data with imported data...');
+                state.kartAnalysisData = importedData;
+                alert(
+                    `Data replaced successfully!\n\n` +
+                    `Imported: ${importedLaps} laps, ${importedKarts} karts, ${importedDrivers} drivers`
+                );
+            }
+            
+            // Save and refresh
+            saveKartAnalysisData();
+            updateKartAnalysisView();
+            
         } catch (error) {
             console.error('Error importing kart analysis data:', error);
-            alert('Error importing data. Please check the file format.');
+            alert(`Error importing data: ${error.message}\n\nPlease check the file format.`);
         }
     };
     reader.readAsText(file);
