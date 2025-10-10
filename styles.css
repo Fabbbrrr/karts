@@ -2336,6 +2336,14 @@ body.theme-racing-green .hud-value {
     text-align: center;
 }
 
+.analysis-no-data.hidden {
+    display: none;
+}
+
+.analysis-content.hidden {
+    display: none;
+}
+
 .analysis-no-data h2 {
     color: #00ff88;
     margin-bottom: 20px;
@@ -2569,6 +2577,10 @@ body.theme-racing-green .hud-value {
     justify-content: center;
     padding: 20px;
     overflow-y: auto;
+}
+
+.analysis-details-overlay.hidden {
+    display: none;
 }
 
 .kart-details-modal {
