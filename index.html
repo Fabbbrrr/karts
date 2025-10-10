@@ -28,17 +28,6 @@
         <!-- Connection Indicator -->
         <div id="connection-indicator" class="disconnected"></div>
         
-        <!-- Session Selector (shown when in replay mode or no live data) -->
-        <div id="session-selector-bar" class="session-selector-bar hidden">
-            <div class="session-selector-content">
-                <span class="session-selector-label">📼 Session:</span>
-                <select id="session-selector" class="session-selector-dropdown">
-                    <option value="">Select a recorded session...</option>
-                </select>
-                <button id="go-live-btn" class="go-live-btn hidden">🔴 Go Live</button>
-            </div>
-        </div>
-        
         <!-- Tab Navigation -->
         <nav id="tab-nav" class="tab-nav hidden">
             <button class="tab-btn active" data-tab="race">Race</button>
@@ -494,6 +483,20 @@
                     <p style="color: #666; font-size: 0.85rem; margin-top: 8px;">
                         💡 Find your channel at live.racefacer.com/YOUR_VENUE_NAME
                     </p>
+                </div>
+                
+                <div class="settings-section" id="session-selector-bar">
+                    <h2>Session Replay</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Review previously recorded sessions or return to live data
+                    </p>
+                    <label for="session-selector">Recorded Session:</label>
+                    <select id="session-selector" class="settings-select">
+                        <option value="">Live Data (Current Session)</option>
+                    </select>
+                    <button id="go-live-btn" class="settings-btn-secondary hidden" style="margin-top: 12px;">
+                        🔴 Return to Live Data
+                    </button>
                 </div>
                 
                 <div class="settings-section">

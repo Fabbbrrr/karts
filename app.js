@@ -1312,18 +1312,7 @@ function updateConnectionStatus() {
 }
 
 function updateSessionSelector() {
-    if (!elements.sessionSelector || !elements.sessionSelectorBar) return;
-    
-    // Show selector bar if:
-    // 1. We're in replay mode, OR
-    // 2. We have no live data and have recorded sessions
-    const shouldShow = state.isReplayMode || (!state.sessionData && state.recordedSessions.length > 0);
-    
-    if (shouldShow) {
-        elements.sessionSelectorBar.classList.remove('hidden');
-    } else {
-        elements.sessionSelectorBar.classList.add('hidden');
-    }
+    if (!elements.sessionSelector) return;
     
     // Show Go Live button only in replay mode
     if (elements.goLiveBtn) {
@@ -1335,7 +1324,7 @@ function updateSessionSelector() {
     }
     
     // Populate session selector
-    elements.sessionSelector.innerHTML = '<option value="">Select a recorded session...</option>';
+    elements.sessionSelector.innerHTML = '<option value="">Live Data (Current Session)</option>';
     
     state.recordedSessions.forEach(session => {
         const option = document.createElement('option');
