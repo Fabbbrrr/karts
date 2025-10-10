@@ -134,7 +134,12 @@ function updateRaceItemContent(div, run, settings) {
  * @param {Object} sessionData - Current session data
  */
 export function updateDriverDropdown(elements, sessionData) {
-    if (!sessionData || !sessionData.runs) return;
+    if (!sessionData || !sessionData.runs) {
+        console.warn('⚠️ updateDriverDropdown: No session data or runs');
+        return;
+    }
+    
+    console.log('🔄 Updating driver dropdown with', sessionData.runs.length, 'runs');
     
     // Clear existing options (keep first "Select driver" option)
     if (elements.mainDriverSelect) {
@@ -152,9 +157,10 @@ export function updateDriverDropdown(elements, sessionData) {
     }
     
     // Add drivers from current session
-    sessionData.runs
-        .filter(run => run.kart_number && run.kart_number !== '')
-        .forEach(run => {
+    const filteredRuns = sessionData.runs.filter(run => run.kart_number && run.kart_number !== '');
+    console.log('🔄 Adding', filteredRuns.length, 'drivers to dropdown');
+    
+    filteredRuns.forEach(run => {
             // Main driver dropdown
             if (elements.mainDriverSelect) {
                 const option = document.createElement('option');

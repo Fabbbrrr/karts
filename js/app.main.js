@@ -243,6 +243,9 @@ function setupEventListeners() {
             if (raceItem && raceItem.dataset && raceItem.dataset.kartNumber) {
                 const kartNumber = raceItem.dataset.kartNumber;
                 console.log('✅ Driver selected:', kartNumber);
+                console.log('📊 Session data:', state.sessionData);
+                console.log('📦 Main driver dropdown:', elements.mainDriverSelect);
+                console.log('📋 Dropdown options:', elements.mainDriverSelect?.options.length);
                 
                 // Visual feedback
                 raceItem.style.transform = 'scale(0.98)';
@@ -253,14 +256,20 @@ function setupEventListeners() {
                 // Update selection
                 state.settings.mainDriver = kartNumber;
                 saveSettings();
+                console.log('💾 Settings saved, mainDriver:', state.settings.mainDriver);
                 
                 // Update the dropdown to reflect the selection
                 if (elements.mainDriverSelect) {
                     elements.mainDriverSelect.value = kartNumber;
+                    console.log('🔽 Dropdown value set to:', elements.mainDriverSelect.value);
                 }
                 
                 // Switch to HUD tab to show the selected driver
                 switchTab('hud');
+                
+                // Update all views to show the selected driver
+                updateAllViews();
+                console.log('✅ Views updated');
             } else {
                 console.log('⚠️ Click outside race item or no kart number found', {
                     hasRaceItem: !!raceItem,

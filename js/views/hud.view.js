@@ -12,11 +12,21 @@ import { calculateConsistency } from '../utils/calculations.js';
  * @param {Object} state - Application state
  */
 export function updateHUDView(elements, sessionData, state) {
-    if (!sessionData) return;
+    console.log('🎯 updateHUDView called', {
+        hasSessionData: !!sessionData,
+        mainDriver: state.settings.mainDriver,
+        runCount: sessionData?.runs?.length
+    });
+    
+    if (!sessionData) {
+        console.warn('⚠️ No session data in HUD view');
+        return;
+    }
     
     const mainDriver = state.settings.mainDriver;
     
     if (!mainDriver) {
+        console.warn('⚠️ No main driver selected');
         elements.hudNoDriver.style.display = 'flex';
         elements.hudContent.classList.add('hidden');
         return;
@@ -25,10 +35,14 @@ export function updateHUDView(elements, sessionData, state) {
     const run = sessionData.runs.find(r => r.kart_number === mainDriver);
     
     if (!run) {
+        console.warn('⚠️ Driver not found in session data:', mainDriver);
+        console.log('Available kart numbers:', sessionData.runs.map(r => r.kart_number));
         elements.hudNoDriver.style.display = 'flex';
         elements.hudContent.classList.add('hidden');
         return;
     }
+    
+    console.log('✅ HUD displaying driver:', mainDriver, run.name);
     
     // Show HUD content
     elements.hudNoDriver.style.display = 'none';
