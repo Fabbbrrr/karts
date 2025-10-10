@@ -268,21 +268,290 @@ function setupEventListeners() {
         elements.raceList.addEventListener('touchend', handleDriverSelect);
     }
     
-    // Settings changes
+    // Channel input - change track/venue
+    if (elements.channelInput) {
+        elements.channelInput.addEventListener('change', (e) => {
+            const newChannel = e.target.value.trim() || 'lemansentertainment';
+            if (newChannel !== state.settings.channel) {
+                state.settings.channel = newChannel;
+                saveSettings();
+                reconnectToChannel();
+            }
+        });
+    }
+    
+    // Main driver select (settings)
     if (elements.mainDriverSelect) {
-        elements.mainDriverSelect.addEventListener('change', () => {
-            state.settings.mainDriver = elements.mainDriverSelect.value;
+        elements.mainDriverSelect.addEventListener('change', (e) => {
+            state.settings.mainDriver = e.target.value || null;
             saveSettings();
             updateAllViews();
         });
     }
     
+    // HUD driver selector (no driver screen)
+    if (elements.hudDriverSelect) {
+        elements.hudDriverSelect.addEventListener('change', (e) => {
+            state.settings.mainDriver = e.target.value || null;
+            saveSettings();
+            SettingsView.applySettings(elements, state.settings);
+            updateAllViews();
+        });
+    }
+    
+    // HUD quick driver selector (header)
+    if (elements.hudQuickDriverSelect) {
+        elements.hudQuickDriverSelect.addEventListener('change', (e) => {
+            state.settings.mainDriver = e.target.value || null;
+            saveSettings();
+            SettingsView.applySettings(elements, state.settings);
+            updateAllViews();
+        });
+    }
+    
+    // Results method selector
+    if (elements.resultsMethodSelect) {
+        elements.resultsMethodSelect.addEventListener('change', () => {
+            ResultsView.updateResultsView(elements, state.sessionData);
+        });
+    }
+    
+    // Session selector for replay
+    if (elements.sessionSelector) {
+        elements.sessionSelector.addEventListener('change', (e) => {
+            const sessionId = e.target.value;
+            if (sessionId) {
+                loadReplaySession(sessionId);
+            }
+        });
+    }
+    
+    // Go Live button
+    if (elements.goLiveBtn) {
+        elements.goLiveBtn.addEventListener('click', () => {
+            goLive();
+        });
+    }
+    
+    // Display toggle settings
+    if (elements.showIntervals) {
+        elements.showIntervals.addEventListener('change', (e) => {
+            state.settings.showIntervals = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showGaps) {
+        elements.showGaps.addEventListener('change', (e) => {
+            state.settings.showGaps = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showConsistency) {
+        elements.showConsistency.addEventListener('change', (e) => {
+            state.settings.showConsistency = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showAvgLap) {
+        elements.showAvgLap.addEventListener('change', (e) => {
+            state.settings.showAvgLap = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showLastLap) {
+        elements.showLastLap.addEventListener('change', (e) => {
+            state.settings.showLastLap = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    // New feature settings
+    if (elements.showPaceTrend) {
+        elements.showPaceTrend.addEventListener('change', (e) => {
+            state.settings.showPaceTrend = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showPercentageOffBest) {
+        elements.showPercentageOffBest.addEventListener('change', (e) => {
+            state.settings.showPercentageOffBest = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showGapTrend) {
+        elements.showGapTrend.addEventListener('change', (e) => {
+            state.settings.showGapTrend = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.showPositionChanges) {
+        elements.showPositionChanges.addEventListener('change', (e) => {
+            state.settings.showPositionChanges = e.target.checked;
+            saveSettings();
+            updateAllViews();
+        });
+    }
+    
+    if (elements.enableBestLapCelebration) {
+        elements.enableBestLapCelebration.addEventListener('change', (e) => {
+            state.settings.enableBestLapCelebration = e.target.checked;
+            saveSettings();
+        });
+    }
+    
+    if (elements.enableProximityAlert) {
+        elements.enableProximityAlert.addEventListener('change', (e) => {
+            state.settings.enableProximityAlert = e.target.checked;
+            saveSettings();
+        });
+    }
+    
+    if (elements.colorThemeSelect) {
+        elements.colorThemeSelect.addEventListener('change', (e) => {
+            state.settings.colorTheme = e.target.value;
+            saveSettings();
+            applyTheme(e.target.value);
+        });
+    }
+    
+    if (elements.resetSettings) {
+        elements.resetSettings.addEventListener('click', () => {
+            if (confirm('Reset all settings to defaults?')) {
+                state.settings = { ...DEFAULT_SETTINGS };
+                saveSettings();
+                SettingsView.applySettings(elements, state.settings);
+                updateAllViews();
+            }
+        });
+    }
+    
     // Compare driver selections
     if (elements.compareDriver1Select) {
-        elements.compareDriver1Select.addEventListener('change', () => updateAllViews());
+        elements.compareDriver1Select.addEventListener('change', () => {
+            CompareView.updateCompareView(elements, state.sessionData);
+        });
     }
+    
     if (elements.compareDriver2Select) {
-        elements.compareDriver2Select.addEventListener('change', () => updateAllViews());
+        elements.compareDriver2Select.addEventListener('change', () => {
+            CompareView.updateCompareView(elements, state.sessionData);
+        });
+    }
+    
+    // Summary tab - export session data
+    if (elements.summaryExport) {
+        elements.summaryExport.addEventListener('click', () => {
+            exportSessionData();
+        });
+    }
+    
+    // Data management - export all app data
+    if (elements.exportAllData) {
+        elements.exportAllData.addEventListener('click', () => {
+            exportAllAppData();
+        });
+    }
+    
+    // Data management - import all app data
+    if (elements.importAllData) {
+        elements.importAllData.addEventListener('click', () => {
+            elements.importFileInput.click();
+        });
+    }
+    
+    if (elements.importFileInput) {
+        elements.importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importAllAppData(file);
+                e.target.value = ''; // Reset input
+            }
+        });
+    }
+    
+    // Kart analysis import
+    if (elements.importAnalysisBtn) {
+        elements.importAnalysisBtn.addEventListener('click', () => {
+            elements.importAnalysisFileInput.click();
+        });
+    }
+    
+    if (elements.importAnalysisFileInput) {
+        elements.importAnalysisFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importKartAnalysisData(file);
+                e.target.value = ''; // Reset input
+            }
+        });
+    }
+    
+    // HUD component toggles in settings
+    const hudCheckboxes = [
+        { el: elements.hudShowLastLapCheckbox, setting: 'hudShowLastLap' },
+        { el: elements.hudShowBestLapCheckbox, setting: 'hudShowBestLap' },
+        { el: elements.hudShowAvgLapCheckbox, setting: 'hudShowAvgLap' },
+        { el: elements.hudShowGapCheckbox, setting: 'hudShowGap' },
+        { el: elements.hudShowIntervalCheckbox, setting: 'hudShowInterval' },
+        { el: elements.hudShowConsistencyCheckbox, setting: 'hudShowConsistency' },
+        { el: elements.hudShowLapHistoryCheckbox, setting: 'hudShowLapHistory' }
+    ];
+    
+    hudCheckboxes.forEach(({ el, setting }) => {
+        if (el) {
+            el.addEventListener('change', (e) => {
+                state.settings[setting] = e.target.checked;
+                saveSettings();
+                SettingsView.applyHUDCardVisibility(elements, state.settings);
+            });
+        }
+    });
+    
+    // Show all HUD components button
+    if (elements.showAllHud) {
+        elements.showAllHud.addEventListener('click', () => {
+            state.settings.hudShowLastLap = true;
+            state.settings.hudShowBestLap = true;
+            state.settings.hudShowAvgLap = true;
+            state.settings.hudShowGap = true;
+            state.settings.hudShowInterval = true;
+            state.settings.hudShowConsistency = true;
+            state.settings.hudShowLapHistory = true;
+            saveSettings();
+            SettingsView.applySettings(elements, state.settings);
+            SettingsView.applyHUDCardVisibility(elements, state.settings);
+            alert('All HUD components restored! ✅');
+        });
+    }
+    
+    // Driver notes
+    if (elements.hudAddNoteBtn) {
+        elements.hudAddNoteBtn.addEventListener('click', () => {
+            addDriverNote();
+        });
+    }
+    
+    if (elements.hudNoteInput) {
+        elements.hudNoteInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addDriverNote();
+            }
+        });
     }
     
     // Analysis details modal - click outside to close
@@ -641,6 +910,326 @@ function updateConnectionIndicator(connected) {
     }
 }
 
+// Reconnect to a new channel
+function reconnectToChannel() {
+    console.log('🔄 Reconnecting to new channel...');
+    
+    if (state.socket) {
+        WebSocketService.disconnect();
+        const newChannel = state.settings.channel || CONFIG.CHANNEL;
+        updateLoadingStatus(`Connecting to ${newChannel}...`);
+        
+        if (elements.loadingScreen) {
+            elements.loadingScreen.classList.add('active');
+        }
+        if (elements.tabNav) {
+            elements.tabNav.classList.add('hidden');
+        }
+        
+        connectWebSocket();
+    }
+}
+
+// Session replay functions
+function loadReplaySession(sessionId) {
+    const session = state.recordedSessions.find(s => s.id === sessionId);
+    if (!session) {
+        console.error('Session not found:', sessionId);
+        return;
+    }
+    
+    console.log(`🎬 Loading replay: ${session.eventName}`);
+    
+    // Enter replay mode
+    state.isReplayMode = true;
+    state.replayData = session;
+    
+    // Restore session data
+    state.sessionData = session.sessionData;
+    state.lapHistory = session.lapHistory;
+    state.positionHistory = session.positionHistory;
+    state.startingPositions = session.startingPositions;
+    state.sessionBest = session.sessionBest;
+    state.driverNotes = session.driverNotes || {};
+    state.currentSessionId = session.id;
+    
+    // Update UI
+    SettingsView.updateSessionSelector(elements, state.recordedSessions, state.isReplayMode);
+    updateAllViews();
+    
+    console.log('✅ Replay loaded successfully');
+}
+
+function goLive() {
+    console.log('🔴 Going live...');
+    
+    // Exit replay mode
+    state.isReplayMode = false;
+    state.replayData = null;
+    
+    // Clear current data (will be replaced by live feed)
+    state.sessionData = null;
+    state.lapHistory = {};
+    state.positionHistory = {};
+    state.startingPositions = {};
+    state.gapHistory = {};
+    state.sessionBest = null;
+    state.lastBestLap = {};
+    state.lastGap = {};
+    state.lastPosition = {};
+    state.currentSessionId = null;
+    
+    // Update UI
+    SettingsView.updateSessionSelector(elements, state.recordedSessions, state.isReplayMode);
+    
+    // If we have live data, update views
+    if (state.sessionData) {
+        updateAllViews();
+    }
+    
+    console.log('✅ Now listening to live feed');
+}
+
+// Theme management
+function applyTheme(theme) {
+    // Remove all theme classes
+    document.body.classList.remove('theme-dark', 'theme-light', 'theme-f1-red', 'theme-racing-green');
+    
+    // Add selected theme class
+    document.body.classList.add(`theme-${theme}`);
+    
+    console.log(`🎨 Theme applied: ${theme}`);
+}
+
+// Driver notes functions
+function addDriverNote() {
+    if (!state.settings.mainDriver || !elements.hudNoteInput) return;
+    
+    const noteText = elements.hudNoteInput.value.trim();
+    if (!noteText) return;
+    
+    const kartNumber = state.settings.mainDriver;
+    const run = state.sessionData?.runs?.find(r => r.kart_number === kartNumber);
+    const lapNum = run?.total_laps || 0;
+    
+    // Initialize notes array for this kart if needed
+    if (!state.driverNotes[kartNumber]) {
+        state.driverNotes[kartNumber] = [];
+    }
+    
+    // Add note
+    const note = {
+        lapNum: lapNum,
+        note: noteText,
+        timestamp: Date.now()
+    };
+    
+    state.driverNotes[kartNumber].push(note);
+    
+    // Save to localStorage
+    StorageService.saveDriverNotes(state.driverNotes);
+    
+    // Clear input
+    elements.hudNoteInput.value = '';
+    
+    // Update display
+    updateDriverNotesList();
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+function deleteDriverNote(kartNumber, timestamp) {
+    if (!state.driverNotes[kartNumber]) return;
+    
+    state.driverNotes[kartNumber] = state.driverNotes[kartNumber].filter(
+        note => note.timestamp !== timestamp
+    );
+    
+    StorageService.saveDriverNotes(state.driverNotes);
+    updateDriverNotesList();
+}
+
+function updateDriverNotesList() {
+    if (!elements.hudNotesList || !state.settings.mainDriver) return;
+    
+    const kartNumber = state.settings.mainDriver;
+    const notes = state.driverNotes[kartNumber] || [];
+    
+    if (notes.length === 0) {
+        elements.hudNotesList.innerHTML = '<div class="hud-notes-empty">No notes yet. Add a note to remember important moments!</div>';
+        return;
+    }
+    
+    // Reverse to show newest first
+    const reversedNotes = [...notes].reverse();
+    
+    elements.hudNotesList.innerHTML = '';
+    
+    reversedNotes.forEach(note => {
+        const div = document.createElement('div');
+        div.className = 'hud-note-item';
+        div.innerHTML = `
+            <div class="hud-note-header">
+                <span class="hud-note-lap">Lap ${note.lapNum}</span>
+                <span class="hud-note-time">${new Date(note.timestamp).toLocaleTimeString()}</span>
+                <button class="hud-note-delete" onclick="window.kartingApp.deleteDriverNote('${kartNumber}', ${note.timestamp})">×</button>
+            </div>
+            <div class="hud-note-text">${note.note}</div>
+        `;
+        elements.hudNotesList.appendChild(div);
+    });
+}
+
+// Export/Import functions
+function exportSessionData() {
+    if (!state.sessionData || !state.settings.mainDriver) {
+        alert('No session data to export. Select a driver first.');
+        return;
+    }
+    
+    const run = state.sessionData.runs.find(r => r.kart_number === state.settings.mainDriver);
+    if (!run) return;
+    
+    const history = state.lapHistory[run.kart_number] || [];
+    const exportData = {
+        sessionInfo: {
+            eventName: state.sessionData.event_name,
+            date: new Date().toISOString(),
+            driver: `Kart ${run.kart_number} - ${run.name}`
+        },
+        summary: {
+            bestLap: run.best_time,
+            averageLap: run.avg_lap,
+            totalLaps: run.total_laps,
+            finalPosition: run.pos,
+            startingPosition: state.startingPositions[run.kart_number],
+            consistency: run.consistency_lap
+        },
+        laps: history.map(lap => ({
+            lapNumber: lap.lapNum,
+            lapTime: lap.time,
+            delta: lap.delta ? (lap.delta < 0 ? `${lap.delta}` : `+${lap.delta}`) : '-',
+            position: lap.position
+        }))
+    };
+    
+    // Create download
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `karting-session-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+}
+
+function exportAllAppData() {
+    const exportData = {
+        version: '2.0',
+        exportDate: new Date().toISOString(),
+        settings: state.settings,
+        lapHistory: state.lapHistory,
+        personalRecords: state.personalRecords,
+        startingPositions: state.startingPositions,
+        driverNotes: state.driverNotes
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `karting-backup-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    alert('✅ All data exported successfully!\n\nFile: ' + exportFileDefaultName);
+}
+
+function importAllAppData(file) {
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Validate data structure
+            if (!importedData.version) {
+                throw new Error('Invalid backup file format');
+            }
+            
+            // Confirm import
+            const confirmation = confirm(
+                `Import backup from ${new Date(importedData.exportDate).toLocaleString()}?\n\n` +
+                'This will replace:\n' +
+                '- All settings\n' +
+                '- Lap history\n' +
+                '- Personal records\n' +
+                '- Driver notes\n\n' +
+                'Current data will be overwritten!'
+            );
+            
+            if (!confirmation) return;
+            
+            // Import settings
+            if (importedData.settings) {
+                state.settings = { ...DEFAULT_SETTINGS, ...importedData.settings };
+                StorageService.saveSettings(state.settings);
+            }
+            
+            // Import lap history
+            if (importedData.lapHistory) {
+                state.lapHistory = importedData.lapHistory;
+            }
+            
+            // Import personal records
+            if (importedData.personalRecords) {
+                state.personalRecords = importedData.personalRecords;
+                StorageService.savePersonalRecords(state.personalRecords);
+            }
+            
+            // Import starting positions
+            if (importedData.startingPositions) {
+                state.startingPositions = importedData.startingPositions;
+            }
+            
+            // Import driver notes
+            if (importedData.driverNotes) {
+                state.driverNotes = importedData.driverNotes;
+                StorageService.saveDriverNotes(state.driverNotes);
+            }
+            
+            // Apply settings and update views
+            SettingsView.applySettings(elements, state.settings);
+            updateAllViews();
+            
+            alert('✅ Data imported successfully!');
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            alert(`❌ Import failed: ${error.message}`);
+        }
+    };
+    
+    reader.readAsText(file);
+}
+
+function importKartAnalysisData(file) {
+    StorageService.importKartAnalysisData(file, state.kartAnalysisData, 'ask')
+        .then(importedData => {
+            state.kartAnalysisData = importedData;
+            StorageService.saveKartAnalysisData(state.kartAnalysisData);
+            updateAllViews();
+        })
+        .catch(error => {
+            console.error('Import error:', error);
+        });
+}
+
 // Export for HTML onclick handlers and debugging
 window.kartingApp = {
     state,
@@ -648,22 +1237,21 @@ window.kartingApp = {
     updateAllViews,
     showKartDetails: (kartNumber) => AnalysisView.showKartDetails(kartNumber, elements, state.kartAnalysisData),
     closeKartDetails: () => AnalysisView.closeKartDetails(elements),
+    deleteDriverNote,
     resetKartAnalysisData: () => {
         if (confirm('Are you sure you want to reset all kart analysis data? This cannot be undone.')) {
             state.kartAnalysisData = { laps: [], drivers: {}, karts: {}, sessions: {} };
-            StorageService.clearKartAnalysisData();
+            StorageService.saveKartAnalysisData(state.kartAnalysisData);
+            localStorage.removeItem('kartAnalysisBackup');
+            localStorage.removeItem('kartAnalysisAutoBackup');
             updateAllViews();
             alert('Kart analysis data has been reset.');
         }
     },
     exportKartAnalysisData: () => {
-        // This would be implemented similar to the original
-        console.log('Export kart analysis data');
+        StorageService.exportKartAnalysisData(state.kartAnalysisData);
     },
-    importKartAnalysisData: (file) => {
-        // This would be implemented similar to the original
-        console.log('Import kart analysis data', file);
-    }
+    importKartAnalysisData
 };
 
 // Initialize when DOM is ready
