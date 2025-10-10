@@ -220,6 +220,54 @@ function setupEventListeners() {
         });
     }
     
+    // Race item click - select driver and switch to HUD
+    if (elements.raceList) {
+        const handleDriverSelect = (e) => {
+            // Prevent default to avoid any conflicts
+            e.preventDefault();
+            
+            // Find the race item - check multiple levels
+            let raceItem = e.target;
+            
+            // Traverse up to 5 levels to find .race-item
+            for (let i = 0; i < 5 && raceItem; i++) {
+                if (raceItem.classList && raceItem.classList.contains('race-item')) {
+                    break;
+                }
+                raceItem = raceItem.parentElement;
+            }
+            
+            if (raceItem && raceItem.dataset && raceItem.dataset.kartNumber) {
+                const kartNumber = raceItem.dataset.kartNumber;
+                console.log('✅ Driver selected:', kartNumber);
+                
+                // Visual feedback
+                raceItem.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    raceItem.style.transform = '';
+                }, 100);
+                
+                // Update selection
+                state.settings.mainDriver = kartNumber;
+                saveSettings();
+                
+                // Update the dropdown to reflect the selection
+                if (elements.mainDriverSelect) {
+                    elements.mainDriverSelect.value = kartNumber;
+                }
+                
+                // Switch to HUD tab to show the selected driver
+                switchTab('hud');
+            } else {
+                console.log('⚠️ Click outside race item or no kart number found');
+            }
+        };
+        
+        // Use both click and touchend for better mobile support
+        elements.raceList.addEventListener('click', handleDriverSelect);
+        elements.raceList.addEventListener('touchend', handleDriverSelect);
+    }
+    
     // Settings changes
     if (elements.mainDriverSelect) {
         elements.mainDriverSelect.addEventListener('change', () => {
