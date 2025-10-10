@@ -250,8 +250,14 @@ export function calculateConfidence(kartNumber, analysisData) {
  * @returns {Array} Array of kart analysis objects sorted by performance
  */
 export function analyzeAllKarts(analysisData) {
-    const karts = analysisData.karts;
+    const karts = analysisData.karts || {};
     const kartNumbers = Object.keys(karts);
+    
+    console.log('🔬 Analysis Service Debug:', {
+        totalKarts: kartNumbers.length,
+        kartNumbers: kartNumbers,
+        totalLaps: (analysisData.laps || []).length
+    });
     
     // Calculate analysis for all karts
     const kartAnalysis = kartNumbers.map(kartNumber => {
@@ -259,6 +265,10 @@ export function analyzeAllKarts(analysisData) {
         const percentile = calculatePercentileRanking(kartNumber, analysisData);
         const stats = getKartStats(kartNumber, analysisData);
         const confidence = calculateConfidence(kartNumber, analysisData);
+        
+        if (!normalized) {
+            console.warn(`⚠️ Kart #${kartNumber}: normalized index is null`);
+        }
         
         return {
             kartNumber,
@@ -268,6 +278,8 @@ export function analyzeAllKarts(analysisData) {
             confidence
         };
     }).filter(k => k.normalized !== null);
+    
+    console.log(`✅ Analysis complete: ${kartAnalysis.length} karts with valid data`);
     
     // Sort by normalized index (lower = faster)
     kartAnalysis.sort((a, b) => a.normalized.index - b.normalized.index);

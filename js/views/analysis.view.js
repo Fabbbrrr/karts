@@ -72,8 +72,20 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
     // Analyze all karts
     const kartAnalysis = AnalysisService.analyzeAllKarts(kartAnalysisData);
     
+    console.log('🔍 Analysis View Debug:', {
+        hasTableBody: !!elements.analysisTableBody,
+        kartCount: Object.keys(kartAnalysisData.karts || {}).length,
+        lapCount: (kartAnalysisData.laps || []).length,
+        analysisResults: kartAnalysis.length
+    });
+    
     // Generate table rows
     elements.analysisTableBody.innerHTML = '';
+    
+    if (kartAnalysis.length === 0) {
+        console.warn('⚠️ No kart analysis results to display');
+        return;
+    }
     
     kartAnalysis.forEach((kart, index) => {
         const row = document.createElement('tr');
