@@ -150,8 +150,57 @@ function loadPersistedData() {
     // Load kart analysis data
     state.kartAnalysisData = StorageService.loadKartAnalysisData();
     
+    // Migrate old data structure to new format (backward compatibility)
+    migrateKartAnalysisData();
+    
     // Start auto-backup for kart analysis
     startAutoBackup();
+}
+
+// Migrate old kart analysis data to ensure all properties exist
+function migrateKartAnalysisData() {
+    // Ensure laps array exists
+    if (!state.kartAnalysisData.laps) {
+        state.kartAnalysisData.laps = [];
+    }
+    
+    // Migrate kart objects
+    if (state.kartAnalysisData.karts) {
+        Object.keys(state.kartAnalysisData.karts).forEach(kartNumber => {
+            const kart = state.kartAnalysisData.karts[kartNumber];
+            
+            // Add missing properties
+            if (!kart.lapTimes) kart.lapTimes = [];
+            if (!kart.drivers) kart.drivers = [];
+            if (!kart.driverHistory) kart.driverHistory = {};
+            if (kart.bestLap === undefined) kart.bestLap = Infinity;
+            if (kart.worstLap === undefined) kart.worstLap = 0;
+            if (kart.totalTime === undefined) kart.totalTime = 0;
+            if (kart.totalLaps === undefined) kart.totalLaps = 0;
+        });
+    }
+    
+    // Migrate driver objects
+    if (state.kartAnalysisData.drivers) {
+        Object.keys(state.kartAnalysisData.drivers).forEach(driverName => {
+            const driver = state.kartAnalysisData.drivers[driverName];
+            
+            // Add missing properties
+            if (!driver.lapTimes) driver.lapTimes = [];
+            if (!driver.karts) driver.karts = [];
+            if (!driver.kartHistory) driver.kartHistory = {};
+            if (driver.bestLap === undefined) driver.bestLap = Infinity;
+            if (driver.totalTime === undefined) driver.totalTime = 0;
+            if (driver.totalLaps === undefined) driver.totalLaps = 0;
+        });
+    }
+    
+    // Ensure sessions object exists
+    if (!state.kartAnalysisData.sessions) {
+        state.kartAnalysisData.sessions = {};
+    }
+    
+    console.log('✅ Kart analysis data migration completed');
 }
 
 // Setup event listeners
@@ -352,6 +401,12 @@ function collectKartAnalysisLap(run, lapNum) {
     }
     
     const kart = state.kartAnalysisData.karts[run.kart_number];
+    
+    // Ensure all properties exist (for backward compatibility with old data)
+    if (!kart.lapTimes) kart.lapTimes = [];
+    if (!kart.drivers) kart.drivers = [];
+    if (!kart.driverHistory) kart.driverHistory = {};
+    
     kart.totalLaps++;
     kart.bestLap = Math.min(kart.bestLap, run.last_time_raw);
     kart.worstLap = Math.max(kart.worstLap, run.last_time_raw);
@@ -377,6 +432,12 @@ function collectKartAnalysisLap(run, lapNum) {
     }
     
     const driver = state.kartAnalysisData.drivers[run.name];
+    
+    // Ensure all properties exist (for backward compatibility with old data)
+    if (!driver.lapTimes) driver.lapTimes = [];
+    if (!driver.karts) driver.karts = [];
+    if (!driver.kartHistory) driver.kartHistory = {};
+    
     driver.totalLaps++;
     driver.totalTime += run.last_time_raw;
     driver.bestLap = Math.min(driver.bestLap, run.last_time_raw);
