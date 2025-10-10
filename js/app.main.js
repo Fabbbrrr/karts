@@ -90,8 +90,8 @@ function cacheDOMElements() {
     elements.resultsTableBody = document.getElementById('results-table-body');
     
     // Compare tab
-    elements.compareDriver1Select = document.getElementById('compare-driver1-select');
-    elements.compareDriver2Select = document.getElementById('compare-driver2-select');
+    elements.compareDriver1Select = document.getElementById('compare-driver1');
+    elements.compareDriver2Select = document.getElementById('compare-driver2');
     elements.compareContent = document.getElementById('compare-content');
     elements.compareNoSelection = document.getElementById('compare-no-selection');
     
