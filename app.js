@@ -2890,6 +2890,13 @@ function showKartDetails(kartNumber) {
     if (elements.analysisDetails) {
         elements.analysisDetails.innerHTML = detailsHTML;
         elements.analysisDetails.classList.remove('hidden');
+        
+        // Add click handler to close when clicking outside the modal
+        elements.analysisDetails.onclick = (e) => {
+            if (e.target === elements.analysisDetails) {
+                closeKartDetails();
+            }
+        };
     }
 }
 
@@ -2897,6 +2904,7 @@ function showKartDetails(kartNumber) {
 function closeKartDetails() {
     if (elements.analysisDetails) {
         elements.analysisDetails.classList.add('hidden');
+        elements.analysisDetails.onclick = null;
     }
 }
 
