@@ -159,35 +159,25 @@ export function loadKartAnalysisData() {
 }
 
 export function saveKartAnalysisData(data) {
-    // Save primary data
+    // Save primary data only (backup disabled to save storage quota)
     const success = setItem(STORAGE_KEYS.KART_ANALYSIS, data);
     
-    // Also save recovery backup with metadata
-    const backupData = {
-        data: data,
-        timestamp: Date.now(),
-        lapCount: data.laps?.length || 0
-    };
-    setItem(STORAGE_KEYS.KART_ANALYSIS_BACKUP, backupData);
+    // Backup removed to prevent quota issues - use manual export instead
+    // const backupData = {
+    //     data: data,
+    //     timestamp: Date.now(),
+    //     lapCount: data.laps?.length || 0
+    // };
+    // setItem(STORAGE_KEYS.KART_ANALYSIS_BACKUP, backupData);
     
     return success;
 }
 
 export function saveKartAnalysisAutoBackup(data) {
-    const backupData = {
-        data: data,
-        timestamp: Date.now(),
-        lapCount: data.laps?.length || 0,
-        autoBackup: true
-    };
-    
-    const success = setItem(STORAGE_KEYS.KART_ANALYSIS_AUTO_BACKUP, backupData);
-    
-    if (success) {
-        console.log(`✅ Auto-backup completed: ${backupData.lapCount} laps saved`);
-    }
-    
-    return success;
+    // Auto-backup disabled to prevent quota exceeded errors
+    // Use manual export functionality instead
+    console.log(`ℹ️ Auto-backup disabled (use manual export). ${data.laps?.length || 0} laps in memory.`);
+    return true;
 }
 
 export function loadKartAnalysisBackup() {

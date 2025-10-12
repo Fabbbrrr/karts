@@ -171,8 +171,8 @@ function loadPersistedData() {
     // Migrate old data structure to new format (backward compatibility)
     migrateKartAnalysisData();
     
-    // Start auto-backup for kart analysis
-    startAutoBackup();
+    // Auto-backup disabled to save storage (use manual export instead)
+    // startAutoBackup();
 }
 
 // Migrate old kart analysis data to ensure all properties exist and remove duplication
@@ -1553,7 +1553,8 @@ function refreshStorageStatus() {
         <div style="margin-top: 8px; padding: 8px; background: #0a0a0a; border-radius: 4px;">
             <div style="font-size: 0.75rem; color: #666;">
                 💡 Auto-cleanup: Keeps last 140 sessions (~30k laps)<br/>
-                📊 Optimized storage: ~200 bytes per lap<br/>
+                📊 Optimized storage: ~200 bytes per lap (no backups)<br/>
+                💾 Manual export recommended for long-term data backup<br/>
                 ⚠️ Note: 30k laps may exceed Safari 5MB limit. Best on Chrome/Firefox (10MB).
             </div>
         </div>
