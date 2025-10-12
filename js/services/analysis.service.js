@@ -172,12 +172,27 @@ export function getKartStats(kartNumber, analysisData) {
         return null;
     }
     
+    // Get lap times from laps array (no duplication in storage)
     const kartLaps = analysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    
+    if (kartLaps.length === 0) {
+        return {
+            totalLaps: 0,
+            bestLapTime: Infinity,
+            worstLapTime: 0,
+            avgLapTime: 0,
+            stdDev: 0,
+            consistency: 0,
+            uniqueDriverCount: kart.drivers.length,
+            drivers: kart.drivers,
+            driverHistory: kart.driverHistory
+        };
+    }
     
     // Calculate average
     const avgTime = kart.totalTime / kart.totalLaps;
     
-    // Calculate standard deviation
+    // Calculate standard deviation from actual lap times
     const variance = kartLaps.reduce((sum, lap) => {
         return sum + Math.pow(lap.lapTimeRaw - avgTime, 2);
     }, 0) / kartLaps.length;
@@ -281,8 +296,23 @@ export function analyzeAllKarts(analysisData) {
     
     console.log(`✅ Analysis complete: ${kartAnalysis.length} karts with valid data`);
     
-    // Sort by normalized index (lower = faster)
-    kartAnalysis.sort((a, b) => a.normalized.index - b.normalized.index);
+    // Sort by: best average lap → best lap → number of laps → confidence
+    kartAnalysis.sort((a, b) => {
+        // Primary: Best average lap (lower is better)
+        const avgDiff = a.stats.avgLapTime - b.stats.avgLapTime;
+        if (Math.abs(avgDiff) > 10) return avgDiff; // 10ms threshold
+        
+        // Secondary: Best lap time (lower is better)
+        const bestDiff = a.stats.bestLapTime - b.stats.bestLapTime;
+        if (Math.abs(bestDiff) > 10) return bestDiff; // 10ms threshold
+        
+        // Tertiary: Number of laps (more is better)
+        const lapsDiff = b.stats.totalLaps - a.stats.totalLaps;
+        if (lapsDiff !== 0) return lapsDiff;
+        
+        // Quaternary: Confidence score (higher is better)
+        return b.confidence.score - a.confidence.score;
+    });
     
     return kartAnalysis;
 }

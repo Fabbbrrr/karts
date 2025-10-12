@@ -40,6 +40,9 @@ function init() {
     // Connect to WebSocket
     connectWebSocket();
     
+    // Update storage status initially
+    setTimeout(() => refreshStorageStatus(), 500);
+    
     // Auto-show app after 5 seconds if no connection
     setTimeout(() => {
         if (elements.loadingScreen && elements.loadingScreen.classList.contains('active')) {
@@ -172,20 +175,24 @@ function loadPersistedData() {
     startAutoBackup();
 }
 
-// Migrate old kart analysis data to ensure all properties exist
+// Migrate old kart analysis data to ensure all properties exist and remove duplication
 function migrateKartAnalysisData() {
     // Ensure laps array exists
     if (!state.kartAnalysisData.laps) {
         state.kartAnalysisData.laps = [];
     }
     
-    // Migrate kart objects
+    // Migrate kart objects - remove lapTimes array to save storage
     if (state.kartAnalysisData.karts) {
         Object.keys(state.kartAnalysisData.karts).forEach(kartNumber => {
             const kart = state.kartAnalysisData.karts[kartNumber];
             
-            // Add missing properties
-            if (!kart.lapTimes) kart.lapTimes = [];
+            // Remove lapTimes array (duplication - can calculate from laps array)
+            if (kart.lapTimes) {
+                delete kart.lapTimes;
+            }
+            
+            // Ensure required properties exist
             if (!kart.drivers) kart.drivers = [];
             if (!kart.driverHistory) kart.driverHistory = {};
             if (kart.bestLap === undefined) kart.bestLap = Infinity;
@@ -195,13 +202,17 @@ function migrateKartAnalysisData() {
         });
     }
     
-    // Migrate driver objects
+    // Migrate driver objects - remove lapTimes array to save storage
     if (state.kartAnalysisData.drivers) {
         Object.keys(state.kartAnalysisData.drivers).forEach(driverName => {
             const driver = state.kartAnalysisData.drivers[driverName];
             
-            // Add missing properties
-            if (!driver.lapTimes) driver.lapTimes = [];
+            // Remove lapTimes array (duplication - can calculate from laps array)
+            if (driver.lapTimes) {
+                delete driver.lapTimes;
+            }
+            
+            // Ensure required properties exist
             if (!driver.karts) driver.karts = [];
             if (!driver.kartHistory) driver.kartHistory = {};
             if (driver.bestLap === undefined) driver.bestLap = Infinity;
@@ -215,7 +226,7 @@ function migrateKartAnalysisData() {
         state.kartAnalysisData.sessions = {};
     }
     
-    console.log('✅ Kart analysis data migration completed');
+    console.log('✅ Kart analysis data migration completed - storage optimized');
 }
 
 // Setup event listeners
@@ -769,7 +780,7 @@ function collectKartAnalysisLap(run, lapNum) {
     // Add to laps array
     state.kartAnalysisData.laps.push(lapRecord);
     
-    // Update kart stats
+    // Update kart stats (minimal storage - no lapTimes array)
     if (!state.kartAnalysisData.karts[run.kart_number]) {
         state.kartAnalysisData.karts[run.kart_number] = {
             totalLaps: 0,
@@ -777,23 +788,22 @@ function collectKartAnalysisLap(run, lapNum) {
             worstLap: 0,
             totalTime: 0,
             drivers: [],
-            driverHistory: {},
-            lapTimes: []
+            driverHistory: {}
         };
     }
     
     const kart = state.kartAnalysisData.karts[run.kart_number];
     
-    // Ensure all properties exist (for backward compatibility with old data)
-    if (!kart.lapTimes) kart.lapTimes = [];
+    // Ensure all properties exist (for backward compatibility)
     if (!kart.drivers) kart.drivers = [];
     if (!kart.driverHistory) kart.driverHistory = {};
+    // Remove old lapTimes array if exists (cleanup)
+    if (kart.lapTimes) delete kart.lapTimes;
     
     kart.totalLaps++;
     kart.bestLap = Math.min(kart.bestLap, run.last_time_raw);
     kart.worstLap = Math.max(kart.worstLap, run.last_time_raw);
     kart.totalTime += run.last_time_raw;
-    kart.lapTimes.push(run.last_time_raw);
     
     if (!kart.drivers.includes(run.name)) {
         kart.drivers.push(run.name);
@@ -801,29 +811,28 @@ function collectKartAnalysisLap(run, lapNum) {
     
     kart.driverHistory[run.name] = (kart.driverHistory[run.name] || 0) + 1;
     
-    // Update driver stats
+    // Update driver stats (minimal storage - no lapTimes array)
     if (!state.kartAnalysisData.drivers[run.name]) {
         state.kartAnalysisData.drivers[run.name] = {
             totalLaps: 0,
             totalTime: 0,
             bestLap: Infinity,
             karts: [],
-            kartHistory: {},
-            lapTimes: []
+            kartHistory: {}
         };
     }
     
     const driver = state.kartAnalysisData.drivers[run.name];
     
-    // Ensure all properties exist (for backward compatibility with old data)
-    if (!driver.lapTimes) driver.lapTimes = [];
+    // Ensure all properties exist (for backward compatibility)
     if (!driver.karts) driver.karts = [];
     if (!driver.kartHistory) driver.kartHistory = {};
+    // Remove old lapTimes array if exists (cleanup)
+    if (driver.lapTimes) delete driver.lapTimes;
     
     driver.totalLaps++;
     driver.totalTime += run.last_time_raw;
     driver.bestLap = Math.min(driver.bestLap, run.last_time_raw);
-    driver.lapTimes.push(run.last_time_raw);
     
     if (!driver.karts.includes(run.kart_number)) {
         driver.karts.push(run.kart_number);
@@ -831,8 +840,121 @@ function collectKartAnalysisLap(run, lapNum) {
     
     driver.kartHistory[run.kart_number] = (driver.kartHistory[run.kart_number] || 0) + 1;
     
+    // Track session info for cleanup
+    if (!state.kartAnalysisData.sessions[sessionId]) {
+        state.kartAnalysisData.sessions[sessionId] = {
+            firstLapTimestamp: Date.now(),
+            lapCount: 0
+        };
+    }
+    state.kartAnalysisData.sessions[sessionId].lapCount++;
+    state.kartAnalysisData.sessions[sessionId].lastLapTimestamp = Date.now();
+    
     // Save to localStorage
     StorageService.saveKartAnalysisData(state.kartAnalysisData);
+    
+    // Check if cleanup needed (every 10 laps to reduce overhead)
+    if (state.kartAnalysisData.laps.length % 10 === 0) {
+        cleanupOldSessions();
+    }
+}
+
+// Cleanup old sessions to maintain storage limits
+function cleanupOldSessions() {
+    const MAX_SESSIONS = 140; // Allows ~30,000 laps (avg 214 laps/session)
+    const sessions = state.kartAnalysisData.sessions;
+    const sessionIds = Object.keys(sessions);
+    
+    if (sessionIds.length <= MAX_SESSIONS) return;
+    
+    // Sort sessions by last lap timestamp (oldest first)
+    const sortedSessions = sessionIds
+        .map(id => ({ id, timestamp: sessions[id].lastLapTimestamp || sessions[id].firstLapTimestamp }))
+        .sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Calculate how many sessions to delete
+    const sessionsToDelete = sortedSessions.slice(0, sessionIds.length - MAX_SESSIONS);
+    
+    if (sessionsToDelete.length === 0) return;
+    
+    console.log(`🗑️ Cleaning up ${sessionsToDelete.length} old sessions...`);
+    
+    // Get session IDs to delete
+    const deleteSessionIds = new Set(sessionsToDelete.map(s => s.id));
+    
+    // Remove laps from deleted sessions
+    const originalLapCount = state.kartAnalysisData.laps.length;
+    state.kartAnalysisData.laps = state.kartAnalysisData.laps.filter(
+        lap => !deleteSessionIds.has(lap.sessionId)
+    );
+    
+    // Remove session entries
+    deleteSessionIds.forEach(id => {
+        delete state.kartAnalysisData.sessions[id];
+    });
+    
+    // Rebuild kart and driver statistics from remaining laps
+    rebuildAggregations();
+    
+    const deletedLaps = originalLapCount - state.kartAnalysisData.laps.length;
+    console.log(`✅ Deleted ${deletedLaps} laps from ${sessionsToDelete.length} old sessions. Keeping last ${MAX_SESSIONS} sessions (~30k laps capacity).`);
+    
+    // Save cleaned data
+    StorageService.saveKartAnalysisData(state.kartAnalysisData);
+}
+
+// Rebuild kart and driver aggregations from laps array
+function rebuildAggregations() {
+    // Reset all karts and drivers
+    state.kartAnalysisData.karts = {};
+    state.kartAnalysisData.drivers = {};
+    
+    // Rebuild from laps
+    state.kartAnalysisData.laps.forEach(lap => {
+        // Rebuild kart stats
+        if (!state.kartAnalysisData.karts[lap.kartNumber]) {
+            state.kartAnalysisData.karts[lap.kartNumber] = {
+                totalLaps: 0,
+                bestLap: Infinity,
+                worstLap: 0,
+                totalTime: 0,
+                drivers: [],
+                driverHistory: {}
+            };
+        }
+        
+        const kart = state.kartAnalysisData.karts[lap.kartNumber];
+        kart.totalLaps++;
+        kart.bestLap = Math.min(kart.bestLap, lap.lapTimeRaw);
+        kart.worstLap = Math.max(kart.worstLap, lap.lapTimeRaw);
+        kart.totalTime += lap.lapTimeRaw;
+        
+        if (!kart.drivers.includes(lap.driverName)) {
+            kart.drivers.push(lap.driverName);
+        }
+        kart.driverHistory[lap.driverName] = (kart.driverHistory[lap.driverName] || 0) + 1;
+        
+        // Rebuild driver stats
+        if (!state.kartAnalysisData.drivers[lap.driverName]) {
+            state.kartAnalysisData.drivers[lap.driverName] = {
+                totalLaps: 0,
+                totalTime: 0,
+                bestLap: Infinity,
+                karts: [],
+                kartHistory: {}
+            };
+        }
+        
+        const driver = state.kartAnalysisData.drivers[lap.driverName];
+        driver.totalLaps++;
+        driver.totalTime += lap.lapTimeRaw;
+        driver.bestLap = Math.min(driver.bestLap, lap.lapTimeRaw);
+        
+        if (!driver.karts.includes(lap.kartNumber)) {
+            driver.karts.push(lap.kartNumber);
+        }
+        driver.kartHistory[lap.kartNumber] = (driver.kartHistory[lap.kartNumber] || 0) + 1;
+    });
 }
 
 // Reset session data
@@ -1376,6 +1498,68 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Storage status monitoring
+function refreshStorageStatus() {
+    const status = StorageService.getKartAnalysisStorageStatus();
+    const contentEl = document.getElementById('storage-status-content');
+    
+    if (!contentEl) return;
+    
+    // Determine color based on zone
+    let zoneColor = '#00ff88'; // green
+    let zoneEmoji = '✅';
+    if (status.zone === 'yellow') {
+        zoneColor = '#ffaa00';
+        zoneEmoji = '⚠️';
+    } else if (status.zone === 'orange') {
+        zoneColor = '#ff8800';
+        zoneEmoji = '🟠';
+    } else if (status.zone === 'red') {
+        zoneColor = '#ff6b6b';
+        zoneEmoji = '🔴';
+    }
+    
+    contentEl.innerHTML = `
+        <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #aaa;">Total Laps:</span>
+                <span style="color: #fff; font-weight: bold;">${status.lapCount.toLocaleString()}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #aaa;">Sessions:</span>
+                <span style="color: #fff; font-weight: bold;">${status.sessionCount} / 140 max</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #aaa;">Karts Analyzed:</span>
+                <span style="color: #fff; font-weight: bold;">${status.kartCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #aaa;">Unique Drivers:</span>
+                <span style="color: #fff; font-weight: bold;">${status.driverCount}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #aaa;">Estimated Size:</span>
+                <span style="color: #fff; font-weight: bold;">${status.estimatedMB} MB</span>
+            </div>
+        </div>
+        
+        <div style="background: #0a0a0a; border-radius: 4px; padding: 8px; border-left: 3px solid ${zoneColor};">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">${zoneEmoji}</span>
+                <span style="color: ${zoneColor}; font-size: 0.9rem;">${status.message}</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 8px; padding: 8px; background: #0a0a0a; border-radius: 4px;">
+            <div style="font-size: 0.75rem; color: #666;">
+                💡 Auto-cleanup: Keeps last 140 sessions (~30k laps)<br/>
+                📊 Optimized storage: ~200 bytes per lap<br/>
+                ⚠️ Note: 30k laps may exceed Safari 5MB limit. Best on Chrome/Firefox (10MB).
+            </div>
+        </div>
+    `;
+}
+
 // Export for HTML onclick handlers and debugging
 window.kartingApp = {
     state,
@@ -1416,7 +1600,8 @@ window.kartingApp = {
     importAllAppData,
     openSocketDataViewer,
     closeSocketDataViewer,
-    updateSocketDataViewer
+    updateSocketDataViewer,
+    refreshStorageStatus
 };
 
 // Initialize when DOM is ready

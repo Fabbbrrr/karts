@@ -452,10 +452,10 @@
                             <tr>
                                 <th>Rank</th>
                                 <th>Kart #</th>
+                                <th>Avg Lap ⬇</th>
                                 <th>Best Lap</th>
                                 <th>Norm. Index</th>
                                 <th>vs Avg</th>
-                                <th>Percentile</th>
                                 <th>Laps</th>
                                 <th>Drivers</th>
                                 <th>Confidence</th>
@@ -646,6 +646,17 @@
                     <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
                         Manage collected kart performance data
                     </p>
+                    
+                    <!-- Storage Status -->
+                    <div id="storage-status" style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="color: #00ff88;">📊 Storage Status</strong>
+                            <button onclick="window.kartingApp.refreshStorageStatus()" style="background: none; border: none; color: #888; cursor: pointer; padding: 4px 8px;">🔄</button>
+                        </div>
+                        <div id="storage-status-content">
+                            <p style="margin: 4px 0; color: #888;">Loading...</p>
+                        </div>
+                    </div>
                     
                     <button id="export-analysis-btn" class="settings-btn-secondary" onclick="window.kartingApp.exportKartAnalysisData()">
                         📊 Export Kart Analysis Data

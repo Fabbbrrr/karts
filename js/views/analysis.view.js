@@ -121,16 +121,17 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
             confIcon = '⚡';
         }
         
-        // Format best lap time
+        // Format lap times
+        const avgLapFormatted = formatTime(kart.stats.avgLapTime);
         const bestLapFormatted = formatTime(kart.stats.bestLapTime);
         
         row.innerHTML = `
             <td class="rank ${rankClass}">${rank}</td>
             <td class="kart-number">#${kart.kartNumber}</td>
+            <td class="avg-lap" style="font-weight: bold; color: #00ff88;">${avgLapFormatted}</td>
             <td class="best-lap">${bestLapFormatted}</td>
             <td class="norm-index">${kart.normalized.index.toFixed(3)}</td>
             <td class="perf-diff ${perfClass}">${perfIcon} ${Math.abs(pctFaster).toFixed(1)}%</td>
-            <td class="percentile">${kart.percentile ? kart.percentile.avgPercentile.toFixed(1) : 'N/A'}</td>
             <td class="lap-count">${kart.stats.totalLaps}</td>
             <td class="driver-count">${kart.stats.uniqueDriverCount}</td>
             <td class="confidence ${confClass}">${confIcon} ${confLevel}</td>

@@ -411,6 +411,62 @@ export function getStorageInfo() {
 }
 
 /**
+ * Get kart analysis storage status with warnings
+ * @returns {Object} Storage status and warnings
+ */
+export function getKartAnalysisStorageStatus() {
+    const data = loadKartAnalysisData();
+    const lapCount = data.laps?.length || 0;
+    const sessionCount = Object.keys(data.sessions || {}).length;
+    
+    // Estimate storage size (optimized: ~200 bytes per lap + metadata)
+    const estimatedLapSize = lapCount * 200;
+    const estimatedKartSize = Object.keys(data.karts || {}).length * 300;
+    const estimatedDriverSize = Object.keys(data.drivers || {}).length * 350;
+    const estimatedSize = estimatedLapSize + estimatedKartSize + estimatedDriverSize;
+    const estimatedMB = (estimatedSize / (1024 * 1024)).toFixed(2);
+    
+    // Determine zone and warning level
+    const SAFARI_LIMIT = 5 * 1024 * 1024; // 5MB
+    const percentOfLimit = ((estimatedSize / SAFARI_LIMIT) * 100).toFixed(1);
+    
+    let zone = 'green';
+    let message = '';
+    let action = null;
+    
+    if (sessionCount > 140 || estimatedSize > 7 * 1024 * 1024) {
+        zone = 'red';
+        message = `Storage ${percentOfLimit}% full! ${sessionCount} sessions stored. Auto-cleanup will maintain 140 sessions.`;
+        action = 'export_recommended';
+    } else if (sessionCount > 100 || estimatedSize > 5 * 1024 * 1024) {
+        zone = 'orange';
+        message = `${sessionCount} sessions stored (${estimatedMB} MB). Consider exporting data for backup.`;
+        action = 'export_suggested';
+    } else if (sessionCount > 70 || estimatedSize > 3.5 * 1024 * 1024) {
+        zone = 'yellow';
+        message = `${sessionCount} sessions stored. Storage is healthy.`;
+        action = 'none';
+    } else {
+        zone = 'green';
+        message = `${sessionCount} sessions stored. Plenty of storage available.`;
+        action = 'none';
+    }
+    
+    return {
+        lapCount,
+        sessionCount,
+        kartCount: Object.keys(data.karts || {}).length,
+        driverCount: Object.keys(data.drivers || {}).length,
+        estimatedSize,
+        estimatedMB,
+        percentOfLimit: parseFloat(percentOfLimit),
+        zone,
+        message,
+        action
+    };
+}
+
+/**
  * Check if storage is available
  * @returns {boolean} True if localStorage is available
  */
