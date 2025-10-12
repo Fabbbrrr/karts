@@ -195,6 +195,31 @@ export function clearKartAnalysisData() {
 }
 
 /**
+ * Recover kart analysis data from backups
+ * @returns {Object|null} Recovered data or null if no backup found
+ */
+export function recoverFromBackup() {
+    console.log('🔄 Attempting to recover data from backups...');
+    
+    // Try auto-backup first (most recent)
+    let backup = loadKartAnalysisAutoBackup();
+    if (backup && backup.data && backup.data.laps && backup.data.laps.length > 0) {
+        console.log(`✅ Found auto-backup with ${backup.data.laps.length} laps (${new Date(backup.timestamp).toLocaleString()})`);
+        return backup.data;
+    }
+    
+    // Try regular backup
+    backup = loadKartAnalysisBackup();
+    if (backup && backup.data && backup.data.laps && backup.data.laps.length > 0) {
+        console.log(`✅ Found backup with ${backup.data.laps.length} laps (${new Date(backup.timestamp).toLocaleString()})`);
+        return backup.data;
+    }
+    
+    console.log('❌ No valid backup found');
+    return null;
+}
+
+/**
  * Export kart analysis data as downloadable JSON
  * @param {Object} analysisData - Kart analysis data to export
  */

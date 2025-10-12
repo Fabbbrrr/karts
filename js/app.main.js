@@ -1587,6 +1587,18 @@ window.kartingApp = {
             alert('Kart analysis data has been reset.');
         }
     },
+    recoverFromBackup: () => {
+        const recovered = StorageService.recoverFromBackup();
+        if (recovered) {
+            state.kartAnalysisData = recovered;
+            StorageService.saveKartAnalysisData(recovered);
+            updateAllViews();
+            refreshStorageStatus();
+            alert(`✅ Data recovered! Restored ${recovered.laps?.length || 0} laps from backup.`);
+        } else {
+            alert('❌ No backup data found to recover.');
+        }
+    },
     exportKartAnalysisData: () => {
         if (state.kartAnalysisData.laps.length === 0) {
             alert('No kart analysis data to export. Start collecting data by running sessions.');
