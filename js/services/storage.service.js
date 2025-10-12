@@ -204,6 +204,175 @@ export function clearKartAnalysisData() {
     removeItem(STORAGE_KEYS.KART_ANALYSIS_AUTO_BACKUP);
 }
 
+/**
+ * Export kart analysis data as downloadable JSON
+ * @param {Object} analysisData - Kart analysis data to export
+ */
+export function exportKartAnalysisData(analysisData) {
+    const exportData = {
+        version: '2.0',
+        exportDate: new Date().toISOString(),
+        dataType: 'kartAnalysis',
+        data: analysisData
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `kart-analysis-${new Date().toISOString().slice(0, 10)}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    console.log('✅ Kart analysis data exported:', exportFileDefaultName);
+}
+
+/**
+ * Import kart analysis data from file
+ * @param {File} file - File object to import
+ * @param {Object} currentData - Current analysis data
+ * @param {string} mergeMode - 'ask', 'merge', or 'replace'
+ * @returns {Promise<Object>} Imported/merged analysis data
+ */
+export function importKartAnalysisData(file, currentData, mergeMode = 'ask') {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                
+                // Validate structure
+                if (!importedData.data || !importedData.data.laps) {
+                    throw new Error('Invalid kart analysis data format');
+                }
+                
+                const imported = importedData.data;
+                
+                // Determine merge strategy
+                let finalData;
+                
+                if (currentData.laps.length === 0) {
+                    // No existing data, just use imported
+                    finalData = imported;
+                    console.log('📥 Imported kart analysis data (no existing data)');
+                } else if (mergeMode === 'replace') {
+                    // Replace existing data
+                    finalData = imported;
+                    console.log('📥 Replaced kart analysis data');
+                } else if (mergeMode === 'merge') {
+                    // Merge data
+                    finalData = mergeKartAnalysisData(currentData, imported);
+                    console.log('📥 Merged kart analysis data');
+                } else {
+                    // Ask user
+                    const choice = confirm(
+                        `You have ${currentData.laps.length} existing laps.\n` +
+                        `The file contains ${imported.laps.length} laps.\n\n` +
+                        `Click OK to MERGE data (keep both)\n` +
+                        `Click Cancel to REPLACE existing data with imported data`
+                    );
+                    
+                    if (choice) {
+                        finalData = mergeKartAnalysisData(currentData, imported);
+                        console.log('📥 Merged kart analysis data');
+                    } else {
+                        finalData = imported;
+                        console.log('📥 Replaced kart analysis data');
+                    }
+                }
+                
+                resolve(finalData);
+                
+            } catch (error) {
+                console.error('❌ Import error:', error);
+                reject(error);
+                alert('Error importing data: ' + error.message);
+            }
+        };
+        
+        reader.onerror = () => {
+            reject(new Error('Error reading file'));
+        };
+        
+        reader.readAsText(file);
+    });
+}
+
+/**
+ * Merge two kart analysis datasets
+ * @param {Object} current - Current data
+ * @param {Object} imported - Imported data
+ * @returns {Object} Merged data
+ */
+function mergeKartAnalysisData(current, imported) {
+    const merged = {
+        laps: [...current.laps, ...imported.laps],
+        drivers: { ...current.drivers },
+        karts: { ...current.karts },
+        sessions: { ...current.sessions, ...imported.sessions }
+    };
+    
+    // Merge driver stats
+    Object.entries(imported.drivers).forEach(([driverName, driverData]) => {
+        if (merged.drivers[driverName]) {
+            // Merge existing driver
+            const existing = merged.drivers[driverName];
+            existing.totalLaps += driverData.totalLaps;
+            existing.totalTime += driverData.totalTime;
+            existing.bestLap = Math.min(existing.bestLap, driverData.bestLap);
+            existing.lapTimes = [...(existing.lapTimes || []), ...(driverData.lapTimes || [])];
+            
+            // Merge kart history
+            Object.entries(driverData.kartHistory || {}).forEach(([kartNum, laps]) => {
+                existing.kartHistory[kartNum] = (existing.kartHistory[kartNum] || 0) + laps;
+            });
+            
+            // Merge karts list
+            (driverData.karts || []).forEach(kart => {
+                if (!existing.karts.includes(kart)) {
+                    existing.karts.push(kart);
+                }
+            });
+        } else {
+            // New driver
+            merged.drivers[driverName] = { ...driverData };
+        }
+    });
+    
+    // Merge kart stats
+    Object.entries(imported.karts).forEach(([kartNumber, kartData]) => {
+        if (merged.karts[kartNumber]) {
+            // Merge existing kart
+            const existing = merged.karts[kartNumber];
+            existing.totalLaps += kartData.totalLaps;
+            existing.totalTime += kartData.totalTime;
+            existing.bestLap = Math.min(existing.bestLap, kartData.bestLap);
+            existing.worstLap = Math.max(existing.worstLap, kartData.worstLap);
+            existing.lapTimes = [...(existing.lapTimes || []), ...(kartData.lapTimes || [])];
+            
+            // Merge driver history
+            Object.entries(kartData.driverHistory || {}).forEach(([driverName, laps]) => {
+                existing.driverHistory[driverName] = (existing.driverHistory[driverName] || 0) + laps;
+            });
+            
+            // Merge drivers list
+            (kartData.drivers || []).forEach(driver => {
+                if (!existing.drivers.includes(driver)) {
+                    existing.drivers.push(driver);
+                }
+            });
+        } else {
+            // New kart
+            merged.karts[kartNumber] = { ...kartData };
+        }
+    });
+    
+    return merged;
+}
+
 // ==================
 // Storage Info
 // ==================

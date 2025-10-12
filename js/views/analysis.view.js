@@ -127,6 +127,7 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
         row.innerHTML = `
             <td class="rank ${rankClass}">${rank}</td>
             <td class="kart-number">#${kart.kartNumber}</td>
+            <td class="best-lap">${bestLapFormatted}</td>
             <td class="norm-index">${kart.normalized.index.toFixed(3)}</td>
             <td class="perf-diff ${perfClass}">${perfIcon} ${Math.abs(pctFaster).toFixed(1)}%</td>
             <td class="percentile">${kart.percentile ? kart.percentile.avgPercentile.toFixed(1) : 'N/A'}</td>

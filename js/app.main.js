@@ -130,6 +130,21 @@ function cacheDOMElements() {
     // Session selector
     elements.sessionSelectorBar = document.getElementById('session-selector-bar');
     elements.goLiveBtn = document.getElementById('go-live-btn');
+    
+    // Export/Import buttons
+    elements.summaryExport = document.getElementById('summary-export');
+    elements.exportAllData = document.getElementById('export-all-data');
+    elements.importAllData = document.getElementById('import-all-data');
+    elements.importFileInput = document.getElementById('import-file-input');
+    elements.importAnalysisBtn = document.getElementById('import-analysis-btn');
+    elements.importAnalysisFileInput = document.getElementById('import-analysis-file-input');
+    
+    // Socket data viewer
+    elements.viewSocketDataBtn = document.getElementById('view-socket-data-btn');
+    elements.socketDataModal = document.getElementById('socket-data-modal');
+    elements.socketMessageList = document.getElementById('socket-message-list');
+    elements.socketRefreshBtn = document.getElementById('socket-refresh-btn');
+    elements.socketClearBtn = document.getElementById('socket-clear-btn');
 }
 
 // Load persisted data
@@ -573,11 +588,42 @@ function setupEventListeners() {
         });
     }
     
+    // Socket data viewer
+    if (elements.viewSocketDataBtn) {
+        elements.viewSocketDataBtn.addEventListener('click', () => {
+            openSocketDataViewer();
+        });
+    }
+    
+    if (elements.socketRefreshBtn) {
+        elements.socketRefreshBtn.addEventListener('click', () => {
+            updateSocketDataViewer();
+        });
+    }
+    
+    if (elements.socketClearBtn) {
+        elements.socketClearBtn.addEventListener('click', () => {
+            if (confirm('Clear all socket message history?')) {
+                WebSocketService.clearMessageHistory();
+                updateSocketDataViewer();
+            }
+        });
+    }
+    
     // Analysis details modal - click outside to close
     if (elements.analysisDetails) {
         elements.analysisDetails.addEventListener('click', (e) => {
             if (e.target === elements.analysisDetails) {
                 AnalysisView.closeKartDetails(elements);
+            }
+        });
+    }
+    
+    // Socket data modal - click outside to close
+    if (elements.socketDataModal) {
+        elements.socketDataModal.addEventListener('click', (e) => {
+            if (e.target === elements.socketDataModal) {
+                closeSocketDataViewer();
             }
         });
     }
@@ -1249,6 +1295,87 @@ function importKartAnalysisData(file) {
         });
 }
 
+// Socket data viewer functions
+function openSocketDataViewer() {
+    if (elements.socketDataModal) {
+        elements.socketDataModal.classList.remove('hidden');
+        updateSocketDataViewer();
+        
+        // Auto-refresh every 2 seconds while open
+        if (state.socketViewerInterval) {
+            clearInterval(state.socketViewerInterval);
+        }
+        state.socketViewerInterval = setInterval(() => {
+            if (!elements.socketDataModal.classList.contains('hidden')) {
+                updateSocketDataViewer();
+            } else {
+                clearInterval(state.socketViewerInterval);
+                state.socketViewerInterval = null;
+            }
+        }, 2000);
+    }
+}
+
+function closeSocketDataViewer() {
+    if (elements.socketDataModal) {
+        elements.socketDataModal.classList.add('hidden');
+    }
+    if (state.socketViewerInterval) {
+        clearInterval(state.socketViewerInterval);
+        state.socketViewerInterval = null;
+    }
+}
+
+function updateSocketDataViewer() {
+    if (!elements.socketMessageList) return;
+    
+    const messages = WebSocketService.getMessageHistory();
+    
+    if (messages.length === 0) {
+        elements.socketMessageList.innerHTML = `
+            <div style="text-align: center; color: #888; padding: 40px;">
+                <p style="font-size: 1.2rem; margin-bottom: 8px;">📭 No messages received yet</p>
+                <p style="font-size: 0.9rem;">Wait for data to arrive from the WebSocket connection</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const messagesHtml = messages.map((msg, index) => {
+        const timestamp = new Date(msg.timestamp).toLocaleTimeString();
+        const jsonStr = JSON.stringify(msg.data, null, 2);
+        
+        return `
+            <div style="border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #0a0a0a;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #333;">
+                    <span style="color: #00ff88; font-weight: bold;">Message #${messages.length - index}</span>
+                    <span style="color: #888; font-size: 0.85rem;">${timestamp}</span>
+                </div>
+                <pre style="
+                    background: #000;
+                    padding: 12px;
+                    border-radius: 4px;
+                    overflow-x: auto;
+                    margin: 0;
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                    color: #e0e0e0;
+                    max-height: 400px;
+                    overflow-y: auto;
+                "><code>${escapeHtml(jsonStr)}</code></pre>
+            </div>
+        `;
+    }).join('');
+    
+    elements.socketMessageList.innerHTML = messagesHtml;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Export for HTML onclick handlers and debugging
 window.kartingApp = {
     state,
@@ -1276,9 +1403,20 @@ window.kartingApp = {
         }
     },
     exportKartAnalysisData: () => {
+        if (state.kartAnalysisData.laps.length === 0) {
+            alert('No kart analysis data to export. Start collecting data by running sessions.');
+            return;
+        }
         StorageService.exportKartAnalysisData(state.kartAnalysisData);
+        alert('✅ Kart analysis data exported successfully!');
     },
-    importKartAnalysisData
+    importKartAnalysisData,
+    exportSessionData,
+    exportAllAppData,
+    importAllAppData,
+    openSocketDataViewer,
+    closeSocketDataViewer,
+    updateSocketDataViewer
 };
 
 // Initialize when DOM is ready

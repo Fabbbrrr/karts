@@ -11,6 +11,9 @@ let connectionCallbacks = {
     onData: null
 };
 
+// Store last 20 socket messages for debugging
+let messageHistory = [];
+
 /**
  * Initialize and connect to WebSocket server
  * @param {Object} callbacks - Event callbacks
@@ -95,6 +98,16 @@ function handleConnectError(error) {
  */
 function handleData(data) {
     try {
+        // Store message in history (keep last 20)
+        messageHistory.unshift({
+            timestamp: new Date().toISOString(),
+            data: data
+        });
+        
+        if (messageHistory.length > 20) {
+            messageHistory = messageHistory.slice(0, 20);
+        }
+        
         if (data && data.data && connectionCallbacks.onData) {
             connectionCallbacks.onData(data.data);
         }
@@ -171,5 +184,20 @@ export function emit(event, data) {
  */
 export function updateCallbacks(callbacks) {
     connectionCallbacks = { ...connectionCallbacks, ...callbacks };
+}
+
+/**
+ * Get message history for debugging
+ * @returns {Array} Last 20 messages
+ */
+export function getMessageHistory() {
+    return messageHistory;
+}
+
+/**
+ * Clear message history
+ */
+export function clearMessageHistory() {
+    messageHistory = [];
 }
 
