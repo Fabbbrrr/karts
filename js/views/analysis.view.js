@@ -12,10 +12,19 @@ import * as AnalysisService from '../services/analysis.service.js';
 export function updateAnalysisView(elements, kartAnalysisData) {
     if (!elements.analysisScreen) return;
     
-    const totalLaps = kartAnalysisData.laps.length;
+    const totalLaps = kartAnalysisData.laps?.length || 0;
+    const kartCount = Object.keys(kartAnalysisData.karts || {}).length;
+    
+    console.log('📊 Analysis View Update:', {
+        totalLaps,
+        kartCount,
+        driverCount: Object.keys(kartAnalysisData.drivers || {}).length,
+        sessionCount: Object.keys(kartAnalysisData.sessions || {}).length
+    });
     
     // Show/hide no-data message
-    if (totalLaps === 0) {
+    if (totalLaps === 0 || kartCount === 0) {
+        console.warn('⚠️ No data to display in analysis');
         if (elements.analysisNoData) elements.analysisNoData.classList.remove('hidden');
         if (elements.analysisContent) elements.analysisContent.classList.add('hidden');
         return;

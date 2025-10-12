@@ -905,6 +905,14 @@ function cleanupOldSessions() {
 
 // Rebuild kart and driver aggregations from laps array
 function rebuildAggregations() {
+    console.log(`🔨 Rebuilding aggregations from ${state.kartAnalysisData.laps?.length || 0} laps...`);
+    
+    // Ensure data structure exists
+    if (!state.kartAnalysisData.laps) {
+        console.error('❌ No laps array found!');
+        return;
+    }
+    
     // Reset all karts and drivers
     state.kartAnalysisData.karts = {};
     state.kartAnalysisData.drivers = {};
@@ -955,6 +963,8 @@ function rebuildAggregations() {
         }
         driver.kartHistory[lap.kartNumber] = (driver.kartHistory[lap.kartNumber] || 0) + 1;
     });
+    
+    console.log(`✅ Rebuilt: ${Object.keys(state.kartAnalysisData.karts).length} karts, ${Object.keys(state.kartAnalysisData.drivers).length} drivers`);
 }
 
 // Reset session data
@@ -1590,11 +1600,33 @@ window.kartingApp = {
     recoverFromBackup: () => {
         const recovered = StorageService.recoverFromBackup();
         if (recovered) {
+            console.log('🔍 Recovered data structure:', {
+                laps: recovered.laps?.length || 0,
+                karts: Object.keys(recovered.karts || {}).length,
+                drivers: Object.keys(recovered.drivers || {}).length,
+                sessions: Object.keys(recovered.sessions || {}).length
+            });
+            
+            // Set the recovered data
             state.kartAnalysisData = recovered;
-            StorageService.saveKartAnalysisData(recovered);
+            
+            // Rebuild aggregations from laps array to ensure data integrity
+            console.log('🔄 Rebuilding aggregations from laps...');
+            rebuildAggregations();
+            
+            // Save the rebuilt data
+            StorageService.saveKartAnalysisData(state.kartAnalysisData);
+            
+            // Force update all views
             updateAllViews();
             refreshStorageStatus();
-            alert(`✅ Data recovered! Restored ${recovered.laps?.length || 0} laps from backup.`);
+            
+            // Switch to analysis tab to show results
+            switchTab('analysis');
+            
+            const lapCount = state.kartAnalysisData.laps?.length || 0;
+            const kartCount = Object.keys(state.kartAnalysisData.karts || {}).length;
+            alert(`✅ Data recovered and rebuilt!\n\nRestored:\n- ${lapCount} laps\n- ${kartCount} karts\n- ${Object.keys(state.kartAnalysisData.drivers || {}).length} drivers\n- ${Object.keys(state.kartAnalysisData.sessions || {}).length} sessions`);
         } else {
             alert('❌ No backup data found to recover.');
         }
