@@ -38,18 +38,20 @@ export function findCrossKartDrivers(analysisData) {
 
 /**
  * Calculate Driver-Normalized Performance Index for a kart
- * @param {string} kartNumber - Kart number to analyze
+ * @param {string} kartId - Kart ID to analyze (can be kartId or kartNumber for backward compatibility)
  * @param {Object} analysisData - Kart analysis data
  * @returns {Object|null} Normalized index with statistics
  */
-export function calculateNormalizedIndex(kartNumber, analysisData) {
-    const kart = analysisData.karts[kartNumber];
+export function calculateNormalizedIndex(kartId, analysisData) {
+    const kart = analysisData.karts[kartId];
     if (!kart || kart.totalLaps === 0) {
         return null;
     }
     
-    // Get all laps for this kart
-    const kartLaps = analysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    // Get all laps for this kart (check both kartId and kartNumber for backward compatibility)
+    const kartLaps = analysisData.laps.filter(lap => 
+        lap.kartId === kartId || lap.kartNumber === kartId
+    );
     
     if (kartLaps.length === 0) {
         return null;
@@ -114,12 +116,14 @@ export function calculateNormalizedIndex(kartNumber, analysisData) {
 
 /**
  * Calculate percentile-based ranking for a kart
- * @param {string} kartNumber - Kart number to analyze
+ * @param {string} kartId - Kart ID to analyze
  * @param {Object} analysisData - Kart analysis data
  * @returns {Object|null} Percentile statistics
  */
-export function calculatePercentileRanking(kartNumber, analysisData) {
-    const kartLaps = analysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+export function calculatePercentileRanking(kartId, analysisData) {
+    const kartLaps = analysisData.laps.filter(lap => 
+        lap.kartId === kartId || lap.kartNumber === kartId
+    );
     
     if (kartLaps.length === 0) {
         return null;
@@ -162,18 +166,20 @@ export function calculatePercentileRanking(kartNumber, analysisData) {
 
 /**
  * Get comprehensive statistics for a kart
- * @param {string} kartNumber - Kart number to analyze
+ * @param {string} kartId - Kart ID to analyze
  * @param {Object} analysisData - Kart analysis data
  * @returns {Object|null} Comprehensive kart statistics
  */
-export function getKartStats(kartNumber, analysisData) {
-    const kart = analysisData.karts[kartNumber];
+export function getKartStats(kartId, analysisData) {
+    const kart = analysisData.karts[kartId];
     if (!kart) {
         return null;
     }
     
     // Get lap times from laps array (no duplication in storage)
-    const kartLaps = analysisData.laps.filter(lap => lap.kartNumber === kartNumber);
+    const kartLaps = analysisData.laps.filter(lap => 
+        lap.kartId === kartId || lap.kartNumber === kartId
+    );
     
     if (kartLaps.length === 0) {
         return {
@@ -213,13 +219,13 @@ export function getKartStats(kartNumber, analysisData) {
 
 /**
  * Calculate confidence level for analysis
- * @param {string} kartNumber - Kart number to analyze
+ * @param {string} kartId - Kart ID to analyze
  * @param {Object} analysisData - Kart analysis data
  * @returns {Object} Confidence assessment
  */
-export function calculateConfidence(kartNumber, analysisData) {
-    const normalized = calculateNormalizedIndex(kartNumber, analysisData);
-    const stats = getKartStats(kartNumber, analysisData);
+export function calculateConfidence(kartId, analysisData) {
+    const normalized = calculateNormalizedIndex(kartId, analysisData);
+    const stats = getKartStats(kartId, analysisData);
     
     if (!normalized || !stats) {
         return { level: 'Low', score: 0 };
@@ -266,27 +272,30 @@ export function calculateConfidence(kartNumber, analysisData) {
  */
 export function analyzeAllKarts(analysisData) {
     const karts = analysisData.karts || {};
-    const kartNumbers = Object.keys(karts);
+    const kartIds = Object.keys(karts);
     
     console.log('🔬 Analysis Service Debug:', {
-        totalKarts: kartNumbers.length,
-        kartNumbers: kartNumbers,
+        totalKarts: kartIds.length,
+        kartIds: kartIds,
         totalLaps: (analysisData.laps || []).length
     });
     
     // Calculate analysis for all karts
-    const kartAnalysis = kartNumbers.map(kartNumber => {
-        const normalized = calculateNormalizedIndex(kartNumber, analysisData);
-        const percentile = calculatePercentileRanking(kartNumber, analysisData);
-        const stats = getKartStats(kartNumber, analysisData);
-        const confidence = calculateConfidence(kartNumber, analysisData);
+    const kartAnalysis = kartIds.map(kartId => {
+        const kart = karts[kartId];
+        const normalized = calculateNormalizedIndex(kartId, analysisData);
+        const percentile = calculatePercentileRanking(kartId, analysisData);
+        const stats = getKartStats(kartId, analysisData);
+        const confidence = calculateConfidence(kartId, analysisData);
         
         if (!normalized) {
-            console.warn(`⚠️ Kart #${kartNumber}: normalized index is null`);
+            console.warn(`⚠️ Kart ID ${kartId}: normalized index is null`);
         }
         
         return {
-            kartNumber,
+            kartId: kartId,
+            kartNumber: kart.kartNumber || kartId,  // Display number for UI
+            kartName: kart.kartName || kart.kartNumber || kartId,
             normalized,
             percentile,
             stats,

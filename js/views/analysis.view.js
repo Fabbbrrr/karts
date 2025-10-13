@@ -134,8 +134,12 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
         const avgLapFormatted = formatTime(kart.stats.avgLapTime);
         const bestLapFormatted = formatTime(kart.stats.bestLapTime);
         
+        // Highlight if kartId and kartNumber are different (kart was renumbered)
+        const renumberedClass = kart.kartId !== kart.kartNumber ? 'renumbered' : '';
+        
         row.innerHTML = `
             <td class="rank ${rankClass}">${rank}</td>
+            <td class="kart-id ${renumberedClass}" style="color: #888; font-family: monospace; font-size: 0.9rem;">${kart.kartId}</td>
             <td class="kart-number">#${kart.kartNumber}</td>
             <td class="avg-lap" style="font-weight: bold; color: #00ff88;">${avgLapFormatted}</td>
             <td class="best-lap">${bestLapFormatted}</td>
@@ -145,7 +149,7 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
             <td class="driver-count">${kart.stats.uniqueDriverCount}</td>
             <td class="confidence ${confClass}">${confIcon} ${confLevel}</td>
             <td class="details-btn-cell">
-                <button class="details-btn" onclick="window.kartingApp.showKartDetails('${kart.kartNumber}')">
+                <button class="details-btn" onclick="window.kartingApp.showKartDetails('${kart.kartId}')">
                     Details
                 </button>
             </td>
@@ -157,17 +161,20 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData) {
 
 /**
  * Show detailed statistics modal for a kart
- * @param {string} kartNumber - Kart number
+ * @param {string} kartId - Kart ID
  * @param {Object} elements - DOM elements
  * @param {Object} kartAnalysisData - Kart analysis data
  */
-export function showKartDetails(kartNumber, elements, kartAnalysisData) {
-    console.log('🔍 showKartDetails in analysis.view.js', { kartNumber, hasElements: !!elements, hasData: !!kartAnalysisData });
+export function showKartDetails(kartId, elements, kartAnalysisData) {
+    console.log('🔍 showKartDetails in analysis.view.js', { kartId, hasElements: !!elements, hasData: !!kartAnalysisData });
     
-    const normalized = AnalysisService.calculateNormalizedIndex(kartNumber, kartAnalysisData);
-    const percentile = AnalysisService.calculatePercentileRanking(kartNumber, kartAnalysisData);
-    const stats = AnalysisService.getKartStats(kartNumber, kartAnalysisData);
-    const confidence = AnalysisService.calculateConfidence(kartNumber, kartAnalysisData);
+    const kart = kartAnalysisData.karts[kartId];
+    const displayNumber = kart ? (kart.kartNumber || kartId) : kartId;
+    
+    const normalized = AnalysisService.calculateNormalizedIndex(kartId, kartAnalysisData);
+    const percentile = AnalysisService.calculatePercentileRanking(kartId, kartAnalysisData);
+    const stats = AnalysisService.getKartStats(kartId, kartAnalysisData);
+    const confidence = AnalysisService.calculateConfidence(kartId, kartAnalysisData);
     const { crossKartDrivers } = AnalysisService.findCrossKartDrivers(kartAnalysisData);
     
     console.log('🔍 Analysis results:', { normalized, percentile, stats, confidence });
@@ -240,11 +247,16 @@ export function showKartDetails(kartNumber, elements, kartAnalysisData) {
         perfClass = 'negative';
     }
     
+    // Show ID and number together
+    const idNumberDisplay = kartId !== displayNumber 
+        ? `#${displayNumber} <span style="color: #888; font-size: 0.85rem;">(ID: ${kartId})</span>`
+        : `#${displayNumber}`;
+    
     // Set the entire modal content (not just a child element)
     modal.innerHTML = `
         <div class="kart-details-modal">
             <div class="kart-details-header">
-                <h2>Kart #${kartNumber} Analysis</h2>
+                <h2>Kart ${idNumberDisplay} Analysis</h2>
                 <button class="close-btn" onclick="window.kartingApp.closeKartDetails()">✕</button>
             </div>
             
