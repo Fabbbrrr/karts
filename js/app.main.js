@@ -37,16 +37,7 @@ function init() {
     // Setup PWA features
     setupPWA();
     
-    // Fetch initial data from REST API (faster than waiting for WebSocket)
-    fetchInitialData().then(success => {
-        if (success) {
-            console.log('✅ Initial data loaded, connecting WebSocket for live updates');
-        } else {
-            console.log('⚠️ No initial data, waiting for WebSocket');
-        }
-    });
-    
-    // Connect to WebSocket for live updates
+    // Connect to WebSocket
     connectWebSocket();
     
     // Update storage status initially
@@ -672,41 +663,6 @@ function setupPWA() {
         navigator.wakeLock.request('screen')
             .then(() => console.log('✅ Wake Lock enabled'))
             .catch(err => console.log('⚠️ Wake Lock not available:', err));
-    }
-}
-
-// Fetch initial data via REST API
-async function fetchInitialData() {
-    const channel = state.settings.channel || CONFIG.CHANNEL;
-    const url = `${CONFIG.REST_API_URL}?slug=${channel}`;
-    
-    console.log('🌐 Fetching initial data from REST API:', url);
-    updateLoadingStatus('Loading initial data...');
-    
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (!response.ok) {
-            console.warn(`⚠️ REST API returned status ${response.status}`);
-            return false;
-        }
-        
-        const data = await response.json();
-        console.log('✅ Initial data received from REST API');
-        
-        // Process the data using the same handler as WebSocket
-        handleSessionData(data);
-        
-        return true;
-    } catch (error) {
-        console.warn('⚠️ Failed to fetch initial data:', error.message);
-        return false;
     }
 }
 
