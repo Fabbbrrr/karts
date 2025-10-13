@@ -4,6 +4,7 @@
 import { formatDelta } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
 import { calculateConsistency } from '../utils/calculations.js';
+import * as LapTrackerService from '../services/lap-tracker.service.js';
 
 /**
  * Update the HUD view for main driver
@@ -72,6 +73,29 @@ export function updateHUDView(elements, sessionData, state) {
     elements.hudInterval.textContent = run.int || '-';
     elements.hudConsistency.textContent = run.consistency_lap || '-';
     
+    // Update personal best and gap to PB
+    const personalBest = LapTrackerService.getPersonalBest(run.name, state.personalRecords);
+    const hudPersonalBestEl = document.getElementById('hud-personal-best');
+    const hudPBGapEl = document.getElementById('hud-pb-gap');
+    
+    if (hudPersonalBestEl) {
+        hudPersonalBestEl.textContent = personalBest ? personalBest.bestLapFormatted : '--.-';
+    }
+    
+    if (hudPBGapEl && personalBest && run.last_time_raw) {
+        const pbGap = LapTrackerService.calculateGapToPersonalBest(run.last_time_raw, personalBest.bestLap);
+        if (pbGap.formatted !== '-') {
+            hudPBGapEl.textContent = pbGap.formatted;
+            hudPBGapEl.className = pbGap.isPositive ? 'positive' : 'negative';
+        } else {
+            hudPBGapEl.textContent = '-';
+            hudPBGapEl.className = '';
+        }
+    } else if (hudPBGapEl) {
+        hudPBGapEl.textContent = '-';
+        hudPBGapEl.className = '';
+    }
+    
     // Update consistency score
     const consistencyScoreEl = document.getElementById('hud-consistency-score');
     if (consistencyScoreEl) {
@@ -80,7 +104,7 @@ export function updateHUDView(elements, sessionData, state) {
     }
     
     // Update lap history display
-    updateLapHistoryDisplay(elements, mainDriver, run.best_time_raw, state.lapHistory);
+    updateLapHistoryDisplay(elements, mainDriver, run.best_time_raw, state.lapHistory, personalBest);
     
     // Update driver notes
     updateDriverNotesDisplay(elements, mainDriver, state.driverNotes);
@@ -138,8 +162,9 @@ function updateHeaderBadges(elements, kartNumber, run, state) {
  * @param {string} kartNumber - Kart number
  * @param {number} bestTimeRaw - Best lap time in ms
  * @param {Object} lapHistory - Lap history state
+ * @param {Object} personalBest - Personal best info
  */
-function updateLapHistoryDisplay(elements, kartNumber, bestTimeRaw, lapHistory) {
+function updateLapHistoryDisplay(elements, kartNumber, bestTimeRaw, lapHistory, personalBest) {
     const hudLapList = elements.hudLapList;
     if (!hudLapList) return;
     
@@ -168,7 +193,12 @@ function updateLapHistoryDisplay(elements, kartNumber, bestTimeRaw, lapHistory) 
             div.classList.add('best');
         }
         
-        // Format delta
+        // Mark if it's the personal best
+        if (personalBest && lap.timeRaw === personalBest.bestLap) {
+            div.classList.add('personal-best');
+        }
+        
+        // Format delta (to session best)
         let deltaText = '-';
         let deltaClass = 'neutral';
         
@@ -186,10 +216,20 @@ function updateLapHistoryDisplay(elements, kartNumber, bestTimeRaw, lapHistory) 
             deltaClass = 'neutral';
         }
         
+        // Calculate gap to PB
+        let pbGapText = '';
+        if (personalBest) {
+            const pbGap = LapTrackerService.calculateGapToPersonalBest(lap.timeRaw, personalBest.bestLap);
+            if (pbGap.formatted !== '-') {
+                pbGapText = `<div class="hud-lap-pb-gap ${pbGap.isPositive ? 'positive' : 'negative'}">${pbGap.formatted}</div>`;
+            }
+        }
+        
         div.innerHTML = `
             <div class="hud-lap-number">L${lap.lapNum}</div>
             <div class="hud-lap-time">${lap.time}</div>
             <div class="hud-lap-delta ${deltaClass}">${deltaText}</div>
+            ${pbGapText}
         `;
         
         hudLapList.appendChild(div);

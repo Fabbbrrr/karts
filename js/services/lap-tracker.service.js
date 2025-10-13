@@ -157,6 +157,93 @@ export function updateSessionBest(sessionData, sessionBest) {
 }
 
 /**
+ * Update personal records for a driver
+ * @param {Object} run - Driver run data
+ * @param {Object} personalRecords - Personal records state
+ * @returns {Object} Updated personal records and whether it's a new PB
+ */
+export function updatePersonalRecords(run, personalRecords) {
+    if (!run || !run.name || !run.last_time_raw) {
+        return { updated: personalRecords, isNewPB: false };
+    }
+    
+    const driverName = run.name;
+    const lapTime = run.last_time_raw;
+    
+    // Initialize driver record if doesn't exist
+    if (!personalRecords[driverName]) {
+        personalRecords[driverName] = {
+            bestLap: lapTime,
+            bestLapFormatted: run.last_time,
+            kartNumber: run.kart_number,
+            timestamp: Date.now(),
+            sessionName: null
+        };
+        return { updated: personalRecords, isNewPB: true };
+    }
+    
+    // Check if this is a new personal best
+    const currentPB = personalRecords[driverName].bestLap;
+    if (lapTime < currentPB) {
+        personalRecords[driverName] = {
+            bestLap: lapTime,
+            bestLapFormatted: run.last_time,
+            kartNumber: run.kart_number,
+            timestamp: Date.now(),
+            sessionName: null
+        };
+        return { updated: personalRecords, isNewPB: true };
+    }
+    
+    return { updated: personalRecords, isNewPB: false };
+}
+
+/**
+ * Get personal best for a driver
+ * @param {string} driverName - Driver name
+ * @param {Object} personalRecords - Personal records state
+ * @returns {Object|null} Personal best info or null
+ */
+export function getPersonalBest(driverName, personalRecords) {
+    if (!driverName || !personalRecords || !personalRecords[driverName]) {
+        return null;
+    }
+    
+    return personalRecords[driverName];
+}
+
+/**
+ * Calculate gap to personal best
+ * @param {number} currentLapTime - Current lap time in ms
+ * @param {number} personalBestTime - Personal best time in ms
+ * @returns {Object} Gap info with value and formatted string
+ */
+export function calculateGapToPersonalBest(currentLapTime, personalBestTime) {
+    if (!currentLapTime || !personalBestTime) {
+        return { gap: 0, formatted: '-', isPositive: false };
+    }
+    
+    const gap = currentLapTime - personalBestTime;
+    const gapSeconds = (gap / 1000).toFixed(3);
+    
+    if (gap > 0) {
+        return { 
+            gap, 
+            formatted: `+${gapSeconds}`, 
+            isPositive: true 
+        };
+    } else if (gap < 0) {
+        return { 
+            gap, 
+            formatted: gapSeconds, 
+            isPositive: false 
+        };
+    }
+    
+    return { gap: 0, formatted: '0.000', isPositive: false };
+}
+
+/**
  * Detect session change
  * @param {Object} sessionData - Current session data
  * @param {string} currentSessionId - Current session ID

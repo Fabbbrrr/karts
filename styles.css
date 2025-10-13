@@ -317,6 +317,18 @@ html, body {
     color: #ffaa00;
 }
 
+.race-detail-value.pb {
+    color: #ffd700;
+}
+
+.race-detail-value.gap-positive {
+    color: #ff6b6b;
+}
+
+.race-detail-value.gap-negative {
+    color: #00ff88;
+}
+
 .race-timing {
     text-align: right;
     display: flex;
@@ -848,7 +860,7 @@ html, body {
 
 .hud-lap-item {
     display: grid;
-    grid-template-columns: 60px 1fr 80px;
+    grid-template-columns: 60px 1fr 80px 80px;
     gap: 12px;
     align-items: center;
     background: #0a0a0a;
@@ -860,6 +872,35 @@ html, body {
 .hud-lap-item.best {
     border: 2px solid #00ff88;
     background: #0a1a0a;
+}
+
+.hud-lap-item.personal-best {
+    border: 2px solid #ffd700;
+    background: #1a1506;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.hud-lap-pb-gap {
+    text-align: right;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+.hud-lap-pb-gap.positive {
+    color: #ff6b6b;
+}
+
+.hud-lap-pb-gap.negative {
+    color: #00ff88;
+}
+
+#hud-pb-gap.positive {
+    color: #ff6b6b;
+}
+
+#hud-pb-gap.negative {
+    color: #00ff88;
 }
 
 /* F1-style lap colors */
@@ -2441,6 +2482,25 @@ body.theme-racing-green .hud-value {
     color: #00ff88;
 }
 
+.kart-id {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+/* Highlight renumbered karts */
+.kart-id.renumbered {
+    color: #ffaa00 !important;
+    font-weight: bold;
+    position: relative;
+}
+
+.kart-id.renumbered::after {
+    content: '⚠';
+    margin-left: 4px;
+    font-size: 0.8rem;
+}
+
 .norm-index {
     font-family: 'Courier New', monospace;
     color: #ccc;
@@ -2772,11 +2832,16 @@ body.theme-racing-green .hud-value {
     }
     
     /* Hide less important columns on mobile */
-    .analysis-table th:nth-child(3),
-    .analysis-table td:nth-child(3),
-    .analysis-table th:nth-child(5),
-    .analysis-table td:nth-child(5) {
+    .analysis-table th:nth-child(4),
+    .analysis-table td:nth-child(4),
+    .analysis-table th:nth-child(6),
+    .analysis-table td:nth-child(6) {
         display: none;
+    }
+    
+    /* Show ID column on mobile (more important than some other columns) */
+    .kart-id {
+        font-size: 0.8rem;
     }
 }
 

@@ -37,7 +37,16 @@ function init() {
     // Setup PWA features
     setupPWA();
     
-    // Connect to WebSocket
+    // Fetch initial data from REST API (faster than waiting for WebSocket)
+    fetchInitialData().then(success => {
+        if (success) {
+            console.log('✅ Initial data loaded, connecting WebSocket for live updates');
+        } else {
+            console.log('⚠️ No initial data, waiting for WebSocket');
+        }
+    });
+    
+    // Connect to WebSocket for live updates
     connectWebSocket();
     
     // Update storage status initially
@@ -184,8 +193,8 @@ function migrateKartAnalysisData() {
     
     // Migrate kart objects - remove lapTimes array to save storage
     if (state.kartAnalysisData.karts) {
-        Object.keys(state.kartAnalysisData.karts).forEach(kartNumber => {
-            const kart = state.kartAnalysisData.karts[kartNumber];
+        Object.keys(state.kartAnalysisData.karts).forEach(kartKey => {
+            const kart = state.kartAnalysisData.karts[kartKey];
             
             // Remove lapTimes array (duplication - can calculate from laps array)
             if (kart.lapTimes) {
@@ -199,6 +208,15 @@ function migrateKartAnalysisData() {
             if (kart.worstLap === undefined) kart.worstLap = 0;
             if (kart.totalTime === undefined) kart.totalTime = 0;
             if (kart.totalLaps === undefined) kart.totalLaps = 0;
+            
+            // Add kartId if missing (migration for old data)
+            if (!kart.kartId) {
+                kart.kartId = kartKey;
+            }
+            // Add kartNumber if missing (for display)
+            if (!kart.kartNumber) {
+                kart.kartNumber = kartKey;
+            }
         });
     }
     
@@ -657,6 +675,41 @@ function setupPWA() {
     }
 }
 
+// Fetch initial data via REST API
+async function fetchInitialData() {
+    const channel = state.settings.channel || CONFIG.CHANNEL;
+    const url = `${CONFIG.REST_API_URL}?slug=${channel}`;
+    
+    console.log('🌐 Fetching initial data from REST API:', url);
+    updateLoadingStatus('Loading initial data...');
+    
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (!response.ok) {
+            console.warn(`⚠️ REST API returned status ${response.status}`);
+            return false;
+        }
+        
+        const data = await response.json();
+        console.log('✅ Initial data received from REST API');
+        
+        // Process the data using the same handler as WebSocket
+        handleSessionData(data);
+        
+        return true;
+    } catch (error) {
+        console.warn('⚠️ Failed to fetch initial data:', error.message);
+        return false;
+    }
+}
+
 // Connect to WebSocket
 function connectWebSocket() {
     const callbacks = {
@@ -743,7 +796,22 @@ function handleSessionData(data) {
 function handleNewLap(run, lapNum, lapData) {
     const kartNumber = run.kart_number;
     
-    // Check for best lap celebration
+    // Update personal records
+    const pbResult = LapTrackerService.updatePersonalRecords(run, state.personalRecords);
+    state.personalRecords = pbResult.updated;
+    
+    if (pbResult.isNewPB) {
+        console.log(`🏆 New Personal Best for ${run.name}: ${run.last_time}`);
+        StorageService.savePersonalRecords(state.personalRecords);
+        
+        // Play celebration if it's the selected driver
+        if (state.settings.mainDriver === kartNumber && state.settings.enableBestLapCelebration) {
+            AudioService.playBestLapCelebration(true);
+            AudioService.vibrate([100, 50, 100, 50, 100]);
+        }
+    }
+    
+    // Check for best lap celebration (session best)
     if (state.settings.enableBestLapCelebration) {
         const isNewBest = LapTrackerService.checkBestLapCelebration(
             kartNumber,
@@ -751,10 +819,10 @@ function handleNewLap(run, lapNum, lapData) {
             state.lastBestLap
         );
         
-        if (isNewBest) {
+        if (isNewBest && !pbResult.isNewPB) {
             AudioService.playBestLapCelebration(true);
             AudioService.vibrate([100, 50, 100]);
-            console.log(`🏆 New best lap for Kart ${kartNumber}!`);
+            console.log(`🏆 New session best lap for Kart ${kartNumber}!`);
         }
     }
     
@@ -766,10 +834,15 @@ function handleNewLap(run, lapNum, lapData) {
 function collectKartAnalysisLap(run, lapNum) {
     const sessionId = state.currentSessionId || 'unknown';
     
+    // Use kart_id as the unique identifier for analysis (not kart_number which can change)
+    const kartId = run.kart_id ? String(run.kart_id) : run.kart_number;
+    
     const lapRecord = {
         timestamp: Date.now(),
         sessionId: sessionId,
-        kartNumber: run.kart_number,
+        kartId: kartId,                    // Use kart_id for uniqueness
+        kartNumber: run.kart_number,       // Store display number for reference
+        kartName: run.kart,                // Store full name (e.g., "E14")
         driverName: run.name,
         lapTime: run.last_time,
         lapTimeRaw: run.last_time_raw,
@@ -780,9 +853,12 @@ function collectKartAnalysisLap(run, lapNum) {
     // Add to laps array
     state.kartAnalysisData.laps.push(lapRecord);
     
-    // Update kart stats (minimal storage - no lapTimes array)
-    if (!state.kartAnalysisData.karts[run.kart_number]) {
-        state.kartAnalysisData.karts[run.kart_number] = {
+    // Update kart stats by kart_id (minimal storage - no lapTimes array)
+    if (!state.kartAnalysisData.karts[kartId]) {
+        state.kartAnalysisData.karts[kartId] = {
+            kartId: kartId,
+            kartNumber: run.kart_number,   // Current display number
+            kartName: run.kart,            // Full name
             totalLaps: 0,
             bestLap: Infinity,
             worstLap: 0,
@@ -792,7 +868,13 @@ function collectKartAnalysisLap(run, lapNum) {
         };
     }
     
-    const kart = state.kartAnalysisData.karts[run.kart_number];
+    const kart = state.kartAnalysisData.karts[kartId];
+    
+    // Update display number if it changed (kart was renumbered)
+    if (run.kart_number) {
+        kart.kartNumber = run.kart_number;
+        kart.kartName = run.kart;
+    }
     
     // Ensure all properties exist (for backward compatibility)
     if (!kart.drivers) kart.drivers = [];
@@ -919,9 +1001,15 @@ function rebuildAggregations() {
     
     // Rebuild from laps
     state.kartAnalysisData.laps.forEach(lap => {
+        // Use kartId if available, fallback to kartNumber for old data
+        const lapKartId = lap.kartId || lap.kartNumber;
+        
         // Rebuild kart stats
-        if (!state.kartAnalysisData.karts[lap.kartNumber]) {
-            state.kartAnalysisData.karts[lap.kartNumber] = {
+        if (!state.kartAnalysisData.karts[lapKartId]) {
+            state.kartAnalysisData.karts[lapKartId] = {
+                kartId: lapKartId,
+                kartNumber: lap.kartNumber || lapKartId,
+                kartName: lap.kartName || lap.kartNumber || lapKartId,
                 totalLaps: 0,
                 bestLap: Infinity,
                 worstLap: 0,
@@ -931,7 +1019,12 @@ function rebuildAggregations() {
             };
         }
         
-        const kart = state.kartAnalysisData.karts[lap.kartNumber];
+        const kart = state.kartAnalysisData.karts[lapKartId];
+        
+        // Update display info if available
+        if (lap.kartNumber) kart.kartNumber = lap.kartNumber;
+        if (lap.kartName) kart.kartName = lap.kartName;
+        
         kart.totalLaps++;
         kart.bestLap = Math.min(kart.bestLap, lap.lapTimeRaw);
         kart.worstLap = Math.max(kart.worstLap, lap.lapTimeRaw);
@@ -958,10 +1051,10 @@ function rebuildAggregations() {
         driver.totalTime += lap.lapTimeRaw;
         driver.bestLap = Math.min(driver.bestLap, lap.lapTimeRaw);
         
-        if (!driver.karts.includes(lap.kartNumber)) {
-            driver.karts.push(lap.kartNumber);
+        if (!driver.karts.includes(lapKartId)) {
+            driver.karts.push(lapKartId);
         }
-        driver.kartHistory[lap.kartNumber] = (driver.kartHistory[lap.kartNumber] || 0) + 1;
+        driver.kartHistory[lapKartId] = (driver.kartHistory[lapKartId] || 0) + 1;
     });
     
     console.log(`✅ Rebuilt: ${Object.keys(state.kartAnalysisData.karts).length} karts, ${Object.keys(state.kartAnalysisData.drivers).length} drivers`);
@@ -1066,7 +1159,7 @@ function updateAllViews() {
     
     switch (state.currentTab) {
         case 'race':
-            RaceView.updateRaceView(elements, data, state.settings);
+            RaceView.updateRaceView(elements, data, state.settings, state.personalRecords);
             break;
         case 'hud':
             HUDView.updateHUDView(elements, data, state);
