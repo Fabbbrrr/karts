@@ -3,6 +3,7 @@
 
 export const CONFIG = {
     SOCKET_URL: 'https://live.racefacer.com:3123',
+    REST_API_URL: 'https://live.racefacer.com/ajax/live-data',
     CHANNEL: 'lemansentertainment',
     RECONNECT_DELAY: 2000
 };
