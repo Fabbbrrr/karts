@@ -142,3 +142,4 @@ To verify everything works:
 - System maintains single entry per physical kart (by ID)
 - Old data without kart_id falls back to kart_number for compatibility
 
+

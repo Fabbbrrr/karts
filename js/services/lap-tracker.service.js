@@ -8,6 +8,9 @@
  * @param {Object} positionHistory - Position history state object
  * @param {Function} onNewLap - Callback when new lap detected
  * @returns {Object} Updated lap and position history
+ * 
+ * NOTE: This function tracks ALL laps for race winner determination, including laps > 60s.
+ * Long laps are excluded from kart analysis elsewhere.
  */
 export function updateLapHistory(sessionData, lapHistory, positionHistory, onNewLap) {
     if (!sessionData || !sessionData.runs) return { lapHistory, positionHistory };
@@ -114,6 +117,10 @@ export function trackGapTrend(kartNumber, gap, gapHistory) {
 export function checkBestLapCelebration(kartNumber, bestTimeRaw, lastBestLap) {
     if (!bestTimeRaw) return false;
     
+    // FILTER: Don't celebrate laps longer than 60 seconds
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    if (bestTimeRaw > LAP_TIME_THRESHOLD) return false;
+    
     const lastBest = lastBestLap[kartNumber];
     
     // If we have a previous best and current is better
@@ -140,10 +147,13 @@ export function checkBestLapCelebration(kartNumber, bestTimeRaw, lastBestLap) {
 export function updateSessionBest(sessionData, sessionBest) {
     if (!sessionData || !sessionData.runs) return sessionBest;
     
+    // FILTER: Exclude laps longer than 60 seconds from session best
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    
     let best = sessionBest;
     
     sessionData.runs.forEach(run => {
-        if (run.best_time_raw && (!best || run.best_time_raw < best.timeRaw)) {
+        if (run.best_time_raw && run.best_time_raw <= LAP_TIME_THRESHOLD && (!best || run.best_time_raw < best.timeRaw)) {
             best = {
                 kartNumber: run.kart_number,
                 name: run.name,
@@ -164,6 +174,12 @@ export function updateSessionBest(sessionData, sessionBest) {
  */
 export function updatePersonalRecords(run, personalRecords) {
     if (!run || !run.name || !run.last_time_raw) {
+        return { updated: personalRecords, isNewPB: false };
+    }
+    
+    // FILTER: Exclude laps longer than 60 seconds from personal bests
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    if (run.last_time_raw > LAP_TIME_THRESHOLD) {
         return { updated: personalRecords, isNewPB: false };
     }
     

@@ -48,9 +48,12 @@ export function calculateNormalizedIndex(kartId, analysisData) {
         return null;
     }
     
+    // FILTER: Exclude laps longer than 60 seconds from analysis
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    
     // Get all laps for this kart (check both kartId and kartNumber for backward compatibility)
     const kartLaps = analysisData.laps.filter(lap => 
-        lap.kartId === kartId || lap.kartNumber === kartId
+        (lap.kartId === kartId || lap.kartNumber === kartId) && lap.lapTimeRaw <= LAP_TIME_THRESHOLD
     );
     
     if (kartLaps.length === 0) {
@@ -121,8 +124,11 @@ export function calculateNormalizedIndex(kartId, analysisData) {
  * @returns {Object|null} Percentile statistics
  */
 export function calculatePercentileRanking(kartId, analysisData) {
+    // FILTER: Exclude laps longer than 60 seconds from analysis
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    
     const kartLaps = analysisData.laps.filter(lap => 
-        lap.kartId === kartId || lap.kartNumber === kartId
+        (lap.kartId === kartId || lap.kartNumber === kartId) && lap.lapTimeRaw <= LAP_TIME_THRESHOLD
     );
     
     if (kartLaps.length === 0) {
@@ -142,8 +148,8 @@ export function calculatePercentileRanking(kartId, analysisData) {
     
     // Calculate percentile for each session
     Object.entries(sessionGroups).forEach(([sessionId, laps]) => {
-        // Get all laps in this session
-        const allSessionLaps = analysisData.laps.filter(l => l.sessionId === sessionId);
+        // Get all laps in this session (excluding laps > 60s)
+        const allSessionLaps = analysisData.laps.filter(l => l.sessionId === sessionId && l.lapTimeRaw <= LAP_TIME_THRESHOLD);
         
         laps.forEach(lap => {
             // Count how many laps were slower
@@ -176,9 +182,12 @@ export function getKartStats(kartId, analysisData) {
         return null;
     }
     
+    // FILTER: Exclude laps longer than 60 seconds from analysis
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    
     // Get lap times from laps array (no duplication in storage)
     const kartLaps = analysisData.laps.filter(lap => 
-        lap.kartId === kartId || lap.kartNumber === kartId
+        (lap.kartId === kartId || lap.kartNumber === kartId) && lap.lapTimeRaw <= LAP_TIME_THRESHOLD
     );
     
     if (kartLaps.length === 0) {

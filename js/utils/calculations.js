@@ -100,9 +100,15 @@ export function calculateGapTrend(gapHistory) {
 export function calculateConsistency(lapTimes) {
     if (!lapTimes || lapTimes.length < 3) return 0;
     
+    // FILTER: Exclude laps longer than 60 seconds from calculations
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    const validLapTimes = lapTimes.filter(time => time <= LAP_TIME_THRESHOLD);
+    
+    if (validLapTimes.length < 3) return 0;
+    
     // Calculate standard deviation
-    const mean = lapTimes.reduce((sum, time) => sum + time, 0) / lapTimes.length;
-    const variance = lapTimes.reduce((sum, time) => sum + Math.pow(time - mean, 2), 0) / lapTimes.length;
+    const mean = validLapTimes.reduce((sum, time) => sum + time, 0) / validLapTimes.length;
+    const variance = validLapTimes.reduce((sum, time) => sum + Math.pow(time - mean, 2), 0) / validLapTimes.length;
     const stdDev = Math.sqrt(variance);
     
     // Convert to percentage (lower stdDev = higher consistency)
@@ -119,7 +125,13 @@ export function calculateConsistency(lapTimes) {
  */
 export function calculateAverageLapTime(lapTimes) {
     if (!lapTimes || lapTimes.length === 0) return 0;
-    return lapTimes.reduce((sum, time) => sum + time, 0) / lapTimes.length;
+    
+    // FILTER: Exclude laps longer than 60 seconds from calculations
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    const validLapTimes = lapTimes.filter(time => time <= LAP_TIME_THRESHOLD);
+    
+    if (validLapTimes.length === 0) return 0;
+    return validLapTimes.reduce((sum, time) => sum + time, 0) / validLapTimes.length;
 }
 
 /**
@@ -132,9 +144,17 @@ export function findBestWorstLaps(lapTimes) {
         return { best: null, worst: null };
     }
     
+    // FILTER: Exclude laps longer than 60 seconds from calculations
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    const validLapTimes = lapTimes.filter(time => time <= LAP_TIME_THRESHOLD);
+    
+    if (validLapTimes.length === 0) {
+        return { best: null, worst: null };
+    }
+    
     return {
-        best: Math.min(...lapTimes),
-        worst: Math.max(...lapTimes)
+        best: Math.min(...validLapTimes),
+        worst: Math.max(...validLapTimes)
     };
 }
 

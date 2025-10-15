@@ -686,11 +686,16 @@ function handleConnect() {
     state.isConnected = true;
     updateConnectionIndicator(true);
     updateLoadingStatus('Connected! Waiting for data...');
+    const channel = state.settings.channel || CONFIG.CHANNEL;
+    console.log('✅ Connected to RaceFacer');
+    console.log(`📡 Listening on channel: ${channel}`);
+    console.log('⏰ Waiting for session data... (updates will appear in console)');
 }
 
 function handleDisconnect() {
     state.isConnected = false;
     updateConnectionIndicator(false);
+    console.log('❌ Disconnected from RaceFacer - reconnecting...');
 }
 
 function handleConnectionError(error) {
@@ -701,7 +706,19 @@ function handleConnectionError(error) {
 function handleSessionData(data) {
     try {
         // Ignore live data if in replay mode
-        if (state.isReplayMode) return;
+        if (state.isReplayMode) {
+            console.log('⏸️ Ignoring live data - in replay mode');
+            return;
+        }
+        
+        // Log data receipt for debugging
+        const timestamp = new Date().toLocaleTimeString();
+        console.log(`📥 [${timestamp}] Session data received:`, {
+            currentLap: data?.current_lap,
+            timeLeft: data?.time_left,
+            runCount: data?.runs?.length,
+            eventName: data?.event_name
+        });
         
         state.sessionData = data;
         
@@ -741,6 +758,7 @@ function handleSessionData(data) {
         RaceView.updateDriverDropdown(elements, data);
         
         // Update all views
+        console.log(`🔄 Updating view: ${state.currentTab}`);
         updateAllViews();
         
     } catch (error) {
@@ -789,6 +807,14 @@ function handleNewLap(run, lapNum, lapData) {
 // Collect lap for kart analysis
 function collectKartAnalysisLap(run, lapNum) {
     const sessionId = state.currentSessionId || 'unknown';
+    
+    // FILTER: Exclude laps longer than 60 seconds from kart analysis
+    // These are likely incidents, system errors, or forgotten drivers
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    if (run.last_time_raw > LAP_TIME_THRESHOLD) {
+        console.log(`⚠️ Excluding long lap from analysis: ${run.name} - ${run.last_time} (${run.last_time_raw}ms > ${LAP_TIME_THRESHOLD}ms)`);
+        return; // Don't add to analysis data, but lap is still visible in session data
+    }
     
     // Use kart_id as the unique identifier for analysis (not kart_number which can change)
     const kartId = run.kart_id ? String(run.kart_id) : run.kart_number;
@@ -955,8 +981,18 @@ function rebuildAggregations() {
     state.kartAnalysisData.karts = {};
     state.kartAnalysisData.drivers = {};
     
+    // FILTER: Exclude laps longer than 60 seconds when rebuilding
+    const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
+    let excludedCount = 0;
+    
     // Rebuild from laps
     state.kartAnalysisData.laps.forEach(lap => {
+        // Skip laps longer than 60 seconds
+        if (lap.lapTimeRaw > LAP_TIME_THRESHOLD) {
+            excludedCount++;
+            return;
+        }
+        
         // Use kartId if available, fallback to kartNumber for old data
         const lapKartId = lap.kartId || lap.kartNumber;
         
@@ -1013,6 +1049,9 @@ function rebuildAggregations() {
         driver.kartHistory[lapKartId] = (driver.kartHistory[lapKartId] || 0) + 1;
     });
     
+    if (excludedCount > 0) {
+        console.log(`⚠️ Excluded ${excludedCount} laps > 60s from aggregations`);
+    }
     console.log(`✅ Rebuilt: ${Object.keys(state.kartAnalysisData.karts).length} karts, ${Object.keys(state.kartAnalysisData.drivers).length} drivers`);
 }
 
@@ -1109,9 +1148,18 @@ function switchTab(tabName) {
 
 // Update all views
 function updateAllViews() {
-    if (!state.sessionData && !state.replayData) return;
+    if (!state.sessionData && !state.replayData) {
+        console.warn('⚠️ No session or replay data available for view update');
+        return;
+    }
     
     const data = state.replayData || state.sessionData;
+    
+    console.log(`📺 Updating ${state.currentTab} view with data:`, {
+        runs: data.runs?.length,
+        currentLap: data.current_lap,
+        timeLeft: data.time_left
+    });
     
     switch (state.currentTab) {
         case 'race':
