@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karting Live Timer - Test Runner</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff88;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            color: #00ff88;
+            font-size: 2rem;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #00cc70;
+            transform: scale(1.05);
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        #console {
+            background: #1a1a1a;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .log-line {
+            margin: 2px 0;
+        }
+        
+        .log-success { color: #00ff88; }
+        .log-error { color: #ff6b6b; }
+        .log-info { color: #4dabf7; }
+        .log-warning { color: #ffa500; }
+        
+        .summary {
+            margin-top: 20px;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            border: 2px solid #00ff88;
+        }
+        
+        .summary h2 {
+            margin-top: 0;
+            color: #00ff88;
+        }
+        
+        .stat {
+            display: inline-block;
+            margin: 10px 20px;
+            font-size: 1.2rem;
+        }
+        
+        .stat-passed {
+            color: #00ff88;
+        }
+        
+        .stat-failed {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Karting Live Timer - Test Runner</h1>
+        <p>Modern JavaScript Test Suite</p>
+    </div>
+
+    <div class="test-controls">
+        <button onclick="runTests()">▶️ Run All Tests</button>
+        <button onclick="clearConsole()">🗑️ Clear Console</button>
+    </div>
+
+    <div id="console"></div>
+
+    <div id="summary" class="summary" style="display: none;">
+        <h2>📊 Test Summary</h2>
+        <div id="summary-content"></div>
+    </div>
+
+    <script type="module">
+        import { runAllTests } from './driver-selection.test.js';
+
+        const consoleEl = document.getElementById('console');
+        const summaryEl = document.getElementById('summary');
+        const summaryContent = document.getElementById('summary-content');
+
+        // Intercept console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendToConsole(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendToConsole(args.join(' '), 'error');
+        };
+
+        function appendToConsole(text, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log-line log-${type}`;
+            div.textContent = text;
+            consoleEl.appendChild(div);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleEl.innerHTML = '';
+            summaryEl.style.display = 'none';
+        }
+
+        async function runTests() {
+            clearConsole();
+            appendToConsole('Starting test suite...', 'info');
+            appendToConsole('━'.repeat(80), 'info');
+            
+            try {
+                const results = await runAllTests();
+                
+                // Show summary
+                summaryEl.style.display = 'block';
+                summaryContent.innerHTML = `
+                    <div class="stat stat-passed">
+                        ✅ Passed: ${results.totalPassed}
+                    </div>
+                    <div class="stat stat-failed">
+                        ❌ Failed: ${results.totalFailed}
+                    </div>
+                    <div class="stat">
+                        📊 Total: ${results.total}
+                    </div>
+                    <div class="stat" style="display: block; margin-top: 20px;">
+                        Success Rate: ${((results.totalPassed / results.total) * 100).toFixed(1)}%
+                    </div>
+                `;
+                
+                if (results.totalFailed === 0) {
+                    appendToConsole('\n🎉 All tests passed successfully!', 'success');
+                } else {
+                    appendToConsole(`\n⚠️ ${results.totalFailed} test(s) failed. Please review above.`, 'warning');
+                }
+            } catch (error) {
+                appendToConsole(`\n❌ Test suite error: ${error.message}`, 'error');
+                appendToConsole(error.stack, 'error');
+            }
+        }
+
+        // Make available globally
+        window.runTests = runTests;
+        window.clearConsole = clearConsole;
+
+        // Show instructions
+        appendToConsole('👋 Welcome to the Test Runner!', 'info');
+        appendToConsole('Click "Run All Tests" to start the test suite.', 'info');
+        appendToConsole('', 'info');
+    </script>
+</body>
+</html>
+

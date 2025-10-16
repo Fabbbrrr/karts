@@ -6,6 +6,7 @@ import state from './core/state.js';
 import * as WebSocketService from './services/websocket.service.js';
 import * as StorageService from './services/storage.service.js';
 import * as LapTrackerService from './services/lap-tracker.service.js';
+import * as DriverSelectionService from './services/driver-selection.service.js';
 import * as AudioService from './utils/audio.js';
 import * as RaceView from './views/race.view.js';
 import * as HUDView from './views/hud.view.js';
@@ -340,51 +341,36 @@ function setupEventListeners() {
     // Main driver select (settings)
     if (elements.mainDriverSelect) {
         elements.mainDriverSelect.addEventListener('change', (e) => {
-            state.settings.mainDriver = e.target.value || null;
-            saveSettings();
-            updateAllViews();
+            DriverSelectionService.handleDriverSelectionChange(
+                e.target.value || null,
+                elements,
+                state,
+                updateAllViews
+            );
         });
     }
     
     // HUD driver selector (no driver screen)
     if (elements.hudDriverSelect) {
         elements.hudDriverSelect.addEventListener('change', (e) => {
-            const selectedDriver = e.target.value || null;
-            console.log('🏎️ HUD driver selector changed:', selectedDriver);
-            state.settings.mainDriver = selectedDriver;
-            saveSettings();
-            
-            // Sync other dropdowns
-            if (elements.mainDriverSelect) {
-                elements.mainDriverSelect.value = selectedDriver || '';
-            }
-            if (elements.hudQuickDriverSelect) {
-                elements.hudQuickDriverSelect.value = selectedDriver || '';
-            }
-            
-            SettingsView.applySettings(elements, state.settings);
-            updateAllViews();
+            DriverSelectionService.handleDriverSelectionChange(
+                e.target.value || null,
+                elements,
+                state,
+                updateAllViews
+            );
         });
     }
     
     // HUD quick driver selector (header)
     if (elements.hudQuickDriverSelect) {
         elements.hudQuickDriverSelect.addEventListener('change', (e) => {
-            const selectedDriver = e.target.value || null;
-            console.log('🏎️ HUD quick selector changed:', selectedDriver);
-            state.settings.mainDriver = selectedDriver;
-            saveSettings();
-            
-            // Sync other dropdowns
-            if (elements.mainDriverSelect) {
-                elements.mainDriverSelect.value = selectedDriver || '';
-            }
-            if (elements.hudDriverSelect) {
-                elements.hudDriverSelect.value = selectedDriver || '';
-            }
-            
-            SettingsView.applySettings(elements, state.settings);
-            updateAllViews();
+            DriverSelectionService.handleDriverSelectionChange(
+                e.target.value || null,
+                elements,
+                state,
+                updateAllViews
+            );
         });
     }
     
@@ -1724,31 +1710,13 @@ window.kartingApp = {
     switchTab,
     updateAllViews,
     selectDriverAndSwitchToHUD: (kartNumber) => {
-        console.log('🏎️ Selecting driver and switching to HUD:', kartNumber);
-        console.log('Session data available:', !!state.sessionData);
-        console.log('Session runs:', state.sessionData?.runs?.length);
-        
-        // Set main driver in settings
-        state.settings.mainDriver = kartNumber;
-        StorageService.saveSettings(state.settings);
-        
-        // Update HUD driver dropdowns
-        if (elements.hudDriverSelect) {
-            elements.hudDriverSelect.value = kartNumber;
-        }
-        if (elements.hudQuickDriverSelect) {
-            elements.hudQuickDriverSelect.value = kartNumber;
-        }
-        
-        // Update main driver select in settings tab
-        if (elements.mainDriverSelect) {
-            elements.mainDriverSelect.value = kartNumber;
-        }
-        
-        // Switch to HUD tab (this will call updateAllViews)
-        switchTab('hud');
-        
-        console.log('✅ Driver selected and HUD tab activated');
+        DriverSelectionService.selectDriverAndShowHUD(
+            kartNumber,
+            elements,
+            state,
+            switchTab,
+            updateAllViews
+        );
     },
     showKartDetails: (kartNumber) => {
         console.log('🔍 showKartDetails called for kart:', kartNumber);
