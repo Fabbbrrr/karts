@@ -1,5 +1,10 @@
-// Karting Live Timer - HUD View
-// Full-screen heads-up display for main driver
+/**
+ * Karting Live Timer - HUD View
+ * 
+ * PURPOSE: Provide full-screen heads-up display focused on main driver
+ * WHY: Allows driver to monitor their performance during race
+ * FEATURE: HUD View, Driver Focus, Live Timing Display
+ */
 
 import { formatDelta } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
@@ -7,10 +12,17 @@ import { calculateConsistency } from '../utils/calculations.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
 
 /**
- * Update the HUD view for main driver
- * @param {Object} elements - DOM elements
- * @param {Object} sessionData - Current session data
- * @param {Object} state - Application state
+ * Update the HUD view with main driver's data
+ * 
+ * PURPOSE: Display focused race data for selected main driver
+ * WHY: Primary view for driver to monitor their own performance
+ * HOW: Finds driver in session data, updates position, times, lap history, notes
+ * FEATURE: HUD View, Driver Focus, Live Performance Tracking
+ * 
+ * @param {Object} elements - Cached DOM elements
+ * @param {Object} sessionData - Current session data from WebSocket
+ * @param {Object} state - Application state with settings and records
+ * @returns {void}
  */
 export function updateHUDView(elements, sessionData, state) {
     console.log('🎯 updateHUDView called', {
