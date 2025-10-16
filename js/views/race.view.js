@@ -63,6 +63,14 @@ function createRaceItem(run, settings, personalRecords) {
     div.className = 'race-item';
     div.dataset.kartNumber = run.kart_number;
     
+    // Add click handler to select driver and switch to HUD
+    div.style.cursor = 'pointer';
+    div.onclick = () => {
+        if (window.kartingApp && window.kartingApp.selectDriverAndSwitchToHUD) {
+            window.kartingApp.selectDriverAndSwitchToHUD(run.kart_number);
+        }
+    };
+    
     updateRaceItemContent(div, run, settings, personalRecords);
     
     return div;
@@ -175,12 +183,16 @@ export function updateDriverDropdown(elements, sessionData) {
         }
     }
     
+    // PRESERVE compare driver selections before clearing
+    const compareDriver1Value = elements.compareDriver1Select?.value || '';
+    const compareDriver2Value = elements.compareDriver2Select?.value || '';
+    
     // Clear compare dropdowns
     if (elements.compareDriver1Select) {
-        elements.compareDriver1Select.innerHTML = '<option value="">Select Driver 1</option>';
+        elements.compareDriver1Select.innerHTML = '<option value="">-- Select Driver --</option>';
     }
     if (elements.compareDriver2Select) {
-        elements.compareDriver2Select.innerHTML = '<option value="">Select Driver 2</option>';
+        elements.compareDriver2Select.innerHTML = '<option value="">-- Select Driver --</option>';
     }
     
     // Add drivers from current session
@@ -211,5 +223,13 @@ export function updateDriverDropdown(elements, sessionData) {
                 elements.compareDriver2Select.appendChild(option2);
             }
         });
+    
+    // RESTORE compare driver selections after populating
+    if (elements.compareDriver1Select && compareDriver1Value) {
+        elements.compareDriver1Select.value = compareDriver1Value;
+    }
+    if (elements.compareDriver2Select && compareDriver2Value) {
+        elements.compareDriver2Select.value = compareDriver2Value;
+    }
 }
 

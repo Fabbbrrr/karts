@@ -770,6 +770,11 @@ function handleSessionData(data) {
 function handleNewLap(run, lapNum, lapData) {
     const kartNumber = run.kart_number;
     
+    // SCREEN FLASH: Trigger prominent flash for main driver's lap in HUD view
+    if (state.settings.mainDriver === kartNumber && state.currentTab === 'hud') {
+        triggerLapFlash();
+    }
+    
     // Update personal records
     const pbResult = LapTrackerService.updatePersonalRecords(run, state.personalRecords);
     state.personalRecords = pbResult.updated;
@@ -802,6 +807,26 @@ function handleNewLap(run, lapNum, lapData) {
     
     // Collect lap for kart analysis
     collectKartAnalysisLap(run, lapNum);
+}
+
+// Trigger prominent screen flash animation
+function triggerLapFlash() {
+    const hudScreen = document.getElementById('hud-screen');
+    if (!hudScreen) return;
+    
+    // Remove existing flash class if present
+    hudScreen.classList.remove('lap-flash');
+    
+    // Force reflow to restart animation
+    void hudScreen.offsetWidth;
+    
+    // Add flash class
+    hudScreen.classList.add('lap-flash');
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        hudScreen.classList.remove('lap-flash');
+    }, 600);
 }
 
 // Collect lap for kart analysis
@@ -1673,6 +1698,23 @@ window.kartingApp = {
     state,
     switchTab,
     updateAllViews,
+    selectDriverAndSwitchToHUD: (kartNumber) => {
+        console.log('🏎️ Selecting driver and switching to HUD:', kartNumber);
+        // Set main driver in settings
+        state.settings.mainDriver = kartNumber;
+        StorageService.saveSettings(state.settings);
+        
+        // Update HUD driver dropdowns
+        if (elements.hudDriverSelect) {
+            elements.hudDriverSelect.value = kartNumber;
+        }
+        if (elements.hudQuickDriverSelect) {
+            elements.hudQuickDriverSelect.value = kartNumber;
+        }
+        
+        // Switch to HUD tab
+        switchTab('hud');
+    },
     showKartDetails: (kartNumber) => {
         console.log('🔍 showKartDetails called for kart:', kartNumber);
         console.log('Elements:', elements);
