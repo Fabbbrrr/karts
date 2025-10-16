@@ -3,6 +3,7 @@
 
 import { formatTime } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
+import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
 
 /**
@@ -31,7 +32,11 @@ export function updateRaceView(elements, sessionData, settings, personalRecords 
     const trackInfo = track_configuration_id ? ` | Track Config #${track_configuration_id}` : '';
     elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}${trackInfo}`;
     
-    const activeRuns = runs.filter(run => run.kart_number && run.kart_number !== '');
+    // Filter out stale drivers (lap started more than 10 minutes ago)
+    // WHY: Venues sometimes forget to remove drivers from previous sessions
+    // FEATURE: Timestamp Filtering (automatically hides abandoned/forgotten drivers)
+    const runsWithKarts = runs.filter(run => run.kart_number && run.kart_number !== '');
+    const activeRuns = filterStaleDrivers(runsWithKarts, TIMESTAMP_THRESHOLDS.RACE_DISPLAY, true);
     
     // Efficient update: reuse existing elements
     const existingItems = Array.from(elements.raceList.children);

@@ -8,6 +8,7 @@ import * as StorageService from './services/storage.service.js';
 import * as LapTrackerService from './services/lap-tracker.service.js';
 import * as DriverSelectionService from './services/driver-selection.service.js';
 import * as AudioService from './utils/audio.js';
+import { isDriverStale, getLapAge, TIMESTAMP_THRESHOLDS } from './utils/timestamp-filter.js';
 import * as RaceView from './views/race.view.js';
 import * as HUDView from './views/hud.view.js';
 import * as AnalysisView from './views/analysis.view.js';
@@ -977,12 +978,12 @@ function triggerLapFlash() {
 }
 
 /**
- * Collect lap for kart analysis with track configuration filtering
+ * Collect lap for kart analysis with track configuration and timestamp filtering
  * 
  * PURPOSE: Store individual lap data for long-term kart performance analysis
- * WHY: Track kart performance across sessions while filtering anomalies
- * HOW: Validates lap time, extracts kart ID, adds track configuration metadata
- * FEATURE: Kart Analysis, Track Configuration Support, 60-Second Lap Filter
+ * WHY: Track kart performance across sessions while filtering anomalies and stale data
+ * HOW: Validates lap time, timestamp age, extracts kart ID, adds track configuration metadata
+ * FEATURE: Kart Analysis, Track Configuration Support, 60-Second Lap Filter, Timestamp Filtering
  * 
  * @param {Object} run - Driver run data from current lap
  * @param {number} lapNum - Lap number completed
@@ -999,6 +1000,16 @@ function collectKartAnalysisLap(run, lapNum) {
     if (run.last_time_raw > LAP_TIME_THRESHOLD) {
         console.log(`⚠️ Excluding long lap from analysis: ${run.name} - ${run.last_time} (${run.last_time_raw}ms > ${LAP_TIME_THRESHOLD}ms)`);
         return; // Don't add to analysis data, but lap is still visible in session data for winner determination
+    }
+    
+    // FILTER: Exclude laps that started more than 5 minutes ago
+    // WHY: Drivers from previous sessions may still appear if venue doesn't clear them properly
+    // FEATURE: Timestamp Filtering (prevents stale drivers from affecting kart analysis)
+    if (isDriverStale(run, TIMESTAMP_THRESHOLDS.KART_ANALYSIS)) {
+        const lapAge = getLapAge(run);
+        const minutesAgo = Math.floor(lapAge / 60);
+        console.log(`⏰ Excluding stale lap from analysis: ${run.name} - lap started ${minutesAgo} minutes ago`);
+        return; // Don't add to analysis data
     }
     
     // Use kart_id as the unique identifier for analysis (not kart_number which can change)
