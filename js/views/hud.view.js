@@ -85,6 +85,28 @@ export function updateHUDView(elements, sessionData, state) {
     elements.hudInterval.textContent = run.int || '-';
     elements.hudConsistency.textContent = run.consistency_lap || '-';
     
+    // Update gap to best lap in last lap time box
+    // WHY: Shows immediately how far off best lap the last lap was
+    // FEATURE: Last Lap Gap Display, Performance Feedback
+    const pctOffBestEl = document.getElementById('hud-pct-off-best');
+    if (pctOffBestEl && run.last_time_raw && run.best_time_raw) {
+        const gapToBest = run.last_time_raw - run.best_time_raw;
+        if (gapToBest > 0) {
+            const gapSeconds = (gapToBest / 1000).toFixed(3);
+            pctOffBestEl.textContent = `+${gapSeconds}s`;
+            pctOffBestEl.className = 'hud-sub-value declining';
+            pctOffBestEl.style.display = 'block';
+        } else if (gapToBest === 0) {
+            pctOffBestEl.textContent = 'BEST LAP';
+            pctOffBestEl.className = 'hud-sub-value improving';
+            pctOffBestEl.style.display = 'block';
+        } else {
+            pctOffBestEl.style.display = 'none';
+        }
+    } else if (pctOffBestEl) {
+        pctOffBestEl.style.display = 'none';
+    }
+    
     // Update personal best and gap to PB
     const personalBest = LapTrackerService.getPersonalBest(run.name, state.personalRecords);
     const hudPersonalBestEl = document.getElementById('hud-personal-best');
@@ -115,22 +137,92 @@ export function updateHUDView(elements, sessionData, state) {
         consistencyScoreEl.textContent = `${consistencyScore}%`;
     }
     
-    // Update lap history display
-    updateLapHistoryDisplay(elements, mainDriver, run.best_time_raw, state.lapHistory, personalBest);
+    // Update lap history display (only if changed to prevent unnecessary resets)
+    // WHY: Full re-renders cause visual flicker and reset scroll positions
+    const lastLapCount = window._hudLastLapCount || 0;
+    const currentLapCount = state.lapHistory[mainDriver]?.length || 0;
+    if (currentLapCount !== lastLapCount || !window._hudLastDriver || window._hudLastDriver !== mainDriver) {
+        updateLapHistoryDisplay(elements, mainDriver, run.best_time_raw, state.lapHistory, personalBest);
+        window._hudLastLapCount = currentLapCount;
+        window._hudLastDriver = mainDriver;
+    }
     
-    // Update driver notes
-    updateDriverNotesDisplay(elements, mainDriver, state.driverNotes);
+    // Update driver notes (only if changed)
+    const notesCount = state.driverNotes[mainDriver]?.length || 0;
+    const lastNotesCount = window._hudLastNotesCount || 0;
+    if (notesCount !== lastNotesCount || !window._hudLastDriver) {
+        updateDriverNotesDisplay(elements, mainDriver, state.driverNotes);
+        window._hudLastNotesCount = notesCount;
+    }
 }
 
 /**
- * Update session timer display
+ * Update session timer display with continuous countdown
+ * 
+ * PURPOSE: Show real-time session time countdown
+ * WHY: Timer should update every second, not just when WebSocket data arrives
+ * HOW: Stores target end time, updates display continuously with setInterval
+ * FEATURE: HUD Timer, Real-Time Updates, User Experience
+ * 
  * @param {Object} elements - DOM elements
- * @param {string} timeLeft - Time left in session
+ * @param {string} timeLeft - Time left in session (HH:MM:SS or MM:SS)
+ * @returns {void}
  */
 function updateSessionTimer(elements, timeLeft) {
-    if (elements.hudSessionTimer) {
-        elements.hudSessionTimer.textContent = timeLeft || '--:--';
+    if (!elements.hudSessionTimer) return;
+    
+    // Clear existing timer if any
+    if (window._hudTimerInterval) {
+        clearInterval(window._hudTimerInterval);
     }
+    
+    // Parse time left into seconds
+    const parseTimeLeft = (timeStr) => {
+        if (!timeStr || timeStr === '--:--') return null;
+        const parts = timeStr.split(':').map(p => parseInt(p, 10));
+        if (parts.length === 3) {
+            // HH:MM:SS
+            return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+        } else if (parts.length === 2) {
+            // MM:SS
+            return (parts[0] * 60) + parts[1];
+        }
+        return null;
+    };
+    
+    const secondsLeft = parseTimeLeft(timeLeft);
+    if (secondsLeft === null) {
+        elements.hudSessionTimer.textContent = timeLeft || '--:--';
+        return;
+    }
+    
+    // Calculate end time
+    const endTime = Date.now() + (secondsLeft * 1000);
+    
+    // Update immediately
+    elements.hudSessionTimer.textContent = timeLeft;
+    
+    // Update every second
+    // WHY: Provides smooth countdown without waiting for WebSocket updates
+    window._hudTimerInterval = setInterval(() => {
+        const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        const hours = Math.floor(remaining / 3600);
+        const minutes = Math.floor((remaining % 3600) / 60);
+        const seconds = remaining % 60;
+        
+        if (hours > 0) {
+            elements.hudSessionTimer.textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            elements.hudSessionTimer.textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Stop at zero
+        if (remaining === 0) {
+            clearInterval(window._hudTimerInterval);
+        }
+    }, 1000);
 }
 
 /**

@@ -67,7 +67,13 @@ export function updateRaceView(elements, sessionData, settings, personalRecords 
 }
 
 /**
- * Create a race item element
+ * Create a race item element with touch-safe event handling
+ * 
+ * PURPOSE: Create clickable race item that doesn't trigger on scroll
+ * WHY: Android browsers interpret scroll lift-off as tap, causing unwanted driver selection
+ * HOW: Tracks touch start/move/end positions to distinguish scroll from tap
+ * FEATURE: Race View, Touch Event Handling, Mobile UX
+ * 
  * @param {Object} run - Driver run data
  * @param {Object} settings - User settings
  * @param {Object} personalRecords - Personal records state
@@ -77,14 +83,48 @@ function createRaceItem(run, settings, personalRecords) {
     const div = document.createElement('div');
     div.className = 'race-item';
     div.dataset.kartNumber = run.kart_number;
-    
-    // Add click handler to select driver and switch to HUD
     div.style.cursor = 'pointer';
-    div.onclick = () => {
-        if (window.kartingApp && window.kartingApp.selectDriverAndSwitchToHUD) {
-            window.kartingApp.selectDriverAndSwitchToHUD(run.kart_number);
+    
+    // Touch tracking for scroll vs tap detection
+    // WHY: Prevents accidental driver selection when scrolling on mobile
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let touchStartTime = 0;
+    const SCROLL_THRESHOLD = 10; // pixels
+    const TAP_TIME_THRESHOLD = 300; // milliseconds
+    
+    div.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+        touchStartTime = Date.now();
+    }, { passive: true });
+    
+    div.addEventListener('touchend', (e) => {
+        const touchEndY = e.changedTouches[0].clientY;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndTime = Date.now();
+        
+        const deltaY = Math.abs(touchEndY - touchStartY);
+        const deltaX = Math.abs(touchEndX - touchStartX);
+        const deltaTime = touchEndTime - touchStartTime;
+        
+        // Only trigger if movement is small and quick (actual tap, not scroll)
+        if (deltaY < SCROLL_THRESHOLD && deltaX < SCROLL_THRESHOLD && deltaTime < TAP_TIME_THRESHOLD) {
+            if (window.kartingApp && window.kartingApp.selectDriverAndSwitchToHUD) {
+                window.kartingApp.selectDriverAndSwitchToHUD(run.kart_number);
+            }
         }
-    };
+    });
+    
+    // Desktop click handler (no touch events on desktop)
+    div.addEventListener('click', (e) => {
+        // Only handle if not a touch device (touch devices use touchend)
+        if (!('ontouchstart' in window)) {
+            if (window.kartingApp && window.kartingApp.selectDriverAndSwitchToHUD) {
+                window.kartingApp.selectDriverAndSwitchToHUD(run.kart_number);
+            }
+        }
+    });
     
     updateRaceItemContent(div, run, settings, personalRecords);
     

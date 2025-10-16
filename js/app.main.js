@@ -8,6 +8,7 @@ import * as StorageService from './services/storage.service.js';
 import * as LapTrackerService from './services/lap-tracker.service.js';
 import * as DriverSelectionService from './services/driver-selection.service.js';
 import * as AudioService from './utils/audio.js';
+import * as TTSService from './utils/tts.js';
 import { isDriverStale, getLapAge, TIMESTAMP_THRESHOLDS } from './utils/timestamp-filter.js';
 import * as RaceView from './views/race.view.js';
 import * as HUDView from './views/hud.view.js';
@@ -905,11 +906,25 @@ function handleSessionData(data) {
  * @param {Object} lapData - Additional lap metadata (gap, interval, etc.)
  * @returns {void}
  */
+/**
+ * Handle new lap detection from lap tracker service
+ * 
+ * PURPOSE: Process when a driver completes a new lap
+ * WHY: Trigger celebrations, collect analysis data, update personal records, announce lap
+ * HOW: Checks for personal bests, updates records, collects kart data, triggers audio/visual/voice feedback
+ * FEATURE: Lap Detection, Personal Records, Best Lap Celebration, Kart Analysis, HUD Flash, TTS Announcement
+ * 
+ * @param {Object} run - Driver run data for the lap
+ * @param {number} lapNum - Lap number completed
+ * @param {Object} lapData - Additional lap metadata (gap, interval, etc.)
+ * @returns {void}
+ */
 function handleNewLap(run, lapNum, lapData) {
     const kartNumber = run.kart_number;
+    const isMainDriver = state.settings.mainDriver === kartNumber;
     
     // SCREEN FLASH: Trigger prominent flash for main driver's lap in HUD view
-    if (state.settings.mainDriver === kartNumber && state.currentTab === 'hud') {
+    if (isMainDriver && state.currentTab === 'hud') {
         triggerLapFlash();
     }
     
@@ -922,7 +937,7 @@ function handleNewLap(run, lapNum, lapData) {
         StorageService.savePersonalRecords(state.personalRecords);
         
         // Play celebration if it's the selected driver
-        if (state.settings.mainDriver === kartNumber && state.settings.enableBestLapCelebration) {
+        if (isMainDriver && state.settings.enableBestLapCelebration) {
             AudioService.playBestLapCelebration(true);
             AudioService.vibrate([100, 50, 100, 50, 100]);
         }
@@ -941,6 +956,33 @@ function handleNewLap(run, lapNum, lapData) {
             AudioService.vibrate([100, 50, 100]);
             console.log(`🏆 New session best lap for Kart ${kartNumber}!`);
         }
+        
+        // Store last best lap time
+        state.lastBestLap[kartNumber] = run.best_time_raw;
+    }
+    
+    // TTS Announcement for main driver
+    // WHY: Voice feedback allows driver to keep eyes on track
+    // FEATURE: Text-to-Speech, Voice Feedback, Racing UX
+    if (state.settings.enableTTS && isMainDriver && run.last_time && state.currentTab === 'hud') {
+        // Calculate gaps for comprehensive announcement
+        const personalBest = LapTrackerService.getPersonalBest(run.name, state.personalRecords);
+        let gapToPB = null;
+        if (personalBest && run.last_time_raw) {
+            const pbGap = LapTrackerService.calculateGapToPersonalBest(run.last_time_raw, personalBest.bestLap);
+            gapToPB = pbGap.formatted;
+        }
+        
+        const gapToBest = run.last_time_raw && run.best_time_raw && run.last_time_raw !== run.best_time_raw ? 
+            `+${((run.last_time_raw - run.best_time_raw) / 1000).toFixed(3)}` : null;
+        
+        TTSService.announceLap({
+            lapTime: run.last_time,
+            gapToBest: gapToBest,
+            gapToPB: gapToPB,
+            gapToP1: run.gap,
+            isBestLap: run.last_time_raw === run.best_time_raw
+        });
     }
     
     // Collect lap for kart analysis

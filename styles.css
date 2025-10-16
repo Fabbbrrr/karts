@@ -2805,6 +2805,119 @@ body.theme-racing-green .hud-value {
     transform: scale(1.02);
 }
 
+/* HUD Mobile Optimization - Keep important data large, make layout compact */
+/* WHY: Small screens need efficient space usage while maintaining readability for racing */
+/* FEATURE: Responsive HUD, Mobile Optimization, Driver Experience */
+@media (max-width: 768px) {
+    .hud-header {
+        padding: 8px 12px;
+        min-height: 50px;
+    }
+    
+    .hud-session-timer {
+        font-size: 1.8rem;
+    }
+    
+    .hud-event-name {
+        font-size: 0.85rem;
+    }
+    
+    .hud-lap-info {
+        font-size: 0.85rem;
+    }
+    
+    .hud-main {
+        padding: 10px;
+    }
+    
+    .hud-position-row {
+        padding: 15px 10px;
+        gap: 5px;
+    }
+    
+    .hud-position {
+        font-size: 4.5rem;
+        /* Keep position large - critical racing info */
+    }
+    
+    .hud-kart {
+        font-size: 1.6rem;
+        margin-top: 0;
+    }
+    
+    .hud-timing-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .hud-card {
+        padding: 10px;
+    }
+    
+    .hud-card.primary {
+        padding: 15px;
+        /* Last lap and best lap times stay prominent */
+    }
+    
+    .hud-label {
+        font-size: 0.65rem;
+        margin-bottom: 3px;
+    }
+    
+    .hud-value {
+        font-size: 2.2rem;
+        /* Timing data must remain readable while driving */
+    }
+    
+    .hud-card.primary .hud-value {
+        font-size: 3.2rem;
+        /* Last lap time is most important */
+    }
+    
+    .hud-sub-value {
+        font-size: 0.75rem;
+        margin-top: 3px;
+    }
+    
+    .hud-footer {
+        padding: 8px;
+        gap: 8px;
+    }
+    
+    .hud-info-item {
+        padding: 6px;
+    }
+    
+    .hud-info-label {
+        font-size: 0.65rem;
+    }
+    
+    .hud-info-value {
+        font-size: 1.2rem;
+    }
+    
+    .hud-lap-history {
+        margin-top: 8px;
+    }
+    
+    .hud-section-header {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+    }
+    
+    .hud-lap-item {
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+    
+    .hud-toggle-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 0.9rem;
+    }
+}
+
 /* Responsive Design for Analysis */
 @media (max-width: 768px) {
     .analysis-stats-grid {
