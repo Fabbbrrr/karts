@@ -1,13 +1,26 @@
-// Karting Live Timer - Lap Tracker Service
-// Track lap history, gaps, positions, and trends
+/**
+ * Karting Live Timer - Lap Tracker Service
+ * 
+ * PURPOSE: Track lap history, gaps, positions, and trends for live timing
+ * WHY: Core service for detecting new laps and tracking race progression
+ * FEATURE: Lap Tracking, Position History, Gap Analysis
+ */
 
 /**
- * Update lap history for all drivers
- * @param {Object} sessionData - Current session data
- * @param {Object} lapHistory - Lap history state object
- * @param {Object} positionHistory - Position history state object
- * @param {Function} onNewLap - Callback when new lap detected
+ * Update lap history for all drivers and detect new laps
+ * 
+ * PURPOSE: Maintain lap-by-lap history for each driver in current session
+ * WHY: Required for lap charts, delta calculations, and new lap detection
+ * HOW: Compares current lap count to history, appends new laps, triggers callbacks
+ * FEATURE: Lap Tracking, New Lap Detection, Position History
+ * 
+ * @param {Object} sessionData - Current session data with runs array
+ * @param {Object} lapHistory - Lap history state object (kartNumber -> lap array)
+ * @param {Object} positionHistory - Position history state object for charts
+ * @param {Function} onNewLap - Callback function when new lap detected
  * @returns {Object} Updated lap and position history
+ * @returns {Object} returns.lapHistory - Updated lap history by kart number
+ * @returns {Object} returns.positionHistory - Updated position history for charts
  * 
  * NOTE: This function tracks ALL laps for race winner determination, including laps > 60s.
  * Long laps are excluded from kart analysis elsewhere.
@@ -73,11 +86,17 @@ export function updateLapHistory(sessionData, lapHistory, positionHistory, onNew
 }
 
 /**
- * Track gap trends over time
- * @param {string} kartNumber - Kart number
- * @param {string|number} gap - Current gap to leader
- * @param {Object} gapHistory - Gap history state object
- * @returns {Object} Updated gap history
+ * Track gap trends over time for position change analysis
+ * 
+ * PURPOSE: Monitor how gaps to leader change lap-to-lap
+ * WHY: Helps identify closing/opening gaps and race pace trends
+ * HOW: Stores recent gaps in array, calculates trend direction
+ * FEATURE: Gap Analysis, Trend Detection, Race Pace
+ * 
+ * @param {string} kartNumber - Kart number to track
+ * @param {string|number} gap - Current gap to leader (seconds)
+ * @param {Object} gapHistory - Gap history state object (kartNumber -> gap array)
+ * @returns {Object} Updated gap history with new gap appended
  */
 export function trackGapTrend(kartNumber, gap, gapHistory) {
     if (!gap || gap === '-') return gapHistory;
@@ -260,19 +279,30 @@ export function calculateGapToPersonalBest(currentLapTime, personalBestTime) {
 }
 
 /**
- * Detect session change
- * @param {Object} sessionData - Current session data
- * @param {string} currentSessionId - Current session ID
- * @param {Object} lapHistory - Lap history state
- * @returns {Object} Detection result with needsReset flag
+ * Detect session change based on event name, session name, and track configuration
+ * 
+ * PURPOSE: Identify when a new session starts to reset lap-specific tracking data
+ * WHY: Different sessions/tracks should not share lap history or position data
+ * HOW: Compares current session identifier against stored one, including track config
+ * FEATURE: Session Management, Track Configuration Detection
+ * 
+ * @param {Object} sessionData - Current session data from live timing
+ * @param {string} currentSessionId - Current session identifier (composite key)
+ * @param {Object} lapHistory - Lap history state for session restart detection
+ * @returns {Object} Detection result with needsReset flag and new sessionId
+ * @returns {boolean} returns.needsReset - True if session changed/restarted
+ * @returns {string} returns.sessionId - New/current session identifier
  */
 export function detectSessionChange(sessionData, currentSessionId, lapHistory) {
     if (!sessionData) {
         return { needsReset: false, sessionId: currentSessionId };
     }
     
-    // Create session identifier
-    const sessionId = `${sessionData.event_name}_${sessionData.session_name || 'default'}`;
+    // Create session identifier including track configuration
+    // WHY: Different track layouts must be treated as separate sessions for kart analysis
+    // FORMAT: "EventName_SessionName_TrackConfigID"
+    const trackConfig = sessionData.track_configuration_id || 'unknown';
+    const sessionId = `${sessionData.event_name}_${sessionData.session_name || 'default'}_${trackConfig}`;
     const currentLap = sessionData.current_lap || 0;
     
     // Check if this is a new session
@@ -299,8 +329,22 @@ export function detectSessionChange(sessionData, currentSessionId, lapHistory) {
 }
 
 /**
- * Reset all session-specific tracking data
- * @returns {Object} Empty tracking objects
+ * Reset all session-specific tracking data for new session
+ * 
+ * PURPOSE: Clear temporary tracking data when session changes
+ * WHY: Different sessions should start with clean slate
+ * HOW: Returns empty objects for lap history, gaps, positions, etc.
+ * FEATURE: Session Management, Data Reset
+ * 
+ * @returns {Object} Empty tracking objects for new session
+ * @returns {Object} returns.lapHistory - Empty lap history object
+ * @returns {Object} returns.startingPositions - Empty starting positions
+ * @returns {Object} returns.gapHistory - Empty gap history
+ * @returns {Object} returns.lastBestLap - Empty best lap tracking
+ * @returns {Object} returns.sessionBest - Null session best
+ * @returns {Object} returns.lastGap - Empty last gap tracking
+ * @returns {Object} returns.lastPosition - Empty last position tracking
+ * @returns {Object} returns.positionHistory - Empty position history
  */
 export function resetTrackingData() {
     return {

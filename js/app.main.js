@@ -17,34 +17,52 @@ import * as ResultsView from './views/results.view.js';
 import * as SettingsView from './views/settings.view.js';
 
 // DOM Elements Cache
+// WHY: Avoid repeated DOM queries for performance
 const elements = {};
 
-// Initialize the application
+/**
+ * Initialize the application and all subsystems
+ * 
+ * PURPOSE: Bootstrap the entire application from page load
+ * WHY: Single entry point for initialization ensures proper startup sequence
+ * HOW: Sequentially initializes DOM cache, storage, audio, events, PWA, and WebSocket
+ * FEATURE: Application Lifecycle, Initialization
+ * 
+ * @returns {void}
+ */
 function init() {
     console.log('🏎️ Initializing Karting Live Timer v2.0...');
     
     // Cache DOM elements
+    // WHY: Performance optimization - avoid repeated querySelector calls
     cacheDOMElements();
     
     // Load data from localStorage
+    // WHY: Restore user settings and persisted analysis data from previous sessions
     loadPersistedData();
     
     // Initialize audio
+    // WHY: Prepare audio context for lap celebration sounds
     state.audioContext = AudioService.initializeAudio();
     
     // Setup event listeners
+    // WHY: Enable user interaction with UI elements
     setupEventListeners();
     
     // Setup PWA features
+    // WHY: Enable offline capabilities and app installation
     setupPWA();
     
     // Connect to WebSocket
+    // WHY: Begin receiving live timing data from RaceFacer
     connectWebSocket();
     
     // Update storage status initially
+    // WHY: Show user how much space is being used
     setTimeout(() => refreshStorageStatus(), 500);
     
     // Auto-show app after 5 seconds if no connection
+    // WHY: Don't leave user stuck on loading screen if WebSocket fails
     setTimeout(() => {
         if (elements.loadingScreen && elements.loadingScreen.classList.contains('active')) {
             console.log('⏱️ Auto-showing app (no data after 5s)');
@@ -53,7 +71,16 @@ function init() {
     }, 5000);
 }
 
-// Cache all DOM elements
+/**
+ * Cache all DOM element references for performance
+ * 
+ * PURPOSE: Store references to frequently accessed DOM elements
+ * WHY: Dramatically improves performance by avoiding repeated DOM queries
+ * HOW: Queries all UI elements once and stores in elements object
+ * FEATURE: Performance Optimization, DOM Management
+ * 
+ * @returns {void}
+ */
 function cacheDOMElements() {
     // Navigation
     elements.tabNav = document.getElementById('tab-nav');
@@ -155,6 +182,16 @@ function cacheDOMElements() {
 }
 
 // Load persisted data
+/**
+ * Load persisted data from localStorage
+ * 
+ * PURPOSE: Restore application state from previous session
+ * WHY: Preserve user settings, personal records, and kart analysis across sessions
+ * HOW: Loads settings, personal records, and kart analysis data from localStorage
+ * FEATURE: Data Persistence, State Management
+ * 
+ * @returns {void}
+ */
 function loadPersistedData() {
     // Load settings
     state.settings = StorageService.loadSettings(DEFAULT_SETTINGS);
@@ -179,7 +216,16 @@ function loadPersistedData() {
     // startAutoBackup();
 }
 
-// Migrate old kart analysis data to ensure all properties exist and remove duplication
+/**
+ * Migrate old kart analysis data to ensure all properties exist and remove duplication
+ * 
+ * PURPOSE: Maintain backward compatibility with older data structures
+ * WHY: Data format evolved over versions; must support loading old data
+ * HOW: Checks for missing properties, removes deprecated fields, ensures consistency
+ * FEATURE: Data Migration, Backward Compatibility, Storage Optimization
+ * 
+ * @returns {void}
+ */
 function migrateKartAnalysisData() {
     // Ensure laps array exists
     if (!state.kartAnalysisData.laps) {
@@ -242,7 +288,16 @@ function migrateKartAnalysisData() {
     console.log('✅ Kart analysis data migration completed - storage optimized');
 }
 
-// Setup event listeners
+/**
+ * Setup all event listeners for user interaction
+ * 
+ * PURPOSE: Bind user actions to application logic
+ * WHY: Enable interactive features like tab switching, driver selection, settings changes
+ * HOW: Attaches event listeners to buttons, dropdowns, forms, and other interactive elements
+ * FEATURE: User Interaction, Event Handling, UI Controls
+ * 
+ * @returns {void}
+ */
 function setupEventListeners() {
     // Skip loading button
     if (elements.skipLoadingBtn) {
@@ -660,7 +715,16 @@ function setupEventListeners() {
     }
 }
 
-// Setup PWA features
+/**
+ * Setup Progressive Web App features
+ * 
+ * PURPOSE: Enable offline capabilities and app installation
+ * WHY: Allows app to work without internet and be installed on home screen
+ * HOW: Registers service worker for caching and offline functionality
+ * FEATURE: Progressive Web App, Offline Support, Service Worker
+ * 
+ * @returns {void}
+ */
 function setupPWA() {
     // Register service worker
     if ('serviceWorker' in navigator) {
@@ -677,7 +741,16 @@ function setupPWA() {
     }
 }
 
-// Connect to WebSocket
+/**
+ * Connect to RaceFacer WebSocket for live timing data
+ * 
+ * PURPOSE: Establish real-time connection to receive live race data
+ * WHY: Core functionality - app displays live timing from RaceFacer system
+ * HOW: Uses WebSocketService to connect via Socket.IO, sets up event handlers
+ * FEATURE: Live Timing, WebSocket Connection, Real-Time Data
+ * 
+ * @returns {void}
+ */
 function connectWebSocket() {
     const callbacks = {
         onConnect: handleConnect,
@@ -692,7 +765,16 @@ function connectWebSocket() {
     updateLoadingStatus('Connecting to RaceFacer...');
 }
 
-// WebSocket handlers
+/**
+ * Handle successful WebSocket connection
+ * 
+ * PURPOSE: Update UI and state when WebSocket connects
+ * WHY: User needs feedback that connection is established
+ * HOW: Updates connection indicator, logs channel info, shows waiting status
+ * FEATURE: WebSocket Connection, Connection Status, Live Timing
+ * 
+ * @returns {void}
+ */
 function handleConnect() {
     state.isConnected = true;
     updateConnectionIndicator(true);
@@ -703,17 +785,49 @@ function handleConnect() {
     console.log('⏰ Waiting for session data... (updates will appear in console)');
 }
 
+/**
+ * Handle WebSocket disconnection
+ * 
+ * PURPOSE: Update UI and state when WebSocket disconnects
+ * WHY: User needs feedback that live data is no longer flowing
+ * HOW: Updates connection indicator classes, logs disconnection
+ * FEATURE: WebSocket Connection, Connection Status, Error Handling
+ * 
+ * @returns {void}
+ */
 function handleDisconnect() {
     state.isConnected = false;
     updateConnectionIndicator(false);
     console.log('❌ Disconnected from RaceFacer - reconnecting...');
 }
 
+/**
+ * Handle WebSocket connection errors
+ * 
+ * PURPOSE: Respond to connection failures
+ * WHY: User needs feedback when connection attempts fail
+ * HOW: Logs error and updates loading status with retry message
+ * FEATURE: Error Handling, WebSocket Connection, User Feedback
+ * 
+ * @param {Error} error - Connection error object
+ * @returns {void}
+ */
 function handleConnectionError(error) {
     console.error('Connection error:', error);
     updateLoadingStatus('Connection failed. Retrying...');
 }
 
+/**
+ * Handle incoming session data from WebSocket
+ * 
+ * PURPOSE: Process live timing data from RaceFacer and update application state
+ * WHY: Core functionality - this is where live race data enters the application
+ * HOW: Validates data, detects session changes, updates lap history, triggers view updates
+ * FEATURE: Live Timing, Session Management, Lap Tracking, Data Processing
+ * 
+ * @param {Object} data - Session data from WebSocket (runs, lap times, positions, etc.)
+ * @returns {void}
+ */
 function handleSessionData(data) {
     try {
         // Ignore live data if in replay mode
@@ -777,7 +891,19 @@ function handleSessionData(data) {
     }
 }
 
-// Handle new lap detection
+/**
+ * Handle new lap detection from lap tracker service
+ * 
+ * PURPOSE: Process when a driver completes a new lap
+ * WHY: Trigger celebrations, collect analysis data, update personal records
+ * HOW: Checks for personal bests, updates records, collects kart data, triggers audio/visual feedback
+ * FEATURE: Lap Detection, Personal Records, Best Lap Celebration, Kart Analysis, HUD Flash
+ * 
+ * @param {Object} run - Driver run data for the lap
+ * @param {number} lapNum - Lap number completed
+ * @param {Object} lapData - Additional lap metadata (gap, interval, etc.)
+ * @returns {void}
+ */
 function handleNewLap(run, lapNum, lapData) {
     const kartNumber = run.kart_number;
     
@@ -821,6 +947,16 @@ function handleNewLap(run, lapNum, lapData) {
 }
 
 // Trigger prominent screen flash animation
+/**
+ * Trigger visual flash animation on HUD when main driver completes a lap
+ * 
+ * PURPOSE: Provide prominent visual feedback for lap completion
+ * WHY: User requested more prominent flash to confirm lap was recorded
+ * HOW: Adds CSS animation class, removes after animation duration
+ * FEATURE: HUD Lap Flash, Visual Feedback, User Experience
+ * 
+ * @returns {void}
+ */
 function triggerLapFlash() {
     const hudScreen = document.getElementById('hud-screen');
     if (!hudScreen) return;
@@ -840,27 +976,44 @@ function triggerLapFlash() {
     }, 600);
 }
 
-// Collect lap for kart analysis
+/**
+ * Collect lap for kart analysis with track configuration filtering
+ * 
+ * PURPOSE: Store individual lap data for long-term kart performance analysis
+ * WHY: Track kart performance across sessions while filtering anomalies
+ * HOW: Validates lap time, extracts kart ID, adds track configuration metadata
+ * FEATURE: Kart Analysis, Track Configuration Support, 60-Second Lap Filter
+ * 
+ * @param {Object} run - Driver run data from current lap
+ * @param {number} lapNum - Lap number completed
+ * @returns {void}
+ */
 function collectKartAnalysisLap(run, lapNum) {
     const sessionId = state.currentSessionId || 'unknown';
+    const trackConfigId = state.sessionData?.track_configuration_id || 'unknown';
     
     // FILTER: Exclude laps longer than 60 seconds from kart analysis
-    // These are likely incidents, system errors, or forgotten drivers
+    // WHY: These are likely incidents, system errors, or forgotten drivers from previous sessions
+    // FEATURE: 60-Second Lap Filter (prevents anomalies from corrupting kart performance data)
     const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
     if (run.last_time_raw > LAP_TIME_THRESHOLD) {
         console.log(`⚠️ Excluding long lap from analysis: ${run.name} - ${run.last_time} (${run.last_time_raw}ms > ${LAP_TIME_THRESHOLD}ms)`);
-        return; // Don't add to analysis data, but lap is still visible in session data
+        return; // Don't add to analysis data, but lap is still visible in session data for winner determination
     }
     
     // Use kart_id as the unique identifier for analysis (not kart_number which can change)
+    // WHY: Kart numbers can be renumbered by venue, but kart_id remains stable
     const kartId = run.kart_id ? String(run.kart_id) : run.kart_number;
     
+    // Create lap record with track configuration for proper filtering
+    // WHY: Different track layouts (e.g., short vs long circuit) must not be compared
     const lapRecord = {
         timestamp: Date.now(),
         sessionId: sessionId,
-        kartId: kartId,                    // Use kart_id for uniqueness
-        kartNumber: run.kart_number,       // Store display number for reference
-        kartName: run.kart,                // Store full name (e.g., "E14")
+        trackConfigId: trackConfigId,         // TRACK CONFIGURATION: Separate different layouts
+        kartId: kartId,                        // Unique kart identifier
+        kartNumber: run.kart_number,           // Display number for reference
+        kartName: run.kart,                    // Full name (e.g., "E14")
         driverName: run.name,
         lapTime: run.last_time,
         lapTimeRaw: run.last_time_raw,
@@ -1003,7 +1156,16 @@ function cleanupOldSessions() {
     StorageService.saveKartAnalysisData(state.kartAnalysisData);
 }
 
-// Rebuild kart and driver aggregations from laps array
+/**
+ * Rebuild kart and driver aggregations from stored lap array
+ * 
+ * PURPOSE: Recalculate all kart/driver statistics from raw lap data
+ * WHY: Needed after data import, storage recovery, or filter changes
+ * HOW: Iterates all laps, filters invalid data, rebuilds aggregate statistics
+ * FEATURE: Kart Analysis, Data Recovery, 60-Second Lap Filter, Track Config Support
+ * 
+ * @returns {void}
+ */
 function rebuildAggregations() {
     console.log(`🔨 Rebuilding aggregations from ${state.kartAnalysisData.laps?.length || 0} laps...`);
     
@@ -1018,8 +1180,12 @@ function rebuildAggregations() {
     state.kartAnalysisData.drivers = {};
     
     // FILTER: Exclude laps longer than 60 seconds when rebuilding
+    // WHY: Prevents corrupted data from affecting statistics after recovery
     const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
     let excludedCount = 0;
+    
+    // Track configuration summary for logging
+    const trackConfigs = new Set();
     
     // Rebuild from laps
     state.kartAnalysisData.laps.forEach(lap => {
@@ -1029,7 +1195,13 @@ function rebuildAggregations() {
             return;
         }
         
+        // Track configurations seen (for logging)
+        if (lap.trackConfigId) {
+            trackConfigs.add(lap.trackConfigId);
+        }
+        
         // Use kartId if available, fallback to kartNumber for old data
+        // WHY: Maintains backward compatibility with older stored data
         const lapKartId = lap.kartId || lap.kartNumber;
         
         // Rebuild kart stats
@@ -1085,13 +1257,27 @@ function rebuildAggregations() {
         driver.kartHistory[lapKartId] = (driver.kartHistory[lapKartId] || 0) + 1;
     });
     
+    // Log rebuild results
     if (excludedCount > 0) {
         console.log(`⚠️ Excluded ${excludedCount} laps > 60s from aggregations`);
+    }
+    if (trackConfigs.size > 0) {
+        console.log(`🏁 Track configurations found: ${Array.from(trackConfigs).join(', ')}`);
     }
     console.log(`✅ Rebuilt: ${Object.keys(state.kartAnalysisData.karts).length} karts, ${Object.keys(state.kartAnalysisData.drivers).length} drivers`);
 }
 
 // Reset session data
+/**
+ * Reset session data when a new session is detected
+ * 
+ * PURPOSE: Clear session-specific tracking data for new race
+ * WHY: Different sessions should not share lap history or position data
+ * HOW: Resets lap history, position history, gaps, session best, starting positions
+ * FEATURE: Session Management, Data Reset, Session Change Detection
+ * 
+ * @returns {void}
+ */
 function resetSessionData() {
     console.log('🔄 Resetting session data...');
     
@@ -1105,7 +1291,16 @@ function resetSessionData() {
     Object.assign(state, reset);
 }
 
-// Save current session
+/**
+ * Save current session for later replay
+ * 
+ * PURPOSE: Store complete session snapshot for replay feature
+ * WHY: Allows user to review past sessions without live connection
+ * HOW: Packages session data, lap history, and metadata into sessionRecord object
+ * FEATURE: Session Replay, Data Persistence, Session Recording
+ * 
+ * @returns {void}
+ */
 function saveCurrentSession() {
     const sessionRecord = {
         id: state.currentSessionId,
@@ -1123,7 +1318,16 @@ function saveCurrentSession() {
     StorageService.saveRecordedSession(sessionRecord);
 }
 
-// Save settings
+/**
+ * Save user settings to localStorage
+ * 
+ * PURPOSE: Persist user preferences across sessions
+ * WHY: User settings should be remembered between app opens
+ * HOW: Extracts settings from UI, stores in localStorage via StorageService
+ * FEATURE: Settings Management, Data Persistence, User Preferences
+ * 
+ * @returns {void}
+ */
 function saveSettings() {
     const settings = SettingsView.getSettingsFromUI(elements);
     Object.assign(state.settings, settings);
@@ -1156,6 +1360,17 @@ function showApp() {
 }
 
 // Switch tab
+/**
+ * Switch between application tabs (views)
+ * 
+ * PURPOSE: Navigate between different views (Race, HUD, Analysis, etc.)
+ * WHY: Provides multi-view interface for different use cases
+ * HOW: Updates CSS classes, triggers view-specific updates, manages visibility
+ * FEATURE: Navigation, Tab Management, View Switching
+ * 
+ * @param {string} tabName - Name of tab to switch to ('race', 'hud', 'analysis', etc.)
+ * @returns {void}
+ */
 function switchTab(tabName) {
     state.currentTab = tabName;
     
@@ -1183,6 +1398,16 @@ function switchTab(tabName) {
 }
 
 // Update all views
+/**
+ * Update all views with current session data
+ * 
+ * PURPOSE: Refresh UI to reflect latest data changes
+ * WHY: Called after WebSocket updates, user actions, or tab switches
+ * HOW: Conditionally updates active tab's view based on currentTab state
+ * FEATURE: View Management, UI Updates, Data Synchronization
+ * 
+ * @returns {void}
+ */
 function updateAllViews() {
     if (!state.sessionData && !state.replayData) {
         console.warn('⚠️ No session or replay data available for view update');

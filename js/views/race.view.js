@@ -6,20 +6,30 @@ import { getLapColor } from '../utils/ui-helpers.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
 
 /**
- * Update the race view with current session data
- * @param {Object} elements - DOM elements
- * @param {Object} sessionData - Current session data
- * @param {Object} settings - User settings
- * @param {Object} personalRecords - Personal records state
+ * Update the race view with current session data including track configuration
+ * 
+ * PURPOSE: Display all drivers in current race with live timing data
+ * WHY: Primary view for watching multi-driver races in real-time
+ * HOW: Updates header, driver list, and click handlers for driver selection
+ * FEATURE: Race View, Live Timing Display, Track Configuration Display
+ * 
+ * @param {Object} elements - Cached DOM elements
+ * @param {Object} sessionData - Current session data from WebSocket
+ * @param {Object} settings - User preferences and display settings
+ * @param {Object} [personalRecords={}] - Driver personal best times
+ * @returns {void}
  */
 export function updateRaceView(elements, sessionData, settings, personalRecords = {}) {
     if (!sessionData) return;
     
-    const { event_name, current_lap, total_laps, time_left, runs } = sessionData;
+    const { event_name, current_lap, total_laps, time_left, runs, track_configuration_id } = sessionData;
     
-    // Update header
+    // Update header with track configuration
+    // WHY: Users need to know which track layout is being used
+    // FEATURE: Track Configuration Display
     elements.eventName.textContent = event_name || 'RaceFacer Live Timing';
-    elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}`;
+    const trackInfo = track_configuration_id ? ` | Track Config #${track_configuration_id}` : '';
+    elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}${trackInfo}`;
     
     const activeRuns = runs.filter(run => run.kart_number && run.kart_number !== '');
     

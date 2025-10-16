@@ -37,24 +37,42 @@ export function findCrossKartDrivers(analysisData) {
 }
 
 /**
- * Calculate Driver-Normalized Performance Index for a kart
- * @param {string} kartId - Kart ID to analyze (can be kartId or kartNumber for backward compatibility)
- * @param {Object} analysisData - Kart analysis data
- * @returns {Object|null} Normalized index with statistics
+ * Calculate Driver-Normalized Performance Index for a kart on a specific track configuration
+ * 
+ * PURPOSE: Determine kart performance independent of driver skill level
+ * WHY: Different drivers have different skill levels; normalize to compare karts fairly
+ * HOW: Calculate ratio of lap times vs driver's average, weighted by cross-kart drivers
+ * FEATURE: Kart Analysis, Driver Normalization, Track Configuration Filtering
+ * 
+ * @param {string} kartId - Kart ID to analyze (kartId or kartNumber for backward compatibility)
+ * @param {Object} analysisData - Kart analysis data with laps, drivers, karts
+ * @param {string|number} [trackConfigId] - Optional track configuration filter
+ * @returns {Object|null} Normalized index with statistics, or null if insufficient data
+ * @returns {number} returns.index - Performance index (1.0 = average, <1.0 = faster, >1.0 = slower)
+ * @returns {number} returns.percentageFaster - Percentage faster/slower than average
+ * @returns {number} returns.lapCount - Number of laps analyzed
+ * @returns {number} returns.driverCount - Number of unique drivers
+ * @returns {number} returns.crossKartDriverCount - Drivers who used multiple karts (high confidence)
  */
-export function calculateNormalizedIndex(kartId, analysisData) {
+export function calculateNormalizedIndex(kartId, analysisData, trackConfigId = null) {
     const kart = analysisData.karts[kartId];
     if (!kart || kart.totalLaps === 0) {
         return null;
     }
     
     // FILTER: Exclude laps longer than 60 seconds from analysis
+    // WHY: Long laps indicate incidents or system errors, not kart performance
     const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
     
-    // Get all laps for this kart (check both kartId and kartNumber for backward compatibility)
-    const kartLaps = analysisData.laps.filter(lap => 
-        (lap.kartId === kartId || lap.kartNumber === kartId) && lap.lapTimeRaw <= LAP_TIME_THRESHOLD
-    );
+    // Get all laps for this kart filtered by track configuration
+    // WHY: Different track layouts (short/long) must not be compared
+    // FEATURE: Track Configuration Filtering
+    const kartLaps = analysisData.laps.filter(lap => {
+        const matchesKart = (lap.kartId === kartId || lap.kartNumber === kartId);
+        const validTime = lap.lapTimeRaw <= LAP_TIME_THRESHOLD;
+        const matchesTrack = trackConfigId === null || lap.trackConfigId === trackConfigId;
+        return matchesKart && validTime && matchesTrack;
+    });
     
     if (kartLaps.length === 0) {
         return null;
