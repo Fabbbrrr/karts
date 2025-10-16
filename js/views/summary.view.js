@@ -34,7 +34,9 @@ export function updateSummaryView(elements, sessionData, state) {
 function updateFinalPositions(elements, sessionData, state) {
     if (!elements.summaryPositionsList) return;
     
-    const runs = [...sessionData.runs].sort((a, b) => a.pos - b.pos);
+    // Filter out stale drivers from final positions
+    const activeRuns = filterStaleDrivers(sessionData.runs, TIMESTAMP_THRESHOLDS.SUMMARY_DISPLAY, false);
+    const runs = [...activeRuns].sort((a, b) => a.pos - b.pos);
     
     elements.summaryPositionsList.innerHTML = runs.map(run => {
         const posClass = run.pos <= 3 ? `p${run.pos}` : '';
