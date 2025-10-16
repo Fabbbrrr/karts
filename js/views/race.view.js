@@ -195,6 +195,14 @@ export function updateDriverDropdown(elements, sessionData) {
         elements.compareDriver2Select.innerHTML = '<option value="">-- Select Driver --</option>';
     }
     
+    // Clear HUD dropdowns
+    if (elements.hudDriverSelect) {
+        elements.hudDriverSelect.innerHTML = '<option value="">-- Select Kart --</option>';
+    }
+    if (elements.hudQuickDriverSelect) {
+        elements.hudQuickDriverSelect.innerHTML = '<option value="">-- Select Kart --</option>';
+    }
+    
     // Add drivers from current session
     const filteredRuns = sessionData.runs.filter(run => run.kart_number && run.kart_number !== '');
     console.log('🔄 Adding', filteredRuns.length, 'drivers to dropdown');
@@ -206,6 +214,21 @@ export function updateDriverDropdown(elements, sessionData) {
                 option.value = run.kart_number;
                 option.textContent = `Kart ${run.kart_number} - ${run.name}`;
                 elements.mainDriverSelect.appendChild(option);
+            }
+            
+            // HUD driver dropdowns
+            if (elements.hudDriverSelect) {
+                const hudOption = document.createElement('option');
+                hudOption.value = run.kart_number;
+                hudOption.textContent = `Kart ${run.kart_number} - ${run.name}`;
+                elements.hudDriverSelect.appendChild(hudOption);
+            }
+            
+            if (elements.hudQuickDriverSelect) {
+                const hudQuickOption = document.createElement('option');
+                hudQuickOption.value = run.kart_number;
+                hudQuickOption.textContent = `Kart ${run.kart_number} - ${run.name}`;
+                elements.hudQuickDriverSelect.appendChild(hudQuickOption);
             }
             
             // Compare dropdowns
@@ -230,6 +253,17 @@ export function updateDriverDropdown(elements, sessionData) {
     }
     if (elements.compareDriver2Select && compareDriver2Value) {
         elements.compareDriver2Select.value = compareDriver2Value;
+    }
+    
+    // Set HUD dropdowns to current main driver if set
+    const currentMainDriver = elements.mainDriverSelect?.value;
+    if (currentMainDriver) {
+        if (elements.hudDriverSelect) {
+            elements.hudDriverSelect.value = currentMainDriver;
+        }
+        if (elements.hudQuickDriverSelect) {
+            elements.hudQuickDriverSelect.value = currentMainDriver;
+        }
     }
 }
 

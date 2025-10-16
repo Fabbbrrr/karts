@@ -76,6 +76,8 @@ function cacheDOMElements() {
     elements.hudScreen = document.getElementById('hud-screen');
     elements.hudNoDriver = document.getElementById('hud-no-driver');
     elements.hudContent = document.getElementById('hud-content');
+    elements.hudDriverSelect = document.getElementById('hud-driver-select');
+    elements.hudQuickDriverSelect = document.getElementById('hud-quick-driver-select');
     elements.hudEventName = document.getElementById('hud-event-name');
     elements.hudLapInfo = document.getElementById('hud-lap-info');
     elements.hudPosition = document.getElementById('hud-position');
@@ -88,6 +90,7 @@ function cacheDOMElements() {
     elements.hudConsistency = document.getElementById('hud-consistency');
     elements.hudLapList = document.getElementById('hud-lap-list');
     elements.hudNotesList = document.getElementById('hud-notes-list');
+    elements.hudSessionTimer = document.getElementById('hud-session-timer');
     
     // Results tab
     elements.resultsTableBody = document.getElementById('results-table-body');
