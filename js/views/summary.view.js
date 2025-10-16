@@ -2,6 +2,7 @@
 // Session summary with charts and final results
 
 import { formatTime } from '../utils/time-formatter.js';
+import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 
 /**
  * Update summary view with session results
