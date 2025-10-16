@@ -349,8 +349,19 @@ function setupEventListeners() {
     // HUD driver selector (no driver screen)
     if (elements.hudDriverSelect) {
         elements.hudDriverSelect.addEventListener('change', (e) => {
-            state.settings.mainDriver = e.target.value || null;
+            const selectedDriver = e.target.value || null;
+            console.log('🏎️ HUD driver selector changed:', selectedDriver);
+            state.settings.mainDriver = selectedDriver;
             saveSettings();
+            
+            // Sync other dropdowns
+            if (elements.mainDriverSelect) {
+                elements.mainDriverSelect.value = selectedDriver || '';
+            }
+            if (elements.hudQuickDriverSelect) {
+                elements.hudQuickDriverSelect.value = selectedDriver || '';
+            }
+            
             SettingsView.applySettings(elements, state.settings);
             updateAllViews();
         });
@@ -359,8 +370,19 @@ function setupEventListeners() {
     // HUD quick driver selector (header)
     if (elements.hudQuickDriverSelect) {
         elements.hudQuickDriverSelect.addEventListener('change', (e) => {
-            state.settings.mainDriver = e.target.value || null;
+            const selectedDriver = e.target.value || null;
+            console.log('🏎️ HUD quick selector changed:', selectedDriver);
+            state.settings.mainDriver = selectedDriver;
             saveSettings();
+            
+            // Sync other dropdowns
+            if (elements.mainDriverSelect) {
+                elements.mainDriverSelect.value = selectedDriver || '';
+            }
+            if (elements.hudDriverSelect) {
+                elements.hudDriverSelect.value = selectedDriver || '';
+            }
+            
             SettingsView.applySettings(elements, state.settings);
             updateAllViews();
         });
@@ -1703,6 +1725,9 @@ window.kartingApp = {
     updateAllViews,
     selectDriverAndSwitchToHUD: (kartNumber) => {
         console.log('🏎️ Selecting driver and switching to HUD:', kartNumber);
+        console.log('Session data available:', !!state.sessionData);
+        console.log('Session runs:', state.sessionData?.runs?.length);
+        
         // Set main driver in settings
         state.settings.mainDriver = kartNumber;
         StorageService.saveSettings(state.settings);
@@ -1715,8 +1740,15 @@ window.kartingApp = {
             elements.hudQuickDriverSelect.value = kartNumber;
         }
         
-        // Switch to HUD tab
+        // Update main driver select in settings tab
+        if (elements.mainDriverSelect) {
+            elements.mainDriverSelect.value = kartNumber;
+        }
+        
+        // Switch to HUD tab (this will call updateAllViews)
         switchTab('hud');
+        
+        console.log('✅ Driver selected and HUD tab activated');
     },
     showKartDetails: (kartNumber) => {
         console.log('🔍 showKartDetails called for kart:', kartNumber);
