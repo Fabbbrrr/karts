@@ -418,7 +418,7 @@ export function applyHUDCardVisibility(elements, settings) {
     toggleCard('hud-card-stats', settings.hudShowStats);
     
     // Initialize drag and drop after toggle
-    setTimeout(() => initializeDragAndDrop(), 100);
+    setTimeout(() => initializeDragAndDrop(), 2000);
 }
 
 /**
