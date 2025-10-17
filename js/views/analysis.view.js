@@ -229,14 +229,14 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData, trackConfigId =
         let trackConfigDisplay = '-';
         if (trackConfigId !== null) {
             // Filtered view - show the track name
-            trackConfigDisplay = TrackConfigUtils.getTrackConfigName(trackConfigId);
+            trackConfigDisplay = getTrackConfigName(trackConfigId);
         } else {
             // All tracks view - get track from kart's data
             const kartLaps = (kartAnalysisData.laps || []).filter(lap => lap.kartId === kart.kartId);
             if (kartLaps.length > 0 && kartLaps[0].trackConfigId !== undefined) {
                 const trackConfigs = [...new Set(kartLaps.map(lap => lap.trackConfigId))];
                 if (trackConfigs.length === 1) {
-                    trackConfigDisplay = TrackConfigUtils.getTrackConfigName(trackConfigs[0]);
+                    trackConfigDisplay = getTrackConfigName(trackConfigs[0]);
                 } else {
                     trackConfigDisplay = `${trackConfigs.length} tracks`;
                 }
