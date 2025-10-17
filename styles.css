@@ -1060,6 +1060,13 @@ html, body {
     font-size: 1rem;
 }
 
+.setting-description {
+    color: #888;
+    font-size: 0.85rem;
+    margin: -8px 0 12px 28px;
+    line-height: 1.4;
+}
+
 .settings-section p {
     color: #888;
     margin-bottom: 0.5rem;
