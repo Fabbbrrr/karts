@@ -12,10 +12,28 @@ import * as SessionHistoryService from '../services/session-history.service.js';
  * @param {Object} state - Application state
  */
 export function updateSummaryView(elements, sessionData, state) {
-    if (!sessionData) return;
+    console.log('📈 updateSummaryView called:', { 
+        sessionData: !!sessionData, 
+        runs: sessionData?.runs?.length 
+    });
     
     // Populate session selector
     populateSessionSelector('summary');
+    
+    if (!sessionData || !sessionData.runs || sessionData.runs.length === 0) {
+        console.warn('⚠️ No session data for summary');
+        const noData = document.getElementById('summary-no-data');
+        const content = document.getElementById('summary-content');
+        if (noData) noData.classList.remove('hidden');
+        if (content) content.classList.add('hidden');
+        return;
+    }
+    
+    // Show content, hide placeholder
+    const noData = document.getElementById('summary-no-data');
+    const content = document.getElementById('summary-content');
+    if (noData) noData.classList.add('hidden');
+    if (content) content.classList.remove('hidden');
     
     // Update final positions
     updateFinalPositions(elements, sessionData, state);
@@ -27,6 +45,8 @@ export function updateSummaryView(elements, sessionData, state) {
     if (elements.positionChart && Object.keys(state.positionHistory).length > 0) {
         updatePositionChart(elements, sessionData, state.positionHistory);
     }
+    
+    console.log('✅ Summary view updated');
 }
 
 /**
