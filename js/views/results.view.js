@@ -8,6 +8,7 @@
 
 import { formatTime } from '../utils/time-formatter.js';
 import { calculateConsistency, calculateAverageLapTime } from '../utils/calculations.js';
+import * as SessionHistoryService from '../services/session-history.service.js';
 
 /**
  * Calculate results based on selected scoring method
@@ -302,6 +303,9 @@ export function updateResultsView(elements, sessionData, state) {
         state: !!state
     });
     
+    // Populate session selector on first call
+    populateSessionSelector('results');
+    
     if (!sessionData || !sessionData.runs || sessionData.runs.length === 0) {
         console.warn('⚠️ No session data or runs available for results');
         const noData = document.getElementById('results-no-data');
@@ -357,4 +361,50 @@ export function updateResultsView(elements, sessionData, state) {
         winnerScore: results[0]?.scoreDisplay,
         totalLapsConsidered: results.reduce((sum, r) => sum + r.validLaps, 0)
     });
+}
+
+/**
+ * Populate session selector dropdown with saved sessions
+ * 
+ * PURPOSE: Fill dropdown with available historical sessions
+ * WHY: Let users select past sessions to view
+ * HOW: Load from SessionHistoryService and create options
+ * FEATURE: Session History
+ * 
+ * @param {string} tab - Which tab's selector to populate ("results" or "summary")
+ * @returns {void}
+ */
+function populateSessionSelector(tab) {
+    const selector = document.getElementById(`${tab}-session-select`);
+    if (!selector) return;
+    
+    // Check if already populated (avoid re-populating on every update)
+    if (selector.dataset.populated === 'true') return;
+    
+    // Get saved sessions
+    const sessions = SessionHistoryService.getSessionHistory();
+    
+    // Clear existing options except "Live"
+    selector.innerHTML = '<option value="live">🔴 Live Session (Current)</option>';
+    
+    if (sessions.length > 0) {
+        // Add separator
+        const separator = document.createElement('option');
+        separator.disabled = true;
+        separator.textContent = '─────────────';
+        selector.appendChild(separator);
+        
+        // Add session options
+        sessions.forEach(session => {
+            const option = document.createElement('option');
+            option.value = session.sessionId;
+            option.textContent = SessionHistoryService.getSessionLabel(session);
+            selector.appendChild(option);
+        });
+        
+        console.log(`📂 Populated ${tab} selector with ${sessions.length} sessions`);
+    }
+    
+    // Mark as populated
+    selector.dataset.populated = 'true';
 }
