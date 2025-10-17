@@ -1,10 +1,10 @@
 /**
  * Karting Live Timer - Compare View
  * 
- * PURPOSE: Visual head-to-head driver comparison with animated bars and charts
- * WHY: Engaging visual comparison helps identify performance differences
- * HOW: Uses progress bars, winner indicators, and lap-by-lap charts
- * FEATURE: Head-to-Head Comparison, Visual Stats, Performance Charts
+ * PURPOSE: Clean table comparison of two drivers side-by-side
+ * WHY: Users want easy-to-read data comparison with clear gaps
+ * HOW: Updates table cells with driver stats and calculates gaps
+ * FEATURE: Head-to-Head Comparison, Gap Analysis, Winner Highlighting
  */
 
 import { formatTime } from '../utils/time-formatter.js';
@@ -14,10 +14,6 @@ const LAP_TIME_THRESHOLD = 60000; // 60 seconds
 
 /**
  * Update compare view with two selected drivers
- * 
- * PURPOSE: Display flashy visual comparison between two drivers
- * WHY: Users want engaging, easy-to-understand performance comparisons
- * HOW: Updates driver cards, stat bars, charts, and winner indicators
  * 
  * @param {Object} elements - DOM elements
  * @param {Object} sessionData - Current session data
@@ -42,9 +38,11 @@ export function updateCompareView(elements, sessionData) {
     if (elements.compareContent) elements.compareContent.classList.remove('hidden');
     if (elements.compareNoSelection) elements.compareNoSelection.style.display = 'none';
     
-    // Update driver header cards
-    updateDriverCard(1, driver1);
-    updateDriverCard(2, driver2);
+    // Update headers
+    const header1 = document.getElementById('compare-driver1-header');
+    const header2 = document.getElementById('compare-driver2-header');
+    if (header1) header1.textContent = `${driver1.name || 'Driver'} (#${driver1.kart_number})`;
+    if (header2) header2.textContent = `${driver2.name || 'Driver'} (#${driver2.kart_number})`;
     
     // Filter valid lap times
     const getLaps = (run) => (run.lap_times || [])
@@ -54,195 +52,112 @@ export function updateCompareView(elements, sessionData) {
     const d1Laps = getLaps(driver1);
     const d2Laps = getLaps(driver2);
     
-    // Calculate stats
-    const stats = {
-        best: {
-            val1: driver1.best_time_raw && driver1.best_time_raw <= LAP_TIME_THRESHOLD ? driver1.best_time_raw : null,
-            val2: driver2.best_time_raw && driver2.best_time_raw <= LAP_TIME_THRESHOLD ? driver2.best_time_raw : null,
-            display1: driver1.best_time || '-',
-            display2: driver2.best_time || '-',
-            lowerIsBetter: true
-        },
-        avg: {
-            val1: d1Laps.length > 0 ? d1Laps.reduce((sum, t) => sum + t, 0) / d1Laps.length : null,
-            val2: d2Laps.length > 0 ? d2Laps.reduce((sum, t) => sum + t, 0) / d2Laps.length : null,
-            display1: d1Laps.length > 0 ? formatTime(d1Laps.reduce((sum, t) => sum + t, 0) / d1Laps.length) : '-',
-            display2: d2Laps.length > 0 ? formatTime(d2Laps.reduce((sum, t) => sum + t, 0) / d2Laps.length) : '-',
-            lowerIsBetter: true
-        },
-        consistency: {
-            val1: d1Laps.length >= 3 ? calculateConsistency(d1Laps.map(t => ({ lapTimeRaw: t }))) : null,
-            val2: d2Laps.length >= 3 ? calculateConsistency(d2Laps.map(t => ({ lapTimeRaw: t }))) : null,
-            display1: d1Laps.length >= 3 ? `${calculateConsistency(d1Laps.map(t => ({ lapTimeRaw: t }))).toFixed(3)}s` : '-',
-            display2: d2Laps.length >= 3 ? `${calculateConsistency(d2Laps.map(t => ({ lapTimeRaw: t }))).toFixed(3)}s` : '-',
-            lowerIsBetter: true
-        },
-        laps: {
-            val1: d1Laps.length,
-            val2: d2Laps.length,
-            display1: d1Laps.length.toString(),
-            display2: d2Laps.length.toString(),
-            lowerIsBetter: false
-        }
-    };
+    // Calculate average lap times
+    const d1Avg = d1Laps.length > 0 ? d1Laps.reduce((sum, t) => sum + t, 0) / d1Laps.length : null;
+    const d2Avg = d2Laps.length > 0 ? d2Laps.reduce((sum, t) => sum + t, 0) / d2Laps.length : null;
     
-    // Update visual comparison bars
-    let score1 = 0;
-    let score2 = 0;
+    // Calculate consistency
+    const d1Consistency = d1Laps.length >= 3 ? calculateConsistency(d1Laps.map(t => ({ lapTimeRaw: t }))) : null;
+    const d2Consistency = d2Laps.length >= 3 ? calculateConsistency(d2Laps.map(t => ({ lapTimeRaw: t }))) : null;
     
-    Object.keys(stats).forEach(key => {
-        const stat = stats[key];
-        const winner = updateComparisonBars(key, stat);
-        if (winner === 1) score1++;
-        if (winner === 2) score2++;
-    });
-    
-    // Update scores
-    const score1El = document.getElementById('compare-score-1');
-    const score2El = document.getElementById('compare-score-2');
-    if (score1El) score1El.textContent = score1;
-    if (score2El) score2El.textContent = score2;
-    
-    // Update lap-by-lap chart
-    updateLapChart(driver1, driver2, d1Laps, d2Laps);
+    // Update table cells
+    updateCompareRow('pos', driver1.position, driver2.position, true);
+    updateCompareRow('kart', driver1.kart_number, driver2.kart_number, false);
+    updateCompareRow('best', driver1.best_time, driver2.best_time, true, driver1.best_time_raw, driver2.best_time_raw);
+    updateCompareRow('last', driver1.last_time, driver2.last_time, true, driver1.last_time_raw, driver2.last_time_raw);
+    updateCompareRow('avg', d1Avg ? formatTime(d1Avg) : '-', d2Avg ? formatTime(d2Avg) : '-', true, d1Avg, d2Avg);
+    updateCompareRow('consistency', 
+        d1Consistency ? `${d1Consistency.toFixed(3)}s` : '-',
+        d2Consistency ? `${d2Consistency.toFixed(3)}s` : '-',
+        true, d1Consistency, d2Consistency);
+    updateCompareRow('laps', d1Laps.length, d2Laps.length, false);
+    updateCompareRow('gap', driver1.gap || '-', driver2.gap || '-', false);
     
     console.log('📊 Comparison updated:', { 
         driver1: driver1.name, 
-        driver2: driver2.name, 
-        score: `${score1}-${score2}` 
+        driver2: driver2.name 
     });
 }
 
 /**
- * Update driver header card
+ * Update a single comparison row with gap calculation
+ * 
+ * @param {string} stat - Stat name  
+ * @param {*} val1 - Driver 1 value
+ * @param {*} val2 - Driver 2 value
+ * @param {boolean} showGap - Whether to show gap calculation
+ * @param {number} raw1 - Driver 1 raw value for calculation (optional)
+ * @param {number} raw2 - Driver 2 raw value for calculation (optional)
  */
-function updateDriverCard(driverNum, run) {
-    const kartEl = document.getElementById(`compare-driver${driverNum}-kart`);
-    const nameEl = document.getElementById(`compare-driver${driverNum}-name`);
-    const posEl = document.getElementById(`compare-driver${driverNum}-position`);
+function updateCompareRow(stat, val1, val2, showGap, raw1, raw2) {
+    const el1 = document.getElementById(`compare-driver1-${stat}`);
+    const el2 = document.getElementById(`compare-driver2-${stat}`);
+    const gapEl = document.getElementById(`compare-gap-${stat}`);
     
-    if (kartEl) kartEl.textContent = `#${run.kart_number}`;
-    if (nameEl) nameEl.textContent = run.name || `Driver ${run.kart_number}`;
-    if (posEl) posEl.textContent = `P${run.position || '-'}`;
-}
-
-/**
- * Update comparison bars for a stat
- * @returns {number|null} Winner (1, 2, or null for tie)
- */
-function updateComparisonBars(statKey, stat) {
-    const bar1 = document.getElementById(`compare-bar-${statKey}-1`);
-    const bar2 = document.getElementById(`compare-bar-${statKey}-2`);
-    const val1El = document.getElementById(`compare-value-${statKey}-1`);
-    const val2El = document.getElementById(`compare-value-${statKey}-2`);
-    const winnerEl = document.getElementById(`compare-winner-${statKey}`);
-    
-    if (!bar1 || !bar2 || !val1El || !val2El || !winnerEl) return null;
+    if (!el1 || !el2) return;
     
     // Update values
-    val1El.textContent = stat.display1;
-    val2El.textContent = stat.display2;
+    el1.textContent = val1 || '-';
+    el2.textContent = val2 || '-';
     
-    // Determine winner and percentages
-    let winner = null;
-    let pct1 = 0;
-    let pct2 = 0;
+    // Reset classes
+    el1.className = 'compare-value';
+    el2.className = 'compare-value';
+    if (gapEl) gapEl.className = 'compare-gap';
     
-    if (stat.val1 !== null && stat.val2 !== null) {
-        if (stat.lowerIsBetter) {
-            // Lower is better (lap times, consistency)
-            const max = Math.max(stat.val1, stat.val2);
-            pct1 = max > 0 ? (max / stat.val1) * 100 : 100;
-            pct2 = max > 0 ? (max / stat.val2) * 100 : 100;
-            winner = stat.val1 < stat.val2 ? 1 : (stat.val2 < stat.val1 ? 2 : null);
+    // Calculate gap and highlight winner
+    if (showGap && gapEl && raw1 !== null && raw1 !== undefined && raw2 !== null && raw2 !== undefined) {
+        let gap = 0;
+        let winner = null;
+        
+        if (stat === 'pos') {
+            // Position: Lower is better
+            gap = Math.abs(raw1 - raw2);
+            if (raw1 < raw2) {
+                winner = 1;
+                gapEl.textContent = `↑${gap}`;
+            } else if (raw2 < raw1) {
+                winner = 2;
+                gapEl.textContent = `↓${gap}`;
+            } else {
+                gapEl.textContent = '=';
+            }
+        } else if (stat === 'laps') {
+            // Laps: Higher is better
+            gap = Math.abs(raw1 - raw2);
+            if (raw1 > raw2) {
+                winner = 1;
+                gapEl.textContent = `+${gap}`;
+            } else if (raw2 > raw1) {
+                winner = 2;
+                gapEl.textContent = `-${gap}`;
+            } else {
+                gapEl.textContent = '=';
+            }
         } else {
-            // Higher is better (lap count)
-            const max = Math.max(stat.val1, stat.val2);
-            pct1 = max > 0 ? (stat.val1 / max) * 100 : 100;
-            pct2 = max > 0 ? (stat.val2 / max) * 100 : 100;
-            winner = stat.val1 > stat.val2 ? 1 : (stat.val2 > stat.val1 ? 2 : null);
-        }
-    } else if (stat.val1 !== null) {
-        pct1 = 100;
-        winner = 1;
-    } else if (stat.val2 !== null) {
-        pct2 = 100;
-        winner = 2;
-    }
-    
-    // Update bar widths with animation
-    bar1.style.width = `${Math.min(100, pct1)}%`;
-    bar2.style.width = `${Math.min(100, pct2)}%`;
-    
-    // Update winner indicator
-    if (winner === 1) {
-        winnerEl.textContent = '🏆 Driver 1 Wins!';
-        winnerEl.className = 'compare-winner winner-1';
-        bar1.classList.add('winning-bar');
-        bar2.classList.remove('winning-bar');
-    } else if (winner === 2) {
-        winnerEl.textContent = '🏆 Driver 2 Wins!';
-        winnerEl.className = 'compare-winner winner-2';
-        bar2.classList.add('winning-bar');
-        bar1.classList.remove('winning-bar');
-    } else {
-        winnerEl.textContent = '🤝 Tie!';
-        winnerEl.className = 'compare-winner tie';
-        bar1.classList.remove('winning-bar');
-        bar2.classList.remove('winning-bar');
-    }
-    
-    return winner;
-}
-
-/**
- * Update lap-by-lap comparison chart
- */
-function updateLapChart(driver1, driver2, d1Laps, d2Laps) {
-    const chartContainer = document.getElementById('compare-lap-chart-container');
-    if (!chartContainer) return;
-    
-    const maxLaps = Math.max(d1Laps.length, d2Laps.length);
-    
-    if (maxLaps === 0) {
-        chartContainer.innerHTML = '<p class="no-chart-data">No lap data available</p>';
-        return;
-    }
-    
-    let html = '<div class="lap-chart-bars">';
-    
-    for (let i = 0; i < maxLaps; i++) {
-        const lap1 = d1Laps[i];
-        const lap2 = d2Laps[i];
-        
-        const lapLabel = `L${i + 1}`;
-        const lap1Display = lap1 ? formatTime(lap1) : '-';
-        const lap2Display = lap2 ? formatTime(lap2) : '-';
-        
-        let lap1Class = 'lap-bar driver-1-bar';
-        let lap2Class = 'lap-bar driver-2-bar';
-        
-        if (lap1 && lap2) {
-            if (lap1 < lap2) lap1Class += ' faster-lap';
-            else if (lap2 < lap1) lap2Class += ' faster-lap';
+            // Time-based: Lower is better
+            gap = Math.abs(raw1 - raw2);
+            if (raw1 < raw2) {
+                winner = 1;
+                gapEl.textContent = `-${(gap / 1000).toFixed(3)}s`;
+            } else if (raw2 < raw1) {
+                winner = 2;
+                gapEl.textContent = `+${(gap / 1000).toFixed(3)}s`;
+            } else {
+                gapEl.textContent = '=';
+            }
         }
         
-        html += `
-            <div class="lap-comparison-group">
-                <div class="lap-label">${lapLabel}</div>
-                <div class="lap-bars-container">
-                    <div class="${lap1Class}" title="Driver 1: ${lap1Display}">
-                        <span class="lap-time-label">${lap1Display}</span>
-                    </div>
-                    <div class="${lap2Class}" title="Driver 2: ${lap2Display}">
-                        <span class="lap-time-label">${lap2Display}</span>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Highlight winner
+        if (winner === 1) {
+            el1.classList.add('better');
+            gapEl.classList.add('gap-positive');
+        } else if (winner === 2) {
+            el2.classList.add('better');
+            gapEl.classList.add('gap-negative');
+        }
+    } else if (gapEl) {
+        gapEl.textContent = '-';
     }
-    
-    html += '</div>';
-    chartContainer.innerHTML = html;
 }
 
