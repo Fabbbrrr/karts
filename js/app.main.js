@@ -436,7 +436,16 @@ function setupEventListeners() {
     // Results method selector
     if (elements.resultsMethodSelect) {
         elements.resultsMethodSelect.addEventListener('change', () => {
-            ResultsView.updateResultsView(elements, state.sessionData);
+            ResultsView.updateResultsView(elements, state.sessionData, state);
+        });
+    }
+    
+    // Results refresh button
+    const resultsRefreshBtn = document.getElementById('results-refresh-btn');
+    if (resultsRefreshBtn) {
+        resultsRefreshBtn.addEventListener('click', () => {
+            console.log('🔄 Manual results refresh triggered');
+            ResultsView.updateResultsView(elements, state.sessionData, state);
         });
     }
     
@@ -1498,7 +1507,7 @@ function updateAllViews() {
             HUDView.applyHUDCardVisibility(elements, state.settings);
             break;
         case 'results':
-            ResultsView.updateResultsView(elements, data);
+            ResultsView.updateResultsView(elements, data, state);
             break;
         case 'compare':
             CompareView.updateCompareView(elements, data);

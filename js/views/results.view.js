@@ -283,6 +283,16 @@ function updateStatistics(results, method) {
 
 /**
  * Main update function for results view
+ * 
+ * PURPOSE: Calculate and display live race results during session
+ * WHY: Results should update on every lap, not just at session end
+ * HOW: Calculates based on current lap data, updates podium/table/stats
+ * FEATURE: Live Results, Real-time Standings, Multiple Scoring Methods
+ * 
+ * @param {Object} elements - Cached DOM elements
+ * @param {Object} sessionData - Current session data from WebSocket
+ * @param {Object} state - Application state with settings
+ * @returns {void}
  */
 export function updateResultsView(elements, sessionData, state) {
     if (!sessionData || !sessionData.runs) {
@@ -297,13 +307,21 @@ export function updateResultsView(elements, sessionData, state) {
     const methodSelect = document.getElementById('results-method-select');
     const method = methodSelect ? methodSelect.value : 'fastest-lap';
     
-    // Calculate results
+    // Calculate results based on current lap data
     const results = calculateResults(sessionData.runs, method);
     
     // Update method description
     const methodDesc = document.getElementById('results-method-description');
     if (methodDesc) {
         methodDesc.textContent = getMethodDescription(method);
+    }
+    
+    // Update refresh button to show last update time
+    const refreshBtn = document.getElementById('results-refresh-btn');
+    if (refreshBtn) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        refreshBtn.textContent = `🔄 Refresh (Last: ${timeStr})`;
     }
     
     // Show/hide sections
@@ -324,5 +342,11 @@ export function updateResultsView(elements, sessionData, state) {
     updateResultsTable(results);
     updateStatistics(results, method);
     
-    console.log('📊 Results updated:', { method, resultsCount: results.length, winner: results[0]?.name });
+    console.log('📊 Results updated (LIVE):', { 
+        method, 
+        resultsCount: results.length, 
+        winner: results[0]?.name,
+        winnerScore: results[0]?.scoreDisplay,
+        totalLapsConsidered: results.reduce((sum, r) => sum + r.validLaps, 0)
+    });
 }

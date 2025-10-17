@@ -215,14 +215,21 @@
                 <div id="results-content" class="results-content hidden">
                     <!-- Scoring Method Selector -->
                     <div class="results-method-selector">
-                        <label for="results-method-select">📊 Scoring Method:</label>
-                        <select id="results-method-select" class="results-select">
-                            <option value="fastest-lap">🏁 Fastest Lap (Venue Default)</option>
-                            <option value="total-time">⏱️ Total Time (Endurance)</option>
-                            <option value="average-lap">📈 Average Lap Time</option>
-                            <option value="best-3-avg">⭐ Best 3 Laps Average</option>
-                            <option value="consistency">🎯 Consistency Score</option>
-                        </select>
+                        <div class="results-method-header">
+                            <div class="results-method-control">
+                                <label for="results-method-select">📊 Scoring Method:</label>
+                                <select id="results-method-select" class="results-select">
+                                    <option value="fastest-lap">🏁 Fastest Lap (Venue Default)</option>
+                                    <option value="total-time">⏱️ Total Time (Endurance)</option>
+                                    <option value="average-lap">📈 Average Lap Time</option>
+                                    <option value="best-3-avg">⭐ Best 3 Laps Average</option>
+                                    <option value="consistency">🎯 Consistency Score</option>
+                                </select>
+                            </div>
+                            <button id="results-refresh-btn" class="results-refresh-btn" title="Manually recalculate results">
+                                🔄 Refresh
+                            </button>
+                        </div>
                         <p class="results-method-description" id="results-method-description"></p>
                     </div>
                     
