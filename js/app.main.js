@@ -462,6 +462,38 @@ function setupEventListeners() {
         });
     }
     
+    // Results session selector
+    const resultsSessionSelect = document.getElementById('results-session-select');
+    if (resultsSessionSelect) {
+        resultsSessionSelect.addEventListener('change', (e) => {
+            handleSessionSelection(e.target.value, 'results');
+        });
+    }
+    
+    // Results back to live button
+    const resultsBackToLive = document.getElementById('results-back-to-live');
+    if (resultsBackToLive) {
+        resultsBackToLive.addEventListener('click', () => {
+            returnToLiveMode('results');
+        });
+    }
+    
+    // Summary session selector
+    const summarySessionSelect = document.getElementById('summary-session-select');
+    if (summarySessionSelect) {
+        summarySessionSelect.addEventListener('change', (e) => {
+            handleSessionSelection(e.target.value, 'summary');
+        });
+    }
+    
+    // Summary back to live button
+    const summaryBackToLive = document.getElementById('summary-back-to-live');
+    if (summaryBackToLive) {
+        summaryBackToLive.addEventListener('click', () => {
+            returnToLiveMode('summary');
+        });
+    }
+    
     // Session selector for replay
     if (elements.sessionSelector) {
         elements.sessionSelector.addEventListener('change', (e) => {
