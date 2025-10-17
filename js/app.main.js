@@ -2208,6 +2208,9 @@ window.kartingApp = {
     state,
     switchTab,
     updateAllViews,
+    updateResultsView: () => {
+        ResultsView.updateResultsView(elements, state.sessionData, state);
+    },
     selectDriverAndSwitchToHUD: (kartNumber) => {
         DriverSelectionService.selectDriverAndShowHUD(
             kartNumber,
