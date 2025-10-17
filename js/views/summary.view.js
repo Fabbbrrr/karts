@@ -3,6 +3,7 @@
 
 import { formatTime } from '../utils/time-formatter.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
+import * as SessionHistoryService from '../services/session-history.service.js';
 
 /**
  * Update summary view with session results
@@ -12,6 +13,9 @@ import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-fil
  */
 export function updateSummaryView(elements, sessionData, state) {
     if (!sessionData) return;
+    
+    // Populate session selector
+    populateSessionSelector('summary');
     
     // Update final positions
     updateFinalPositions(elements, sessionData, state);
