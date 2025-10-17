@@ -2232,6 +2232,44 @@ body.theme-racing-green .hud-value {
     border: 2px solid #333;
 }
 
+.results-method-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.results-method-control {
+    flex: 1;
+    min-width: 250px;
+}
+
+.results-refresh-btn {
+    background: linear-gradient(135deg, #00ff88, #00cc6e);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+.results-refresh-btn:hover {
+    background: linear-gradient(135deg, #00ff88, #00aa5a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 255, 136, 0.4);
+}
+
+.results-refresh-btn:active {
+    transform: translateY(0);
+}
+
 .results-method-selector label {
     display: block;
     color: #00ff88;
