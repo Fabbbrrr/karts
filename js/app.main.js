@@ -147,6 +147,10 @@ function cacheDOMElements() {
     elements.analysisTableBody = document.getElementById('analysis-table-body');
     elements.analysisDetails = document.getElementById('analysis-details');
     
+    // Race tab filters
+    elements.raceTrackConfigFilter = document.getElementById('race-track-config-filter');
+    elements.raceFilterSection = document.getElementById('race-filter-section');
+    
     // Settings tab
     elements.mainDriverSelect = document.getElementById('main-driver-select');
     elements.channelInput = document.getElementById('channel-input');
@@ -628,6 +632,21 @@ function setupEventListeners() {
     if (elements.compareDriver2Select) {
         elements.compareDriver2Select.addEventListener('change', () => {
             CompareView.updateCompareView(elements, state.sessionData);
+        });
+    }
+    
+    // Track configuration filters
+    if (elements.raceTrackConfigFilter) {
+        elements.raceTrackConfigFilter.addEventListener('change', () => {
+            console.log('🔄 Race track config filter changed:', elements.raceTrackConfigFilter.value);
+            updateAllViews();
+        });
+    }
+    
+    if (elements.trackConfigFilter) {
+        elements.trackConfigFilter.addEventListener('change', () => {
+            console.log('🔄 Analysis track config filter changed:', elements.trackConfigFilter.value);
+            AnalysisView.updateAnalysisView(elements, state.kartAnalysisData);
         });
     }
     
@@ -1133,9 +1152,14 @@ function collectKartAnalysisLap(run, lapNum) {
         return; // Don't add to analysis data
     }
     
-    // Use kart_id as the unique identifier for analysis (not kart_number which can change)
+    // Use kart_id as the base identifier for analysis (not kart_number which can change)
     // WHY: Kart numbers can be renumbered by venue, but kart_id remains stable
-    const kartId = run.kart_id ? String(run.kart_id) : run.kart_number;
+    const baseKartId = run.kart_id ? String(run.kart_id) : run.kart_number;
+    
+    // Create composite key: trackConfig + kart ID for true uniqueness
+    // WHY: Same kart number on different track layouts are effectively different configurations
+    // FEATURE: Track Configuration Separation (prevents cross-track contamination)
+    const kartId = `${trackConfigId}_${baseKartId}`;
     
     // Create lap record with track configuration for proper filtering
     // WHY: Different track layouts (e.g., short vs long circuit) must not be compared
@@ -1143,7 +1167,8 @@ function collectKartAnalysisLap(run, lapNum) {
         timestamp: Date.now(),
         sessionId: sessionId,
         trackConfigId: trackConfigId,         // TRACK CONFIGURATION: Separate different layouts
-        kartId: kartId,                        // Unique kart identifier
+        kartId: kartId,                        // Composite unique identifier (track + kart)
+        baseKartId: baseKartId,                // Original kart ID for reference
         kartNumber: run.kart_number,           // Display number for reference
         kartName: run.kart,                    // Full name (e.g., "E14")
         driverName: run.name,
@@ -1156,10 +1181,13 @@ function collectKartAnalysisLap(run, lapNum) {
     // Add to laps array
     state.kartAnalysisData.laps.push(lapRecord);
     
-    // Update kart stats by kart_id (minimal storage - no lapTimes array)
+    // Update kart stats by composite kartId (track + kart ID)
+    // WHY: Each track configuration needs separate kart stats
     if (!state.kartAnalysisData.karts[kartId]) {
         state.kartAnalysisData.karts[kartId] = {
             kartId: kartId,
+            baseKartId: baseKartId,
+            trackConfigId: trackConfigId,
             kartNumber: run.kart_number,   // Current display number
             kartName: run.kart,            // Full name
             totalLaps: 0,

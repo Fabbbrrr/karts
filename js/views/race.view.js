@@ -4,6 +4,7 @@
 import { formatTime } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
+import { getUniqueTrackConfigs, getTrackConfigName } from '../utils/track-config.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
 
 /**
@@ -32,11 +33,28 @@ export function updateRaceView(elements, sessionData, settings, personalRecords 
     const trackInfo = track_configuration_id ? ` | Track Config #${track_configuration_id}` : '';
     elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}${trackInfo}`;
     
+    // Update track configuration filter
+    updateRaceTrackConfigFilter(elements, runs, track_configuration_id);
+    
+    // Get selected track configuration filter
+    const selectedTrackConfig = elements.raceTrackConfigFilter?.value || 'all';
+    
     // Filter out stale drivers (lap started more than 10 minutes ago)
     // WHY: Venues sometimes forget to remove drivers from previous sessions
     // FEATURE: Timestamp Filtering (automatically hides abandoned/forgotten drivers)
-    const runsWithKarts = runs.filter(run => run.kart_number && run.kart_number !== '');
-    const activeRuns = filterStaleDrivers(runsWithKarts, TIMESTAMP_THRESHOLDS.RACE_DISPLAY, true);
+    let runsWithKarts = runs.filter(run => run.kart_number && run.kart_number !== '');
+    let activeRuns = filterStaleDrivers(runsWithKarts, TIMESTAMP_THRESHOLDS.RACE_DISPLAY, true);
+    
+    // Filter by track configuration if specified
+    // WHY: Different track layouts must be shown separately
+    // FEATURE: Track Configuration Filtering
+    if (selectedTrackConfig !== 'all' && track_configuration_id && selectedTrackConfig === String(track_configuration_id)) {
+        // Only show drivers from current track config (already filtered by sessionData)
+        // This is a redundant check since all drivers in current session should match current track config
+    } else if (selectedTrackConfig !== 'all') {
+        // User selected a different track config - no drivers to show from current session
+        activeRuns = [];
+    }
     
     // Efficient update: reuse existing elements
     const existingItems = Array.from(elements.raceList.children);
@@ -63,6 +81,60 @@ export function updateRaceView(elements, sessionData, settings, personalRecords 
     // Remove extra items if any
     while (elements.raceList.children.length > activeRuns.length) {
         elements.raceList.removeChild(elements.raceList.lastChild);
+    }
+}
+
+/**
+ * Update track configuration filter dropdown for race view
+ * 
+ * PURPOSE: Allow user to filter race view by track configuration
+ * WHY: Multi-track venues may have drivers on different layouts simultaneously
+ * HOW: Detects available track configs, populates dropdown, auto-selects if only one
+ * FEATURE: Track Configuration Filtering, Auto-Selection, User Interface
+ * 
+ * @param {Object} elements - DOM elements
+ * @param {Array} runs - Current session runs
+ * @param {string|number} currentTrackConfig - Current session's track configuration ID
+ * @returns {void}
+ */
+function updateRaceTrackConfigFilter(elements, runs, currentTrackConfig) {
+    if (!elements.raceTrackConfigFilter || !elements.raceFilterSection) return;
+    
+    // Get unique track configurations from current runs
+    const trackConfigs = new Set();
+    if (currentTrackConfig) {
+        trackConfigs.add(String(currentTrackConfig));
+    }
+    
+    const trackConfigsArray = Array.from(trackConfigs);
+    
+    // Store current selection
+    const currentSelection = elements.raceTrackConfigFilter.value || 'all';
+    
+    // Rebuild options
+    elements.raceTrackConfigFilter.innerHTML = '<option value="all">All Track Configurations</option>';
+    
+    trackConfigsArray.forEach(configId => {
+        const option = document.createElement('option');
+        option.value = configId;
+        option.textContent = getTrackConfigName(configId);
+        elements.raceTrackConfigFilter.appendChild(option);
+    });
+    
+    // Auto-select if only one configuration exists
+    if (trackConfigsArray.length === 1) {
+        elements.raceTrackConfigFilter.value = trackConfigsArray[0];
+        elements.raceFilterSection.style.display = 'none'; // Hide filter if only one option
+    } else if (trackConfigsArray.length > 1) {
+        // Show filter for multiple configs
+        elements.raceFilterSection.style.display = 'block';
+        // Restore selection if it still exists
+        if (currentSelection !== 'all' && trackConfigsArray.includes(currentSelection)) {
+            elements.raceTrackConfigFilter.value = currentSelection;
+        }
+    } else {
+        // No track configs - hide filter
+        elements.raceFilterSection.style.display = 'none';
     }
 }
 
