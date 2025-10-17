@@ -305,18 +305,18 @@
         <!-- Compare Tab -->
         <div id="compare-screen" class="screen tab-content">
             <div class="compare-container">
-                <h1>⚔️ Head-to-Head Battle</h1>
+                <h1>📊 Driver Comparison</h1>
                 
                 <div class="compare-selectors">
                     <div class="compare-selector">
-                        <label>🏁 Driver 1:</label>
+                        <label>Driver 1:</label>
                         <select id="compare-driver1" class="settings-select">
                             <option value="">-- Select Driver --</option>
                         </select>
                     </div>
-                    <div class="compare-vs-badge">VS</div>
+                    <div class="compare-vs">VS</div>
                     <div class="compare-selector">
-                        <label>🏁 Driver 2:</label>
+                        <label>Driver 2:</label>
                         <select id="compare-driver2" class="settings-select">
                             <option value="">-- Select Driver --</option>
                         </select>
@@ -324,126 +324,72 @@
                 </div>
                 
                 <div id="compare-content" class="compare-content hidden">
-                    <!-- Driver Headers -->
-                    <div class="compare-header-cards">
-                        <div class="compare-driver-card driver-1-card">
-                            <div class="driver-card-kart" id="compare-driver1-kart">#00</div>
-                            <div class="driver-card-name" id="compare-driver1-name">Driver 1</div>
-                            <div class="driver-card-position" id="compare-driver1-position">P-</div>
-                        </div>
-                        
-                        <div class="compare-battle-icon">⚡</div>
-                        
-                        <div class="compare-driver-card driver-2-card">
-                            <div class="driver-card-kart" id="compare-driver2-kart">#00</div>
-                            <div class="driver-card-name" id="compare-driver2-name">Driver 2</div>
-                            <div class="driver-card-position" id="compare-driver2-position">P-</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Visual Stat Comparisons -->
-                    <div class="compare-stats-visual">
-                        <!-- Best Lap Comparison -->
-                        <div class="compare-stat-item">
-                            <div class="compare-stat-header">
-                                <span class="stat-icon">⏱️</span>
-                                <span class="stat-title">Best Lap Time</span>
-                            </div>
-                            <div class="compare-bars">
-                                <div class="compare-bar-wrapper left">
-                                    <div class="compare-bar driver-1-bar" id="compare-bar-best-1" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-best-1">-</span>
-                                </div>
-                                <div class="compare-bar-wrapper right">
-                                    <div class="compare-bar driver-2-bar" id="compare-bar-best-2" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-best-2">-</span>
-                                </div>
-                            </div>
-                            <div class="compare-winner" id="compare-winner-best"></div>
-                        </div>
-                        
-                        <!-- Average Lap Comparison -->
-                        <div class="compare-stat-item">
-                            <div class="compare-stat-header">
-                                <span class="stat-icon">📊</span>
-                                <span class="stat-title">Average Lap Time</span>
-                            </div>
-                            <div class="compare-bars">
-                                <div class="compare-bar-wrapper left">
-                                    <div class="compare-bar driver-1-bar" id="compare-bar-avg-1" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-avg-1">-</span>
-                                </div>
-                                <div class="compare-bar-wrapper right">
-                                    <div class="compare-bar driver-2-bar" id="compare-bar-avg-2" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-avg-2">-</span>
-                                </div>
-                            </div>
-                            <div class="compare-winner" id="compare-winner-avg"></div>
-                        </div>
-                        
-                        <!-- Consistency Comparison -->
-                        <div class="compare-stat-item">
-                            <div class="compare-stat-header">
-                                <span class="stat-icon">🎯</span>
-                                <span class="stat-title">Consistency</span>
-                            </div>
-                            <div class="compare-bars">
-                                <div class="compare-bar-wrapper left">
-                                    <div class="compare-bar driver-1-bar" id="compare-bar-consistency-1" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-consistency-1">-</span>
-                                </div>
-                                <div class="compare-bar-wrapper right">
-                                    <div class="compare-bar driver-2-bar" id="compare-bar-consistency-2" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-consistency-2">-</span>
-                                </div>
-                            </div>
-                            <div class="compare-winner" id="compare-winner-consistency"></div>
-                        </div>
-                        
-                        <!-- Total Laps Comparison -->
-                        <div class="compare-stat-item">
-                            <div class="compare-stat-header">
-                                <span class="stat-icon">🔄</span>
-                                <span class="stat-title">Total Laps</span>
-                            </div>
-                            <div class="compare-bars">
-                                <div class="compare-bar-wrapper left">
-                                    <div class="compare-bar driver-1-bar" id="compare-bar-laps-1" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-laps-1">-</span>
-                                </div>
-                                <div class="compare-bar-wrapper right">
-                                    <div class="compare-bar driver-2-bar" id="compare-bar-laps-2" style="width: 0%"></div>
-                                    <span class="compare-bar-value" id="compare-value-laps-2">-</span>
-                                </div>
-                            </div>
-                            <div class="compare-winner" id="compare-winner-laps"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Lap-by-Lap Comparison Chart -->
-                    <div class="compare-lap-chart">
-                        <h3>📈 Lap-by-Lap Performance</h3>
-                        <div id="compare-lap-chart-container" class="lap-chart-container"></div>
-                    </div>
-                    
-                    <!-- Score Summary -->
-                    <div class="compare-summary">
-                        <div class="compare-summary-item driver-1-summary">
-                            <div class="summary-score" id="compare-score-1">0</div>
-                            <div class="summary-label">Categories Won</div>
-                        </div>
-                        <div class="compare-summary-divider"></div>
-                        <div class="compare-summary-item driver-2-summary">
-                            <div class="summary-score" id="compare-score-2">0</div>
-                            <div class="summary-label">Categories Won</div>
-                        </div>
+                    <div class="compare-table-wrapper">
+                        <table class="compare-table">
+                            <thead>
+                                <tr class="compare-header-row">
+                                    <th class="compare-stat-col">Stat</th>
+                                    <th class="compare-driver-col" id="compare-driver1-header">Driver 1</th>
+                                    <th class="compare-gap-col">Gap</th>
+                                    <th class="compare-driver-col" id="compare-driver2-header">Driver 2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Position</td>
+                                    <td class="compare-value" id="compare-driver1-pos">-</td>
+                                    <td class="compare-gap" id="compare-gap-pos">-</td>
+                                    <td class="compare-value" id="compare-driver2-pos">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Kart Number</td>
+                                    <td class="compare-value" id="compare-driver1-kart">-</td>
+                                    <td class="compare-gap">-</td>
+                                    <td class="compare-value" id="compare-driver2-kart">-</td>
+                                </tr>
+                                <tr class="compare-row highlight-row">
+                                    <td class="compare-stat-label">Best Lap</td>
+                                    <td class="compare-value" id="compare-driver1-best">-</td>
+                                    <td class="compare-gap" id="compare-gap-best">-</td>
+                                    <td class="compare-value" id="compare-driver2-best">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Last Lap</td>
+                                    <td class="compare-value" id="compare-driver1-last">-</td>
+                                    <td class="compare-gap" id="compare-gap-last">-</td>
+                                    <td class="compare-value" id="compare-driver2-last">-</td>
+                                </tr>
+                                <tr class="compare-row highlight-row">
+                                    <td class="compare-stat-label">Average Lap</td>
+                                    <td class="compare-value" id="compare-driver1-avg">-</td>
+                                    <td class="compare-gap" id="compare-gap-avg">-</td>
+                                    <td class="compare-value" id="compare-driver2-avg">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Consistency</td>
+                                    <td class="compare-value" id="compare-driver1-consistency">-</td>
+                                    <td class="compare-gap" id="compare-gap-consistency">-</td>
+                                    <td class="compare-value" id="compare-driver2-consistency">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Total Laps</td>
+                                    <td class="compare-value" id="compare-driver1-laps">-</td>
+                                    <td class="compare-gap" id="compare-gap-laps">-</td>
+                                    <td class="compare-value" id="compare-driver2-laps">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Gap to Leader</td>
+                                    <td class="compare-value" id="compare-driver1-gap">-</td>
+                                    <td class="compare-gap">-</td>
+                                    <td class="compare-value" id="compare-driver2-gap">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 
                 <div id="compare-no-selection" class="compare-placeholder">
-                    <div class="placeholder-icon">⚔️</div>
-                    <p>Select two drivers to start the battle!</p>
-                    <p class="placeholder-hint">Compare lap times, consistency, and performance head-to-head</p>
+                    <p>Select two drivers to compare their stats side-by-side</p>
                 </div>
             </div>
         </div>
