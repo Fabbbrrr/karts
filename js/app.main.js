@@ -2030,16 +2030,24 @@ window.kartingApp = {
         TTSService.stopSpeaking();
     },
     toggleHUDTTS: () => {
+        console.log('🎤 toggleHUDTTS called, current state:', state.settings.enableTTS);
         state.settings.enableTTS = !state.settings.enableTTS;
-        elements.enableTTSToggle.checked = state.settings.enableTTS;
+        
+        // Sync settings checkbox
+        if (elements.enableTTSToggle) {
+            elements.enableTTSToggle.checked = state.settings.enableTTS;
+        }
+        
         saveSettings();
         updateHUDTTSButton();
         updateTTSConfigVisibility();
-        console.log('🎤 HUD TTS toggled:', state.settings.enableTTS);
+        console.log('🎤 HUD TTS toggled to:', state.settings.enableTTS);
         
         // Give user feedback
         if (state.settings.enableTTS) {
             TTSService.speak('Voice announcements enabled');
+        } else {
+            TTSService.speak('Voice announcements disabled');
         }
     },
     resetKartAnalysisData: () => {
@@ -2115,14 +2123,21 @@ window.kartingApp = {
  * @returns {void}
  */
 function updateHUDTTSButton() {
-    if (!elements.hudTTSToggle) return;
+    if (!elements.hudTTSToggle) {
+        console.warn('⚠️ HUD TTS button element not found');
+        return;
+    }
+    
+    console.log('🔄 Updating HUD TTS button, enableTTS:', state.settings.enableTTS);
     
     if (state.settings.enableTTS) {
         elements.hudTTSToggle.classList.add('active');
         elements.hudTTSToggle.title = 'Voice Announcements ON (click to disable)';
+        elements.hudTTSToggle.setAttribute('data-state', 'enabled');
     } else {
         elements.hudTTSToggle.classList.remove('active');
         elements.hudTTSToggle.title = 'Voice Announcements OFF (click to enable)';
+        elements.hudTTSToggle.setAttribute('data-state', 'disabled');
     }
 }
 
