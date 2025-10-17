@@ -121,6 +121,7 @@ function cacheDOMElements() {
     elements.hudLapList = document.getElementById('hud-lap-list');
     elements.hudNotesList = document.getElementById('hud-notes-list');
     elements.hudSessionTimer = document.getElementById('hud-session-timer');
+    elements.hudTTSToggle = document.getElementById('hud-tts-toggle');
     
     // Results tab
     elements.resultsTableBody = document.getElementById('results-table-body');
@@ -979,10 +980,14 @@ function handleNewLap(run, lapNum, lapData) {
         
         TTSService.announceLap({
             lapTime: run.last_time,
+            position: run.position,
             gapToBest: gapToBest,
             gapToPB: gapToPB,
             gapToP1: run.gap,
-            isBestLap: run.last_time_raw === run.best_time_raw
+            isBestLap: run.last_time_raw === run.best_time_raw,
+            // Pass user preferences for what to announce
+            announceGapP1: state.settings.ttsAnnounceGapP1,
+            announceGapPB: state.settings.ttsAnnounceGapPB
         });
     }
     
