@@ -2078,6 +2078,78 @@ window.kartingApp = {
     refreshStorageStatus
 };
 
+/**
+ * Test TTS with different racing scenarios
+ * 
+ * PURPOSE: Allow user to preview TTS announcements before racing
+ * WHY: Users need to verify TTS works and adjust volume/preferences
+ * HOW: Simulates different lap scenarios with realistic test data
+ * FEATURE: TTS Testing, User Experience, Settings Preview
+ * 
+ * @param {string} scenario - Test scenario name (fast, slow, best, pb, leader, chase)
+ * @returns {void}
+ */
+function testTTSScenario(scenario) {
+    if (!TTSService.isTTSSupported()) {
+        alert('Text-to-Speech is not supported in your browser');
+        return;
+    }
+    
+    const scenarios = {
+        fast: {
+            lapTime: '30.5',
+            gapToBest: '-0.2',  // Faster than previous best
+            gapToPB: '+0.1',    // Still slower than personal best
+            gapToP1: '+0.8',    // Behind leader
+            isBestLap: false
+        },
+        slow: {
+            lapTime: '31.2',
+            gapToBest: '+0.7',  // Slower than best
+            gapToPB: '+1.4',    // Much slower than PB
+            gapToP1: '+2.1',    // Further behind leader
+            isBestLap: false
+        },
+        best: {
+            lapTime: '29.8',
+            gapToBest: null,    // This IS the best
+            gapToPB: '-0.3',    // New session best
+            gapToP1: 'LEADER',  // You're P1
+            isBestLap: true
+        },
+        pb: {
+            lapTime: '29.5',
+            gapToBest: '-0.5',  // Much faster
+            gapToPB: '-0.3',    // New personal best
+            gapToP1: '+0.2',    // Very close to leader
+            isBestLap: true
+        },
+        leader: {
+            lapTime: '30.1',
+            gapToBest: '+0.1',
+            gapToPB: '+0.3',
+            gapToP1: 'LEADER',  // You're leading
+            isBestLap: false
+        },
+        chase: {
+            lapTime: '30.3',
+            gapToBest: '+0.5',
+            gapToPB: '+0.8',
+            gapToP1: '+1.5',    // Chasing the leader
+            isBestLap: false
+        }
+    };
+    
+    const testData = scenarios[scenario];
+    if (!testData) {
+        console.error('Unknown TTS test scenario:', scenario);
+        return;
+    }
+    
+    console.log('🎤 Testing scenario:', scenario, testData);
+    TTSService.announceLap(testData);
+}
+
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
