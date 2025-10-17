@@ -2033,9 +2033,10 @@ window.kartingApp = {
         console.log('🎤 toggleHUDTTS called, current state:', state.settings.enableTTS);
         state.settings.enableTTS = !state.settings.enableTTS;
         
-        // Sync settings checkbox
-        if (elements.enableTTSToggle) {
-            elements.enableTTSToggle.checked = state.settings.enableTTS;
+        // Sync settings checkbox (get fresh reference if needed)
+        const ttsCheckbox = document.getElementById('enable-tts');
+        if (ttsCheckbox) {
+            ttsCheckbox.checked = state.settings.enableTTS;
         }
         
         saveSettings();
