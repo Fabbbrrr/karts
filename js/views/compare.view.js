@@ -61,16 +61,16 @@ export function updateCompareView(elements, sessionData) {
     const d2Consistency = d2Laps.length >= 3 ? calculateConsistency(d2Laps.map(t => ({ lapTimeRaw: t }))) : null;
     
     // Update table cells
-    updateCompareRow('pos', driver1.position, driver2.position, true);
+    updateCompareRow('pos', driver1.pos, driver2.pos, true, driver1.pos, driver2.pos);
     updateCompareRow('kart', driver1.kart_number, driver2.kart_number, false);
     updateCompareRow('best', driver1.best_time, driver2.best_time, true, driver1.best_time_raw, driver2.best_time_raw);
     updateCompareRow('last', driver1.last_time, driver2.last_time, true, driver1.last_time_raw, driver2.last_time_raw);
-    updateCompareRow('avg', d1Avg ? formatTime(d1Avg) : '-', d2Avg ? formatTime(d2Avg) : '-', true, d1Avg, d2Avg);
+    updateCompareRow('avg', driver1.avg_lap || '-', driver2.avg_lap || '-', true, driver1.avg_lap_raw, driver2.avg_lap_raw);
     updateCompareRow('consistency', 
-        d1Consistency ? `${d1Consistency.toFixed(3)}s` : '-',
-        d2Consistency ? `${d2Consistency.toFixed(3)}s` : '-',
-        true, d1Consistency, d2Consistency);
-    updateCompareRow('laps', d1Laps.length, d2Laps.length, false);
+        driver1.consistency_lap || '-',
+        driver2.consistency_lap || '-',
+        true, driver1.consistency_lap_raw, driver2.consistency_lap_raw);
+    updateCompareRow('laps', driver1.total_laps, driver2.total_laps, false, driver1.total_laps, driver2.total_laps);
     updateCompareRow('gap', driver1.gap || '-', driver2.gap || '-', false);
     
     console.log('📊 Comparison updated:', { 

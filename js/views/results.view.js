@@ -21,7 +21,7 @@ function calculateResults(runs, method) {
     const LAP_TIME_THRESHOLD = 60000; // 60 seconds in milliseconds
     
     const results = runs
-        .filter(run => run.kart_number && run.laps > 0)
+        .filter(run => run.kart_number && run.total_laps > 0)
         .map(run => {
             let score = null;
             let scoreDisplay = '-';
