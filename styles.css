@@ -598,6 +598,41 @@ html, body {
     gap: 8px;
 }
 
+.hud-tts-toggle {
+    background: #1a1a1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #888;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+}
+
+.hud-tts-toggle:hover {
+    background: #252525;
+    border-color: #555;
+}
+
+.hud-tts-toggle.active {
+    background: #00ff88;
+    border-color: #00ff88;
+    color: #000;
+}
+
+.hud-tts-toggle .tts-icon {
+    font-size: 1rem;
+}
+
+.hud-tts-toggle .tts-status {
+    font-size: 0.8rem;
+}
+
 .hud-session-timer {
     font-size: 2rem;
     font-weight: bold;
