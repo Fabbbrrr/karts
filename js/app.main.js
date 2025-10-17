@@ -445,7 +445,19 @@ function setupEventListeners() {
     if (resultsRefreshBtn) {
         resultsRefreshBtn.addEventListener('click', () => {
             console.log('🔄 Manual results refresh triggered');
-            ResultsView.updateResultsView(elements, state.sessionData, state);
+            console.log('📊 Current state.sessionData:', state.sessionData);
+            console.log('📊 Runs available:', state.sessionData?.runs?.length);
+            
+            // Use replay data if available, otherwise session data
+            const dataToUse = state.replayData || state.sessionData;
+            
+            if (!dataToUse || !dataToUse.runs || dataToUse.runs.length === 0) {
+                console.error('❌ No data available for results calculation');
+                alert('No session data available yet. Please wait for the session to start.');
+                return;
+            }
+            
+            ResultsView.updateResultsView(elements, dataToUse, state);
         });
     }
     

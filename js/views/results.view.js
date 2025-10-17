@@ -295,7 +295,15 @@ function updateStatistics(results, method) {
  * @returns {void}
  */
 export function updateResultsView(elements, sessionData, state) {
-    if (!sessionData || !sessionData.runs) {
+    console.log('📊 updateResultsView called with:', { 
+        sessionData: !!sessionData, 
+        runs: sessionData?.runs?.length,
+        elements: !!elements,
+        state: !!state
+    });
+    
+    if (!sessionData || !sessionData.runs || sessionData.runs.length === 0) {
+        console.warn('⚠️ No session data or runs available for results');
         const noData = document.getElementById('results-no-data');
         const content = document.getElementById('results-content');
         if (noData) noData.classList.remove('hidden');
