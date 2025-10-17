@@ -630,7 +630,34 @@
                         <span>📢 Voice Announcements (reads lap times out loud)</span>
                     </label>
                     <div class="setting-description">
-                        Announces lap time, gap to best, gap to personal best, and gap to P1 leader
+                        Configure what information gets announced after each lap
+                    </div>
+                    
+                    <!-- TTS Configuration Subsection -->
+                    <div class="tts-config-section" id="tts-config-section">
+                        <h4 class="tts-config-title">🎙️ What to Announce</h4>
+                        <div class="tts-config-options">
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-laptime" checked disabled>
+                                <span>⏱️ Lap Time <em>(always on)</em></span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-position" checked disabled>
+                                <span>🏁 Position <em>(always on)</em></span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-gap-best" checked disabled>
+                                <span>⭐ Gap to Session Best <em>(always on)</em></span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-gap-p1" checked>
+                                <span>👑 Gap to P1 Leader</span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-gap-pb" checked>
+                                <span>🎯 Gap to Personal Best</span>
+                            </label>
+                        </div>
                     </div>
                     
                     <!-- TTS Test Buttons -->

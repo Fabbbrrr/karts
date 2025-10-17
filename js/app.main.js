@@ -2016,6 +2016,19 @@ window.kartingApp = {
         console.log('🔇 Stopping TTS');
         TTSService.stopSpeaking();
     },
+    toggleHUDTTS: () => {
+        state.settings.enableTTS = !state.settings.enableTTS;
+        elements.enableTTSToggle.checked = state.settings.enableTTS;
+        saveSettings();
+        updateHUDTTSButton();
+        updateTTSConfigVisibility();
+        console.log('🎤 HUD TTS toggled:', state.settings.enableTTS);
+        
+        // Give user feedback
+        if (state.settings.enableTTS) {
+            TTSService.speak('Voice announcements enabled');
+        }
+    },
     resetKartAnalysisData: () => {
         if (confirm('Are you sure you want to reset all kart analysis data? This cannot be undone.')) {
             state.kartAnalysisData = { laps: [], drivers: {}, karts: {}, sessions: {} };
@@ -2077,6 +2090,48 @@ window.kartingApp = {
     updateSocketDataViewer,
     refreshStorageStatus
 };
+
+/**
+ * Update HUD TTS toggle button appearance
+ * 
+ * PURPOSE: Sync HUD TTS button with settings state
+ * WHY: Provide visual feedback of TTS enabled/disabled state
+ * HOW: Adds/removes 'active' class based on enableTTS setting
+ * FEATURE: TTS Control, UI Feedback
+ * 
+ * @returns {void}
+ */
+function updateHUDTTSButton() {
+    if (!elements.hudTTSToggle) return;
+    
+    if (state.settings.enableTTS) {
+        elements.hudTTSToggle.classList.add('active');
+        elements.hudTTSToggle.title = 'Voice Announcements ON (click to disable)';
+    } else {
+        elements.hudTTSToggle.classList.remove('active');
+        elements.hudTTSToggle.title = 'Voice Announcements OFF (click to enable)';
+    }
+}
+
+/**
+ * Show/hide TTS configuration section based on TTS enabled state
+ * 
+ * PURPOSE: Only show TTS options when TTS is enabled
+ * WHY: Reduce UI clutter when TTS is disabled
+ * HOW: Toggles display of tts-config-section
+ * FEATURE: Settings UI, Conditional Display
+ * 
+ * @returns {void}
+ */
+function updateTTSConfigVisibility() {
+    if (!elements.ttsConfigSection) return;
+    
+    if (state.settings.enableTTS) {
+        elements.ttsConfigSection.style.display = 'block';
+    } else {
+        elements.ttsConfigSection.style.display = 'none';
+    }
+}
 
 /**
  * Test TTS with different racing scenarios

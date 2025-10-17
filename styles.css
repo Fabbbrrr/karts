@@ -1159,6 +1159,52 @@ html, body {
     transform: scale(0.98);
 }
 
+/* TTS Configuration Section */
+.tts-config-section {
+    background: #0f0f0f;
+    border-left: 3px solid #00ff88;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 8px 0 16px 28px;
+}
+
+.tts-config-title {
+    color: #00ff88;
+    font-size: 0.95rem;
+    margin: 0 0 12px 0;
+    font-weight: bold;
+}
+
+.tts-config-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tts-option {
+    margin: 0 !important;
+    padding-left: 8px;
+}
+
+.tts-option span {
+    font-size: 0.9rem;
+}
+
+.tts-option em {
+    color: #666;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.tts-option input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tts-option input[type="checkbox"]:disabled + span {
+    color: #aaa;
+}
+
 .settings-section p {
     color: #888;
     margin-bottom: 0.5rem;

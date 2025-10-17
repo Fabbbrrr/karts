@@ -156,21 +156,24 @@ export function formatGapForSpeech(gap) {
  * 
  * PURPOSE: Provide complete lap performance feedback via voice
  * WHY: Driver gets all critical info without looking at screen
- * HOW: Combines lap time, gap to best, gap to PB, gap to P1 into single announcement
+ * HOW: Combines lap time, position, gaps based on user preferences into single announcement
  * FEATURE: Lap Announcement, Voice Feedback, Race Performance
  * 
  * @param {Object} data - Lap announcement data
- * @param {string} data.lapTime - Lap time (e.g., "30.916")
- * @param {string} [data.gapToBest] - Gap to session best (e.g., "+0.532")
- * @param {string} [data.gapToPB] - Gap to personal best (e.g., "-0.124")
- * @param {string} [data.gapToP1] - Gap to leader (e.g., "+2.5")
+ * @param {string} data.lapTime - Lap time (e.g., "30.916") [ALWAYS ANNOUNCED]
+ * @param {number} [data.position] - Current position (e.g., 1, 2, 3) [ALWAYS ANNOUNCED]
+ * @param {string} [data.gapToBest] - Gap to session best (e.g., "+0.532") [ALWAYS ANNOUNCED]
+ * @param {string} [data.gapToPB] - Gap to personal best (e.g., "-0.124") [OPTIONAL]
+ * @param {string} [data.gapToP1] - Gap to leader (e.g., "+2.5") [OPTIONAL]
  * @param {boolean} [data.isBestLap=false] - True if this is session best lap
+ * @param {boolean} [data.announceGapP1=true] - Whether to announce gap to P1
+ * @param {boolean} [data.announceGapPB=true] - Whether to announce gap to PB
  * @returns {void}
  */
 export function announceLap(data) {
     const parts = [];
     
-    // Lap time
+    // CORE: Lap time (always announced)
     const lapTimeSpeech = formatLapTimeForSpeech(data.lapTime);
     if (lapTimeSpeech) {
         parts.push(lapTimeSpeech);
@@ -181,7 +184,12 @@ export function announceLap(data) {
         parts.push('Best lap!');
     }
     
-    // Gap to session best
+    // CORE: Position (always announced)
+    if (data.position) {
+        parts.push(formatPositionForSpeech(data.position));
+    }
+    
+    // CORE: Gap to session best (always announced unless this IS the best)
     if (data.gapToBest && data.gapToBest !== '-' && !data.isBestLap) {
         const gapSpeech = formatGapForSpeech(data.gapToBest);
         if (gapSpeech) {
@@ -189,16 +197,16 @@ export function announceLap(data) {
         }
     }
     
-    // Gap to personal best
-    if (data.gapToPB && data.gapToPB !== '-') {
+    // OPTIONAL: Gap to personal best (only if enabled)
+    if (data.announceGapPB !== false && data.gapToPB && data.gapToPB !== '-') {
         const pbGapSpeech = formatGapForSpeech(data.gapToPB);
         if (pbGapSpeech) {
             parts.push(`PB ${pbGapSpeech}`);
         }
     }
     
-    // Gap to P1
-    if (data.gapToP1 && data.gapToP1 !== '-' && data.gapToP1 !== 'LEADER') {
+    // OPTIONAL: Gap to P1 (only if enabled)
+    if (data.announceGapP1 !== false && data.gapToP1 && data.gapToP1 !== '-' && data.gapToP1 !== 'LEADER') {
         const p1GapSpeech = formatGapForSpeech(data.gapToP1);
         if (p1GapSpeech) {
             parts.push(`to leader ${p1GapSpeech}`);
@@ -209,6 +217,33 @@ export function announceLap(data) {
     if (parts.length > 0) {
         speak(parts.join(', '));
     }
+}
+
+/**
+ * Format position for natural speech
+ * 
+ * PURPOSE: Convert position number to speakable ordinal
+ * WHY: "Position 1" should be spoken as "First" or "P1"
+ * HOW: Converts number to ordinal text
+ * FEATURE: TTS Formatting, Natural Language
+ * 
+ * @param {number} position - Position number (1, 2, 3, etc.)
+ * @returns {string} Speakable position format
+ */
+export function formatPositionForSpeech(position) {
+    if (!position || isNaN(position)) {
+        return '';
+    }
+    
+    const pos = parseInt(position, 10);
+    
+    // Special cases for 1st, 2nd, 3rd
+    if (pos === 1) return 'First place';
+    if (pos === 2) return 'Second place';
+    if (pos === 3) return 'Third place';
+    
+    // For 4th+, just say P4, P5, etc.
+    return `P ${pos}`;
 }
 
 /**
