@@ -218,122 +218,189 @@
             </div>
         </div>
         
-        <!-- Results Tab -->
+        <!-- Results Tab - Complete Redesign -->
         <div id="results-screen" class="screen tab-content">
-            <div class="results-container">
-                <h1>🏆 Race Results & Standings</h1>
+            <!-- Header with Controls -->
+            <div class="results-header-modern">
+                <div class="results-title-section">
+                    <h1>🏁 Race Results</h1>
+                    <p class="results-subtitle" id="results-subtitle">Final standings and analysis</p>
+                </div>
                 
-                <!-- Session Selector -->
-                <div class="session-selector-wrapper">
-                    <label for="results-session-select">📂 Session:</label>
-                    <select id="results-session-select" class="session-select">
-                        <option value="live">🔴 Live Session (Current)</option>
+                <div class="results-controls">
+                    <select id="results-session-select" class="select-modern">
+                        <option value="live">🔴 Live</option>
                     </select>
+                    
+                    <button id="results-refresh-btn" class="btn-icon-modern" title="Refresh">
+                        🔄
+                    </button>
+                    
+                    <button id="results-export-btn" class="btn-icon-modern" title="Export">
+                        📥
+                    </button>
+                </div>
+            </div>
+            
+            <!-- History Banner -->
+            <div id="results-history-banner" class="banner-modern hidden">
+                <span class="banner-icon">📂</span>
+                <div class="banner-info">
+                    <strong id="results-history-title"></strong>
+                    <span id="results-history-details"></span>
+                </div>
+                <button class="btn-back-live" id="results-back-to-live">
+                    🔴 Live
+                </button>
+            </div>
+            
+            <!-- No Data State -->
+            <div id="results-no-data" class="placeholder-modern hidden">
+                <div class="placeholder-icon">⏱️</div>
+                <h2>Waiting for Data</h2>
+                <p>Results will appear once the session starts</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div id="results-content" class="results-content-modern">
+                <!-- Session Overview -->
+                <div class="overview-card">
+                    <div class="overview-grid">
+                        <div class="overview-stat">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-label">Drivers</div>
+                            <div class="stat-value" id="results-drivers-count">0</div>
+                        </div>
+                        <div class="overview-stat">
+                            <div class="stat-icon">🏁</div>
+                            <div class="stat-label">Total Laps</div>
+                            <div class="stat-value" id="results-laps-count">0</div>
+                        </div>
+                        <div class="overview-stat">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-label">Fastest Lap</div>
+                            <div class="stat-value" id="results-fastest-time">--.-</div>
+                        </div>
+                        <div class="overview-stat">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-label">Avg Lap</div>
+                            <div class="stat-value" id="results-avg-time">--.-</div>
+                        </div>
+                    </div>
                 </div>
                 
-                <!-- History Banner (hidden by default) -->
-                <div id="results-history-banner" class="history-banner hidden">
-                    <div class="history-banner-content">
-                        <div class="history-banner-info">
-                            <div class="history-banner-title">📅 Viewing Historical Session</div>
-                            <div class="history-banner-details" id="results-history-details">
-                                Date • Winner • Best Lap
-                            </div>
+                <!-- Scoring Methods -->
+                <div class="method-selector-modern">
+                    <button class="method-btn-modern active" data-method="fastest-lap">
+                        <span class="method-icon">⚡</span>
+                        <span class="method-name">Fastest Lap</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="total-time">
+                        <span class="method-icon">🏃</span>
+                        <span class="method-name">Total Time</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="average-lap">
+                        <span class="method-icon">📊</span>
+                        <span class="method-name">Average</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="best-3-avg">
+                        <span class="method-icon">🎯</span>
+                        <span class="method-name">Best 3</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="consistency">
+                        <span class="method-icon">🎚️</span>
+                        <span class="method-name">Consistency</span>
+                    </button>
+                </div>
+                
+                <div id="results-method-description" class="method-description"></div>
+                
+                <!-- Podium -->
+                <div class="podium-modern">
+                    <h2 class="section-title">🏆 Podium</h2>
+                    <div class="podium-cards">
+                        <div class="podium-card silver" id="podium-p2-modern">
+                            <div class="podium-badge">2</div>
+                            <div class="podium-medal">🥈</div>
+                            <div class="podium-kart" id="podium-p2-kart">#-</div>
+                            <div class="podium-name" id="podium-p2-name">-</div>
+                            <div class="podium-time" id="podium-p2-time">--.-</div>
+                            <div class="podium-gap" id="podium-p2-gap">-</div>
                         </div>
-                        <button class="history-back-btn" id="results-back-to-live">
-                            🔴 Back to Live
-                        </button>
+                        
+                        <div class="podium-card gold" id="podium-p1-modern">
+                            <div class="podium-badge">1</div>
+                            <div class="podium-medal winner">🥇</div>
+                            <div class="podium-kart" id="podium-p1-kart">#-</div>
+                            <div class="podium-name" id="podium-p1-name">-</div>
+                            <div class="podium-time" id="podium-p1-time">--.-</div>
+                            <div class="podium-label">WINNER</div>
+                        </div>
+                        
+                        <div class="podium-card bronze" id="podium-p3-modern">
+                            <div class="podium-badge">3</div>
+                            <div class="podium-medal">🥉</div>
+                            <div class="podium-kart" id="podium-p3-kart">#-</div>
+                            <div class="podium-name" id="podium-p3-name">-</div>
+                            <div class="podium-time" id="podium-p3-time">--.-</div>
+                            <div class="podium-gap" id="podium-p3-gap">-</div>
+                        </div>
                     </div>
                 </div>
                 
-                <div id="results-no-data" class="results-placeholder">
-                    <p>Waiting for session data to calculate results...</p>
-                </div>
-                
-                <div id="results-content" class="results-content hidden">
-                    <!-- Scoring Method Selector -->
-                    <div class="results-method-selector">
-                        <div class="results-method-header">
-                            <div class="results-method-control">
-                                <label for="results-method-select">📊 Scoring Method:</label>
-                                <select id="results-method-select" class="results-select">
-                                    <option value="fastest-lap">🏁 Fastest Lap (Venue Default)</option>
-                                    <option value="total-time">⏱️ Total Time (Endurance)</option>
-                                    <option value="average-lap">📈 Average Lap Time</option>
-                                    <option value="best-3-avg">⭐ Best 3 Laps Average</option>
-                                    <option value="consistency">🎯 Consistency Score</option>
-                                </select>
-                            </div>
-                            <button id="results-refresh-btn" class="results-refresh-btn" title="Manually recalculate results">
-                                🔄 Refresh
-                            </button>
-                        </div>
-                        <p class="results-method-description" id="results-method-description"></p>
+                <!-- Full Results -->
+                <div class="results-table-modern">
+                    <div class="table-header-modern">
+                        <h3>Full Results</h3>
+                        <input type="text" id="results-search" class="search-modern" placeholder="🔍 Search...">
                     </div>
                     
-                    <!-- Podium Section -->
-                    <div class="results-podium">
-                        <h2>🏆 Podium</h2>
-                        <div class="podium-container">
-                            <div class="podium-place p2">
-                                <div class="podium-driver" id="podium-p2">
-                                    <div class="podium-position">2nd</div>
-                                    <div class="podium-kart">-</div>
-                                    <div class="podium-name">-</div>
-                                    <div class="podium-time">-</div>
-                                </div>
-                                <div class="podium-stand stand-2">2</div>
-                            </div>
-                            <div class="podium-place p1">
-                                <div class="podium-driver" id="podium-p1">
-                                    <div class="podium-position">🥇 1st</div>
-                                    <div class="podium-kart">-</div>
-                                    <div class="podium-name">-</div>
-                                    <div class="podium-time">-</div>
-                                </div>
-                                <div class="podium-stand stand-1">1</div>
-                            </div>
-                            <div class="podium-place p3">
-                                <div class="podium-driver" id="podium-p3">
-                                    <div class="podium-position">3rd</div>
-                                    <div class="podium-kart">-</div>
-                                    <div class="podium-name">-</div>
-                                    <div class="podium-time">-</div>
-                                </div>
-                                <div class="podium-stand stand-3">3</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Full Rankings Table -->
-                    <div class="results-rankings">
-                        <h2>📋 Full Standings</h2>
-                        <div class="results-table">
-                            <div class="results-table-header">
-                                <div class="results-col-pos">Pos</div>
-                                <div class="results-col-kart">Kart</div>
-                                <div class="results-col-name">Driver</div>
-                                <div class="results-col-score">Score</div>
-                                <div class="results-col-gap">Gap</div>
-                                <div class="results-col-laps">Laps</div>
-                            </div>
-                            <div id="results-table-body" class="results-table-body">
-                                <!-- Populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Comparison Bar Chart -->
-                    <div class="results-chart-section">
-                        <h2>📊 Visual Comparison</h2>
-                        <canvas id="results-chart" width="800" height="400"></canvas>
-                    </div>
-                    
-                    <!-- Method Statistics -->
-                    <div class="results-stats">
-                        <h3>📈 Statistics</h3>
-                        <div class="results-stats-grid" id="results-stats-grid">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Kart</th>
+                                <th>Driver</th>
+                                <th>Score</th>
+                                <th>Gap</th>
+                                <th>Best</th>
+                                <th>Laps</th>
+                                <th>Awards</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body-modern">
                             <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Insights -->
+                <div class="insights-section">
+                    <h3 class="section-title">🎯 Session Insights</h3>
+                    <div class="insights-grid">
+                        <div class="insight-card">
+                            <div class="insight-icon">⚡</div>
+                            <div class="insight-label">Fastest Lap</div>
+                            <div class="insight-value" id="insight-fastest">-</div>
+                            <div class="insight-sub" id="insight-fastest-time">--.-</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">🎯</div>
+                            <div class="insight-label">Most Consistent</div>
+                            <div class="insight-value" id="insight-consistent">-</div>
+                            <div class="insight-sub" id="insight-consistent-score">-</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">📈</div>
+                            <div class="insight-label">Most Improved</div>
+                            <div class="insight-value" id="insight-improved">-</div>
+                            <div class="insight-sub" id="insight-improved-gain">-</div>
+                        </div>
+                        <div class="insight-card">
+                            <div class="insight-icon">🔥</div>
+                            <div class="insight-label">Completion</div>
+                            <div class="insight-value" id="insight-completion">-</div>
+                            <div class="insight-sub" id="insight-completion-rate">-</div>
                         </div>
                     </div>
                 </div>

@@ -438,21 +438,14 @@ function setupEventListeners() {
         });
     }
     
-    // Results method selector
-    if (elements.resultsMethodSelect) {
-        elements.resultsMethodSelect.addEventListener('change', () => {
-            ResultsView.updateResultsView(elements, state.sessionData, state);
-        });
-    }
+    // Results tab - setup event listeners
+    ResultsView.setupResultsEventListeners();
     
     // Results refresh button
     const resultsRefreshBtn = document.getElementById('results-refresh-btn');
     if (resultsRefreshBtn) {
         resultsRefreshBtn.addEventListener('click', () => {
             console.log('🔄 Manual results refresh triggered');
-            console.log('📊 Current state.sessionData:', state.sessionData);
-            console.log('📊 Runs available:', state.sessionData?.runs?.length);
-            
             // Use replay data if available, otherwise session data
             const dataToUse = state.replayData || state.sessionData;
             
