@@ -208,6 +208,29 @@
             <div class="results-container">
                 <h1>🏆 Race Results & Standings</h1>
                 
+                <!-- Session Selector -->
+                <div class="session-selector-wrapper">
+                    <label for="results-session-select">📂 Session:</label>
+                    <select id="results-session-select" class="session-select">
+                        <option value="live">🔴 Live Session (Current)</option>
+                    </select>
+                </div>
+                
+                <!-- History Banner (hidden by default) -->
+                <div id="results-history-banner" class="history-banner hidden">
+                    <div class="history-banner-content">
+                        <div class="history-banner-info">
+                            <div class="history-banner-title">📅 Viewing Historical Session</div>
+                            <div class="history-banner-details" id="results-history-details">
+                                Date • Winner • Best Lap
+                            </div>
+                        </div>
+                        <button class="history-back-btn" id="results-back-to-live">
+                            🔴 Back to Live
+                        </button>
+                    </div>
+                </div>
+                
                 <div id="results-no-data" class="results-placeholder">
                     <p>Waiting for session data to calculate results...</p>
                 </div>
@@ -398,6 +421,29 @@
         <div id="summary-screen" class="screen tab-content">
             <div class="summary-container">
                 <h1>📈 Session Summary</h1>
+                
+                <!-- Session Selector -->
+                <div class="session-selector-wrapper">
+                    <label for="summary-session-select">📂 Session:</label>
+                    <select id="summary-session-select" class="session-select">
+                        <option value="live">🔴 Live Session (Current)</option>
+                    </select>
+                </div>
+                
+                <!-- History Banner (hidden by default) -->
+                <div id="summary-history-banner" class="history-banner hidden">
+                    <div class="history-banner-content">
+                        <div class="history-banner-info">
+                            <div class="history-banner-title">📅 Viewing Historical Session</div>
+                            <div class="history-banner-details" id="summary-history-details">
+                                Date • Winner • Best Lap
+                            </div>
+                        </div>
+                        <button class="history-back-btn" id="summary-back-to-live">
+                            🔴 Back to Live
+                        </button>
+                    </div>
+                </div>
                 
                 <div id="summary-no-data" class="summary-placeholder">
                     <p>Complete a session to see your summary and statistics</p>
