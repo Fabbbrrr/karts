@@ -966,7 +966,10 @@ function handleNewLap(run, lapNum, lapData) {
     // TTS Announcement for main driver
     // WHY: Voice feedback allows driver to keep eyes on track
     // FEATURE: Text-to-Speech, Voice Feedback, Racing UX
-    if (state.settings.enableTTS && isMainDriver && run.last_time && state.currentTab === 'hud') {
+    // NOTE: Announce on every lap regardless of which tab is open
+    if (state.settings.enableTTS && isMainDriver && run.last_time) {
+        console.log('🎤 TTS conditions met, announcing lap');
+        
         // Calculate gaps for comprehensive announcement
         const personalBest = LapTrackerService.getPersonalBest(run.name, state.personalRecords);
         let gapToPB = null;
@@ -989,6 +992,11 @@ function handleNewLap(run, lapNum, lapData) {
             announceGapP1: state.settings.ttsAnnounceGapP1,
             announceGapPB: state.settings.ttsAnnounceGapPB
         });
+    } else {
+        // Debug why TTS didn't fire
+        if (!state.settings.enableTTS) console.log('🔇 TTS disabled in settings');
+        if (!isMainDriver) console.log('🔇 Not main driver (main:', state.settings.mainDriver, ', lap:', run.kart_number, ')');
+        if (!run.last_time) console.log('🔇 No lap time available');
     }
     
     // Collect lap for kart analysis
