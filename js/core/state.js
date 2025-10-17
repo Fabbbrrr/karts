@@ -35,6 +35,10 @@ const state = {
     recordedSessions: [],
     replayData: null,
     
+    // Session history
+    isHistoryMode: false,
+    currentHistorySession: null,
+    
     // Kart Analysis Data
     kartAnalysisData: {
         laps: [],

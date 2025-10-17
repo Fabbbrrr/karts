@@ -7,6 +7,7 @@ import * as WebSocketService from './services/websocket.service.js';
 import * as StorageService from './services/storage.service.js';
 import * as LapTrackerService from './services/lap-tracker.service.js';
 import * as DriverSelectionService from './services/driver-selection.service.js';
+import * as SessionHistoryService from './services/session-history.service.js';
 import * as AudioService from './utils/audio.js';
 import * as TTSService from './utils/tts.js';
 import { isDriverStale, getLapAge, TIMESTAMP_THRESHOLDS } from './utils/timestamp-filter.js';
@@ -855,9 +856,14 @@ function handleConnectionError(error) {
  */
 function handleSessionData(data) {
     try {
-        // Ignore live data if in replay mode
+        // Ignore live data if in replay or history mode
         if (state.isReplayMode) {
             console.log('⏸️ Ignoring live data - in replay mode');
+            return;
+        }
+        
+        if (state.isHistoryMode) {
+            console.log('📅 Ignoring live data - viewing history');
             return;
         }
         
@@ -881,6 +887,12 @@ function handleSessionData(data) {
         
         if (detection.needsReset) {
             resetSessionData();
+        }
+        
+        // Auto-save previous session if session changed
+        if (detection.needsReset && state.currentSessionId && state.sessionData) {
+            console.log('💾 Auto-saving previous session to history');
+            SessionHistoryService.saveCurrentSession(state.sessionData, state.currentSessionId);
         }
         
         state.currentSessionId = detection.sessionId;
