@@ -21,12 +21,29 @@ const LAP_TIME_THRESHOLD = 60000; // 60 seconds
 let currentMethod = 'fastest-lap';
 let currentResults = [];
 let searchQuery = '';
+let cachedSessionData = null;
+let cachedState = null;
 
 /**
  * Main update function - orchestrates entire results view
  */
-export function updateResultsView(elements, sessionData, state) {
-    console.log('🏁 Results View Update:', { hasData: !!sessionData, runs: sessionData?.runs?.length });
+export function updateResultsView(elements, sessionData, state, method = null) {
+    console.log('🏁 Results View Update:', { 
+        hasData: !!sessionData, 
+        runs: sessionData?.runs?.length,
+        method: method || currentMethod 
+    });
+    
+    // Store data for recalculation
+    cachedSessionData = sessionData;
+    cachedState = state;
+    
+    // Update method if provided
+    if (method) {
+        currentMethod = method;
+        // Update active button state
+        updateMethodButtonState(method);
+    }
     
     // Populate session selector
     populateSessionSelector('results');
@@ -52,7 +69,7 @@ export function updateResultsView(elements, sessionData, state) {
     updateResultsTable(results, searchQuery);
     updateInsights(sessionData, results);
     
-    console.log('✅ Results view updated successfully');
+    console.log('✅ Results view updated successfully with method:', currentMethod);
 }
 
 /**
@@ -399,6 +416,20 @@ function updateInsights(sessionData, results) {
 }
 
 /**
+ * Update method button active state
+ */
+function updateMethodButtonState(method) {
+    const methodButtons = document.querySelectorAll('.method-btn-modern');
+    methodButtons.forEach(btn => {
+        if (btn.dataset.method === method) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+/**
  * Setup event listeners
  */
 export function setupResultsEventListeners() {
@@ -406,16 +437,20 @@ export function setupResultsEventListeners() {
     const methodButtons = document.querySelectorAll('.method-btn-modern');
     methodButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Update active state
-            methodButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            const newMethod = btn.dataset.method;
+            console.log('🔄 Switching to method:', newMethod);
             
-            // Update method and recalculate
-            currentMethod = btn.dataset.method;
-            
-            // Trigger update through main app
-            if (window.kartingApp && window.kartingApp.updateResultsView) {
-                window.kartingApp.updateResultsView();
+            // Recalculate with new method using cached data
+            if (cachedSessionData) {
+                updateResultsView({}, cachedSessionData, cachedState, newMethod);
+            } else if (window.kartingApp && window.kartingApp.state && window.kartingApp.state.sessionData) {
+                // Fallback to global state
+                updateResultsView(
+                    {}, 
+                    window.kartingApp.state.sessionData, 
+                    window.kartingApp.state, 
+                    newMethod
+                );
             }
         });
     });
@@ -436,6 +471,8 @@ export function setupResultsEventListeners() {
             exportResults(currentResults, currentMethod);
         });
     }
+    
+    console.log('✅ Results event listeners setup complete');
 }
 
 /**
