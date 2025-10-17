@@ -2305,6 +2305,137 @@ body.theme-racing-green .hud-value {
     font-size: 1.1rem;
 }
 
+/* Session Selector */
+.session-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding: 12px 16px;
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.session-selector-wrapper label {
+    color: #888;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.session-select {
+    flex: 1;
+    background: #0a0a0a;
+    color: #fff;
+    border: 2px solid #333;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.session-select:hover {
+    border-color: #00ff88;
+}
+
+.session-select:focus {
+    outline: none;
+    border-color: #00ff88;
+    box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+}
+
+.session-select option {
+    background: #0a0a0a;
+    color: #fff;
+    padding: 8px;
+}
+
+/* History Banner */
+.history-banner {
+    background: linear-gradient(135deg, #1a0a0a, #0a1a1a);
+    border: 2px solid #ff8800;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px rgba(255, 136, 0, 0.2);
+}
+
+.history-banner.hidden {
+    display: none;
+}
+
+.history-banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.history-banner-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.history-banner-title {
+    color: #ff8800;
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.history-banner-details {
+    color: #ccc;
+    font-size: 0.95rem;
+}
+
+.history-back-btn {
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(255, 68, 68, 0.3);
+}
+
+.history-back-btn:hover {
+    background: linear-gradient(135deg, #ff5555, #dd0000);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 68, 68, 0.5);
+}
+
+.history-back-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .session-selector-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .session-selector-wrapper label {
+        text-align: left;
+    }
+    
+    .history-banner-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .history-back-btn {
+        width: 100%;
+    }
+}
+
 .results-content {
     padding: 0;
 }
