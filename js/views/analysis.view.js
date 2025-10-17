@@ -225,8 +225,27 @@ function updateAnalysisRankingsTable(elements, kartAnalysisData, trackConfigId =
         // Highlight if kartId and kartNumber are different (kart was renumbered)
         const renumberedClass = kart.kartId !== kart.kartNumber ? 'renumbered' : '';
         
+        // Get track config name (if filtering, show it; otherwise show track from first lap)
+        let trackConfigDisplay = '-';
+        if (trackConfigId !== null) {
+            // Filtered view - show the track name
+            trackConfigDisplay = TrackConfigUtils.getTrackConfigName(trackConfigId);
+        } else {
+            // All tracks view - get track from kart's data
+            const kartLaps = (kartAnalysisData.laps || []).filter(lap => lap.kartId === kart.kartId);
+            if (kartLaps.length > 0 && kartLaps[0].trackConfigId !== undefined) {
+                const trackConfigs = [...new Set(kartLaps.map(lap => lap.trackConfigId))];
+                if (trackConfigs.length === 1) {
+                    trackConfigDisplay = TrackConfigUtils.getTrackConfigName(trackConfigs[0]);
+                } else {
+                    trackConfigDisplay = `${trackConfigs.length} tracks`;
+                }
+            }
+        }
+        
         row.innerHTML = `
             <td class="rank ${rankClass}">${rank}</td>
+            <td class="track-config" style="color: #00cc88; font-size: 0.85rem; font-weight: 500;">${trackConfigDisplay}</td>
             <td class="kart-id ${renumberedClass}" style="color: #888; font-family: monospace; font-size: 0.9rem;">${kart.kartId}</td>
             <td class="kart-number">#${kart.kartNumber}</td>
             <td class="avg-lap" style="font-weight: bold; color: #00ff88;">${avgLapFormatted}</td>
