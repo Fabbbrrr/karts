@@ -1529,6 +1529,124 @@ function switchTab(tabName) {
     updateAllViews();
 }
 
+/**
+ * Handle session selection from dropdown
+ * 
+ * PURPOSE: Load historical session when user selects from dropdown
+ * WHY: Enable viewing past session results and summaries
+ * HOW: Load session from history service, update state, refresh views
+ * FEATURE: Session History, Historical Data Viewing
+ * 
+ * @param {string} sessionId - Selected session ID ("live" or historical ID)
+ * @param {string} tab - Which tab triggered the selection ("results" or "summary")
+ * @returns {void}
+ */
+function handleSessionSelection(sessionId, tab) {
+    console.log(`📂 Session selection: ${sessionId} from ${tab} tab`);
+    
+    if (sessionId === 'live') {
+        returnToLiveMode(tab);
+        return;
+    }
+    
+    // Load historical session
+    const session = SessionHistoryService.loadSession(sessionId);
+    if (!session) {
+        console.error('❌ Failed to load session:', sessionId);
+        alert('Failed to load session. Please try again.');
+        return;
+    }
+    
+    // Enter history mode
+    state.isHistoryMode = true;
+    state.currentHistorySession = session;
+    
+    console.log('📅 Entered history mode:', {
+        date: session.date,
+        time: session.startTime,
+        winner: session.winner.name
+    });
+    
+    // Update banner
+    updateHistoryBanner(tab, session);
+    
+    // Update view with historical data
+    if (tab === 'results') {
+        ResultsView.updateResultsView(elements, session.sessionData, state);
+    } else if (tab === 'summary') {
+        SummaryView.updateSummaryView(elements, session.sessionData, state);
+    }
+}
+
+/**
+ * Return to live mode from history viewing
+ * 
+ * PURPOSE: Exit history mode and resume live updates
+ * WHY: User wants to return to current live session
+ * HOW: Reset history state, hide banner, restore live data
+ * FEATURE: Session History, Live Mode
+ * 
+ * @param {string} tab - Which tab to return to live mode ("results" or "summary")
+ * @returns {void}
+ */
+function returnToLiveMode(tab) {
+    console.log(`🔴 Returning to live mode from ${tab} tab`);
+    
+    // Exit history mode
+    state.isHistoryMode = false;
+    state.currentHistorySession = null;
+    
+    // Reset selector to live
+    const selector = document.getElementById(`${tab}-session-select`);
+    if (selector) {
+        selector.value = 'live';
+    }
+    
+    // Hide banner
+    const banner = document.getElementById(`${tab}-history-banner`);
+    if (banner) {
+        banner.classList.add('hidden');
+    }
+    
+    // Update view with live data
+    if (tab === 'results') {
+        ResultsView.updateResultsView(elements, state.sessionData, state);
+    } else if (tab === 'summary') {
+        SummaryView.updateSummaryView(elements, state.sessionData, state);
+    }
+    
+    console.log('✅ Returned to live mode');
+}
+
+/**
+ * Update history banner with session info
+ * 
+ * PURPOSE: Show user they're viewing historical data
+ * WHY: Clear indication of history mode vs live mode
+ * HOW: Populate banner with session details and show it
+ * FEATURE: Session History, UI Feedback
+ * 
+ * @param {string} tab - Which tab's banner to update
+ * @param {Object} session - Session object with metadata
+ * @returns {void}
+ */
+function updateHistoryBanner(tab, session) {
+    const banner = document.getElementById(`${tab}-history-banner`);
+    const details = document.getElementById(`${tab}-history-details`);
+    
+    if (!banner || !details) return;
+    
+    // Format banner details
+    const winnerInfo = session.winner.name !== 'No Winner' && session.winner.name !== 'Unknown'
+        ? `Winner: ${session.winner.name} (#${session.winner.kartNumber}) - ${session.winner.bestLap}`
+        : session.eventName;
+    
+    details.textContent = `${session.date} ${session.startTime} • ${winnerInfo}`;
+    
+    // Show banner
+    banner.classList.remove('hidden');
+}
+
 // Update all views
 /**
  * Update all views with current session data
@@ -1541,12 +1659,15 @@ function switchTab(tabName) {
  * @returns {void}
  */
 function updateAllViews() {
-    if (!state.sessionData && !state.replayData) {
-        console.warn('⚠️ No session or replay data available for view update');
+    if (!state.sessionData && !state.replayData && !state.currentHistorySession) {
+        console.warn('⚠️ No session, replay, or history data available for view update');
         return;
     }
     
-    const data = state.replayData || state.sessionData;
+    // Use history data if in history mode, otherwise use replay or live data
+    const data = state.isHistoryMode && state.currentHistorySession 
+        ? state.currentHistorySession.sessionData 
+        : (state.replayData || state.sessionData);
     
     console.log(`📺 Updating ${state.currentTab} view with data:`, {
         runs: data.runs?.length,
