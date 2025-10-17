@@ -75,7 +75,11 @@ export function updateHUDView(elements, sessionData, state) {
     // Update lap count card
     const lapCountEl = document.getElementById('hud-lap-count');
     if (lapCountEl) {
-        lapCountEl.textContent = run.total_laps || 0;
+        // Current lap = completed laps + 1 (if still racing)
+        const currentLap = (run.run_status === 'in_progress' || run.run_status === 'running') 
+            ? (run.total_laps || 0) + 1 
+            : (run.total_laps || 0);
+        lapCountEl.textContent = currentLap;
     }
     
     // Update header stat badges
