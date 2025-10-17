@@ -416,5 +416,125 @@ export function applyHUDCardVisibility(elements, settings) {
     toggleCard('hud-card-consistency', settings.hudShowConsistency);
     toggleCard('hud-card-lap-history', settings.hudShowLapHistory);
     toggleCard('hud-card-stats', settings.hudShowStats);
+    
+    // Initialize drag and drop after toggle
+    setTimeout(() => initializeDragAndDrop(), 100);
+}
+
+/**
+ * Initialize drag and drop for HUD cards
+ * 
+ * PURPOSE: Allow users to reorder HUD cards by dragging
+ * WHY: Personalized layout improves UX on small screens
+ * HOW: Uses HTML5 Drag & Drop API + Touch events for mobile
+ * FEATURE: Drag & Drop, Card Reordering, Mobile Touch Support
+ */
+function initializeDragAndDrop() {
+    const cards = document.querySelectorAll('.hud-card');
+    
+    cards.forEach(card => {
+        // Skip if already initialized
+        if (card.getAttribute('data-drag-initialized') === 'true') return;
+        card.setAttribute('data-drag-initialized', 'true');
+        
+        // Make cards draggable
+        card.setAttribute('draggable', 'true');
+        
+        // Desktop drag events
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('drop', handleDrop);
+        card.addEventListener('dragleave', handleDragLeave);
+        
+        // Mobile touch events
+        card.addEventListener('touchstart', handleTouchStart, { passive: false });
+        card.addEventListener('touchmove', handleTouchMove, { passive: false });
+        card.addEventListener('touchend', handleTouchEnd);
+    });
+}
+
+function handleDragStart(e) {
+    draggedElement = e.currentTarget;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.hud-card').forEach(card => card.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+    return false;
+}
+
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+    
+    if (draggedElement !== e.currentTarget) {
+        const parent = e.currentTarget.parentElement;
+        const draggedIndex = Array.from(parent.children).indexOf(draggedElement);
+        const targetIndex = Array.from(parent.children).indexOf(e.currentTarget);
+        
+        if (draggedIndex < targetIndex) {
+            parent.insertBefore(draggedElement, e.currentTarget.nextSibling);
+        } else {
+            parent.insertBefore(draggedElement, e.currentTarget);
+        }
+    }
+    
+    return false;
+}
+
+function handleTouchStart(e) {
+    if (e.target.classList.contains('hud-toggle-btn')) return;
+    touchDraggedElement = e.currentTarget;
+    e.currentTarget.classList.add('dragging');
+}
+
+function handleTouchMove(e) {
+    if (!touchDraggedElement) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (elementBelow && elementBelow.classList.contains('hud-card') && elementBelow !== touchDraggedElement) {
+        elementBelow.classList.add('drag-over');
+    }
+}
+
+function handleTouchEnd(e) {
+    if (!touchDraggedElement) return;
+    
+    touchDraggedElement.classList.remove('dragging');
+    
+    const touch = e.changedTouches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    document.querySelectorAll('.hud-card').forEach(card => card.classList.remove('drag-over'));
+    
+    if (elementBelow && elementBelow.classList.contains('hud-card') && elementBelow !== touchDraggedElement) {
+        const parent = touchDraggedElement.parentElement;
+        const draggedIndex = Array.from(parent.children).indexOf(touchDraggedElement);
+        const targetIndex = Array.from(parent.children).indexOf(elementBelow);
+        
+        if (draggedIndex < targetIndex) {
+            parent.insertBefore(touchDraggedElement, elementBelow.nextSibling);
+        } else {
+            parent.insertBefore(touchDraggedElement, elementBelow);
+        }
+    }
+    
+    touchDraggedElement = null;
 }
 
