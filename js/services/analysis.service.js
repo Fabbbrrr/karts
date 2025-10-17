@@ -297,20 +297,33 @@ export function calculateConfidence(kartId, analysisData) {
  * @param {Object} analysisData - Kart analysis data
  * @returns {Array} Array of kart analysis objects sorted by performance
  */
-export function analyzeAllKarts(analysisData) {
+/**
+ * Analyze all karts with optional track configuration filter and return sorted results
+ * 
+ * PURPOSE: Generate performance rankings for all karts
+ * WHY: Provides comprehensive comparison across fleet
+ * HOW: Calculates normalized index for each kart, sorts by performance
+ * FEATURE: Kart Analysis, Performance Rankings, Track Configuration Filtering
+ * 
+ * @param {Object} analysisData - Kart analysis data
+ * @param {string|number|null} trackConfigId - Track configuration to filter by (null for all)
+ * @returns {Array} Sorted kart analysis results with performance metrics
+ */
+export function analyzeAllKarts(analysisData, trackConfigId = null) {
     const karts = analysisData.karts || {};
     const kartIds = Object.keys(karts);
     
     console.log('🔬 Analysis Service Debug:', {
         totalKarts: kartIds.length,
         kartIds: kartIds,
-        totalLaps: (analysisData.laps || []).length
+        totalLaps: (analysisData.laps || []).length,
+        trackConfigFilter: trackConfigId
     });
     
-    // Calculate analysis for all karts
+    // Calculate analysis for all karts with track config filter
     const kartAnalysis = kartIds.map(kartId => {
         const kart = karts[kartId];
-        const normalized = calculateNormalizedIndex(kartId, analysisData);
+        const normalized = calculateNormalizedIndex(kartId, analysisData, trackConfigId);
         const percentile = calculatePercentileRanking(kartId, analysisData);
         const stats = getKartStats(kartId, analysisData);
         const confidence = calculateConfidence(kartId, analysisData);

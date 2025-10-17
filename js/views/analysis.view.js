@@ -3,11 +3,19 @@
 
 import { formatTime } from '../utils/time-formatter.js';
 import * as AnalysisService from '../services/analysis.service.js';
+import { getUniqueTrackConfigs, getTrackConfigName } from '../utils/track-config.js';
 
 /**
- * Update the analysis view with kart rankings
+ * Update the analysis view with kart rankings and track configuration filter
+ * 
+ * PURPOSE: Display kart performance analysis with optional track config filtering
+ * WHY: Different track layouts produce different lap times and must be analyzed separately
+ * HOW: Shows track config selector, filters data, displays rankings
+ * FEATURE: Kart Analysis, Track Configuration Filtering, Performance Rankings
+ * 
  * @param {Object} elements - DOM elements
  * @param {Object} kartAnalysisData - Kart analysis data
+ * @returns {void}
  */
 export function updateAnalysisView(elements, kartAnalysisData) {
     if (!elements.analysisScreen) return;
@@ -33,20 +41,87 @@ export function updateAnalysisView(elements, kartAnalysisData) {
     if (elements.analysisNoData) elements.analysisNoData.classList.add('hidden');
     if (elements.analysisContent) elements.analysisContent.classList.remove('hidden');
     
-    // Update summary stats
-    updateAnalysisSummaryStats(elements, kartAnalysisData);
+    // Update track configuration filter
+    updateTrackConfigFilter(elements, kartAnalysisData);
     
-    // Update rankings table
-    updateAnalysisRankingsTable(elements, kartAnalysisData);
+    // Get selected track configuration
+    const selectedTrackConfig = elements.trackConfigFilter?.value || 'all';
+    const trackConfigId = selectedTrackConfig === 'all' ? null : selectedTrackConfig;
+    
+    // Update summary stats with track config filter
+    updateAnalysisSummaryStats(elements, kartAnalysisData, trackConfigId);
+    
+    // Update rankings table with track config filter
+    updateAnalysisRankingsTable(elements, kartAnalysisData, trackConfigId);
 }
 
 /**
- * Update analysis summary statistics
+ * Update track configuration filter dropdown
+ * 
+ * PURPOSE: Allow user to filter analysis by specific track layout
+ * WHY: Different track configurations must be analyzed separately
+ * HOW: Populates dropdown with available track configs from lap data
+ * FEATURE: Track Configuration Filtering, User Interface
+ * 
  * @param {Object} elements - DOM elements
  * @param {Object} kartAnalysisData - Kart analysis data
+ * @returns {void}
  */
-function updateAnalysisSummaryStats(elements, kartAnalysisData) {
-    const stats = AnalysisService.getSummaryStats(kartAnalysisData);
+function updateTrackConfigFilter(elements, kartAnalysisData) {
+    if (!elements.trackConfigFilter) return;
+    
+    // Get unique track configurations from laps
+    const trackConfigs = getUniqueTrackConfigs(kartAnalysisData.laps || []);
+    
+    // Store current selection
+    const currentSelection = elements.trackConfigFilter.value || 'all';
+    
+    // Rebuild options
+    elements.trackConfigFilter.innerHTML = '<option value="all">All Track Configurations</option>';
+    
+    trackConfigs.forEach(configId => {
+        const option = document.createElement('option');
+        option.value = configId;
+        option.textContent = getTrackConfigName(configId);
+        elements.trackConfigFilter.appendChild(option);
+    });
+    
+    // Restore selection if it still exists
+    if (currentSelection !== 'all' && trackConfigs.includes(currentSelection)) {
+        elements.trackConfigFilter.value = currentSelection;
+    }
+    
+    // Show filter only if multiple configs exist
+    const filterContainer = elements.trackConfigFilter.parentElement;
+    if (filterContainer) {
+        filterContainer.style.display = trackConfigs.length > 1 ? 'block' : 'none';
+    }
+}
+
+/**
+ * Update analysis summary statistics with optional track config filter
+ * 
+ * PURPOSE: Display aggregate statistics for kart performance
+ * WHY: Provides overview of data being analyzed
+ * HOW: Calculates stats from filtered lap data
+ * FEATURE: Analysis Statistics, Track Configuration Filtering
+ * 
+ * @param {Object} elements - DOM elements
+ * @param {Object} kartAnalysisData - Kart analysis data
+ * @param {string|number|null} trackConfigId - Track configuration to filter by (null for all)
+ * @returns {void}
+ */
+function updateAnalysisSummaryStats(elements, kartAnalysisData, trackConfigId = null) {
+    // Filter laps by track configuration if specified
+    let filteredData = kartAnalysisData;
+    if (trackConfigId !== null) {
+        filteredData = {
+            ...kartAnalysisData,
+            laps: kartAnalysisData.laps.filter(lap => lap.trackConfigId === trackConfigId)
+        };
+    }
+    
+    const stats = AnalysisService.getSummaryStats(filteredData);
     
     if (elements.analysisStats) {
         elements.analysisStats.innerHTML = `
@@ -75,11 +150,24 @@ function updateAnalysisSummaryStats(elements, kartAnalysisData) {
  * @param {Object} elements - DOM elements
  * @param {Object} kartAnalysisData - Kart analysis data
  */
-function updateAnalysisRankingsTable(elements, kartAnalysisData) {
+/**
+ * Update the kart rankings table with optional track config filter
+ * 
+ * PURPOSE: Display ranked list of karts by performance
+ * WHY: Shows which karts are fastest based on statistical analysis
+ * HOW: Analyzes karts, sorts by performance index, displays in table
+ * FEATURE: Kart Rankings, Performance Analysis, Track Configuration Filtering
+ * 
+ * @param {Object} elements - DOM elements
+ * @param {Object} kartAnalysisData - Kart analysis data
+ * @param {string|number|null} trackConfigId - Track configuration to filter by (null for all)
+ * @returns {void}
+ */
+function updateAnalysisRankingsTable(elements, kartAnalysisData, trackConfigId = null) {
     if (!elements.analysisTableBody) return;
     
-    // Analyze all karts
-    const kartAnalysis = AnalysisService.analyzeAllKarts(kartAnalysisData);
+    // Analyze all karts with track config filter
+    const kartAnalysis = AnalysisService.analyzeAllKarts(kartAnalysisData, trackConfigId);
     
     console.log('🔍 Analysis View Debug:', {
         hasTableBody: !!elements.analysisTableBody,

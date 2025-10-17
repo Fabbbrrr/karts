@@ -140,6 +140,7 @@ function cacheDOMElements() {
     elements.analysisScreen = document.getElementById('analysis-screen');
     elements.analysisNoData = document.getElementById('analysis-no-data');
     elements.analysisContent = document.getElementById('analysis-content');
+    elements.trackConfigFilter = document.getElementById('track-config-filter');
     elements.analysisStats = document.getElementById('analysis-stats');
     elements.analysisTableBody = document.getElementById('analysis-table-body');
     elements.analysisDetails = document.getElementById('analysis-details');
