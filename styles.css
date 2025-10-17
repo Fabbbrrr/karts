@@ -1437,6 +1437,20 @@ html, body {
         justify-content: space-between;
         align-items: center;
     }
+    
+    .hud-tts-toggle {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        gap: 4px;
+    }
+    
+    .hud-tts-toggle .tts-icon {
+        font-size: 0.9rem;
+    }
+    
+    .hud-tts-toggle .tts-status {
+        font-size: 0.7rem;
+    }
 }
     
     .hud-card.primary .hud-value {
