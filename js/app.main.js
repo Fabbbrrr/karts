@@ -2008,6 +2008,14 @@ window.kartingApp = {
         return AnalysisView.closeKartDetails(elements);
     },
     deleteDriverNote,
+    testTTS: (scenario) => {
+        console.log('🎤 Testing TTS scenario:', scenario);
+        testTTSScenario(scenario);
+    },
+    stopTTS: () => {
+        console.log('🔇 Stopping TTS');
+        TTSService.stopSpeaking();
+    },
     resetKartAnalysisData: () => {
         if (confirm('Are you sure you want to reset all kart analysis data? This cannot be undone.')) {
             state.kartAnalysisData = { laps: [], drivers: {}, karts: {}, sessions: {} };

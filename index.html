@@ -633,6 +633,43 @@
                         Announces lap time, gap to best, gap to personal best, and gap to P1 leader
                     </div>
                     
+                    <!-- TTS Test Buttons -->
+                    <div class="tts-test-section">
+                        <h3 class="tts-test-title">🎤 Test Voice Announcements</h3>
+                        <p class="tts-test-description">
+                            Try different announcement scenarios to hear what you'll get during racing:
+                        </p>
+                        <div class="tts-test-buttons">
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('fast')">
+                                🟢 Fast Lap<br>
+                                <span class="btn-subtitle">(30.5s, faster than best)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('slow')">
+                                🟡 Slower Lap<br>
+                                <span class="btn-subtitle">(31.2s, +0.7s)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('best')">
+                                🏆 Best Lap!<br>
+                                <span class="btn-subtitle">(29.8s, session best)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('pb')">
+                                ⭐ New Personal Best<br>
+                                <span class="btn-subtitle">(29.5s, -0.3s from PB)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('leader')">
+                                👑 Leader Position<br>
+                                <span class="btn-subtitle">(30.1s, P1 reference)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('chase')">
+                                🏁 Chase Mode<br>
+                                <span class="btn-subtitle">(30.3s, +1.5s to P1)</span>
+                            </button>
+                        </div>
+                        <button class="tts-stop-btn" onclick="window.kartingApp.stopTTS()">
+                            🔇 Stop Speaking
+                        </button>
+                    </div>
+                    
                     <label class="settings-checkbox">
                         <input type="checkbox" id="enable-proximity-alert" checked>
                         <span>⚠️ Opponent Proximity Alert (sound + visual)</span>
