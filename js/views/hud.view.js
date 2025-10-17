@@ -3,13 +3,17 @@
  * 
  * PURPOSE: Provide full-screen heads-up display focused on main driver
  * WHY: Allows driver to monitor their performance during race
- * FEATURE: HUD View, Driver Focus, Live Timing Display
+ * FEATURE: HUD View, Driver Focus, Live Timing Display, Drag & Drop Reordering
  */
 
 import { formatDelta } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
 import { calculateConsistency } from '../utils/calculations.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
+
+// Drag and drop state
+let draggedElement = null;
+let touchDraggedElement = null;
 
 /**
  * Update the HUD view with main driver's data
