@@ -376,31 +376,67 @@
                 
                 <!-- Insights -->
                 <div class="insights-section">
-                    <h3 class="section-title">🎯 Session Insights</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 class="section-title" style="margin: 0;">🎯 Session Insights</h3>
+                        <button id="awards-info-btn" class="awards-info-button" style="padding: 8px 16px; background: #2c2c2c; border: 1px solid #444; border-radius: 6px; color: #4ECDC4; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 1.2rem;">ℹ️</span>
+                            What do these mean?
+                        </button>
+                    </div>
                     <div class="insights-grid">
-                        <div class="insight-card">
+                        <div class="insight-card" title="Overall fastest single lap in the session">
                             <div class="insight-icon">⚡</div>
                             <div class="insight-label">Fastest Lap</div>
                             <div class="insight-value" id="insight-fastest">-</div>
                             <div class="insight-sub" id="insight-fastest-time">--.-</div>
                         </div>
-                        <div class="insight-card">
+                        <div class="insight-card" title="Smallest standard deviation - most predictable lap times">
                             <div class="insight-icon">🎯</div>
                             <div class="insight-label">Most Consistent</div>
                             <div class="insight-value" id="insight-consistent">-</div>
                             <div class="insight-sub" id="insight-consistent-score">-</div>
                         </div>
-                        <div class="insight-card">
+                        <div class="insight-card" title="Biggest position gain from start to finish">
                             <div class="insight-icon">📈</div>
                             <div class="insight-label">Most Improved</div>
                             <div class="insight-value" id="insight-improved">-</div>
                             <div class="insight-sub" id="insight-improved-gain">-</div>
                         </div>
-                        <div class="insight-card">
+                        <div class="insight-card" title="Percentage of drivers who finished the session">
                             <div class="insight-icon">🔥</div>
                             <div class="insight-label">Completion</div>
                             <div class="insight-value" id="insight-completion">-</div>
                             <div class="insight-sub" id="insight-completion-rate">-</div>
+                        </div>
+                        <div class="insight-card" title="Most crashes, spins, and off-track incidents detected">
+                            <div class="insight-icon">💥</div>
+                            <div class="insight-label">Most Incidents</div>
+                            <div class="insight-value" id="insight-incidents">-</div>
+                            <div class="insight-sub" id="insight-incidents-count">-</div>
+                        </div>
+                        <div class="insight-card" title="Smallest gap between average and best lap - ultra-consistent">
+                            <div class="insight-icon">🧊</div>
+                            <div class="insight-label">Ice in Veins</div>
+                            <div class="insight-value" id="insight-ice">-</div>
+                            <div class="insight-sub" id="insight-ice-score">-</div>
+                        </div>
+                        <div class="insight-card" title="Best lap time in the final 3 laps - strong finish">
+                            <div class="insight-icon">🏁</div>
+                            <div class="insight-label">Fastest Finisher</div>
+                            <div class="insight-value" id="insight-fastest-finisher">-</div>
+                            <div class="insight-sub" id="insight-fastest-finisher-time">-</div>
+                        </div>
+                        <div class="insight-card" title="Fastest lap in laps 2-5 - quick to find pace">
+                            <div class="insight-icon">🔥</div>
+                            <div class="insight-label">Hot Start</div>
+                            <div class="insight-value" id="insight-hot-start">-</div>
+                            <div class="insight-sub" id="insight-hot-start-time">-</div>
+                        </div>
+                        <div class="insight-card" title="Most personal best improvements - continuous learning">
+                            <div class="insight-icon">👑</div>
+                            <div class="insight-label">Purple Lap King</div>
+                            <div class="insight-value" id="insight-purple-king">-</div>
+                            <div class="insight-sub" id="insight-purple-count">-</div>
                         </div>
                     </div>
                 </div>
@@ -1034,6 +1070,191 @@
     
     <!-- Main App Module (ES6 Modules) -->
     <script type="module" src="js/app.main.js"></script>
+    
+    <!-- Awards Info Modal -->
+    <div id="awards-modal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); overflow: auto;">
+        <div class="modal-content" style="background-color: #1e1e1e; margin: 5% auto; padding: 0; border: 1px solid #444; border-radius: 12px; width: 90%; max-width: 800px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+            <div class="modal-header" style="padding: 24px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; color: #fff; font-size: 1.5rem;">🏆 Driver Awards Guide</h2>
+                <button id="close-modal" style="background: transparent; border: none; color: #888; font-size: 2rem; cursor: pointer; padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px; color: #ccc; max-height: 60vh; overflow-y: auto;">
+                <p style="margin-bottom: 24px; font-size: 1.05rem; color: #aaa;">Every driver deserves recognition! Here's what each award means and how to earn it:</p>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #4ECDC4; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">⚡</span>
+                        <h3 style="margin: 0; color: #fff;">Fastest Lap</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You set the single fastest lap time in the entire session.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Pure speed! You had the best lap anyone achieved.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #45B7D1; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🧊</span>
+                        <h3 style="margin: 0; color: #fff;">Ice in Veins</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> Your average lap time was closest to your best lap - ultra-consistent driving.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> You drive like a robot! Lap after lap, same pace. This is crucial for endurance racing and shows mental/physical consistency.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #FF6B6B; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🔥</span>
+                        <h3 style="margin: 0; color: #fff;">Hot Start</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You had the fastest lap in laps 2-5 (early in the session).</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> You nail it immediately! No warm-up needed - you're fast from the get-go. Great qualifying pace.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #52B788; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🏁</span>
+                        <h3 style="margin: 0; color: #fff;">Fastest Finisher</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You had the best lap time in the final 3 laps of the session.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> You saved the best for last! Shows great tire management, physical endurance, and the ability to push when tired.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #F7DC6F; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">👑</span>
+                        <h3 style="margin: 0; color: #fff;">Purple Lap King</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You beat your own personal best more times than anyone else.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Continuous improvement! You learn and adapt throughout the session. "Purple laps" (beating your PB) show you never stop pushing.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #85C1E2; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🎯</span>
+                        <h3 style="margin: 0; color: #fff;">Most Consistent</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> Your lap times had the smallest variation (standard deviation < 1 second).</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Predictability! Your times don't vary much - very reliable pace.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #BB8FCE; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">📈</span>
+                        <h3 style="margin: 0; color: #fff;">Most Improved</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You gained the most positions from start to finish.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Great overtaking! Started low, finished high - impressive racing.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #EA8685; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">💥</span>
+                        <h3 style="margin: 0; color: #fff;">Most Incidents</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You had the most crashes, spins, or off-track moments detected.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's shown:</strong> For fun and motivation to improve! Everyone crashes while learning. Track your progress over time.</p>
+                </div>
+                
+                <div style="margin-top: 32px; padding: 20px; background: #2a2a2a; border-radius: 8px; border: 1px solid #444;">
+                    <h3 style="margin: 0 0 12px 0; color: #4ECDC4; font-size: 1.1rem;">💡 Pro Tips</h3>
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.8; color: #aaa;">
+                        <li><strong>Multiple awards?</strong> You can win multiple awards in one session!</li>
+                        <li><strong>Hover for details:</strong> Hover your mouse over any award card for a quick explanation.</li>
+                        <li><strong>Table badges:</strong> Look for emoji badges in the results table - these show who won each award.</li>
+                        <li><strong>Track your progress:</strong> Try to collect different awards each session to improve all-around skills!</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #333; text-align: right;">
+                <button id="close-modal-btn" style="padding: 10px 24px; background: #4ECDC4; color: #1a1a1a; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">Got it!</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Awards Modal Script -->
+    <script>
+        // Modal controls for Awards Info
+        (function() {
+            const modal = document.getElementById('awards-modal');
+            const btn = document.getElementById('awards-info-btn');
+            const closeBtn = document.getElementById('close-modal');
+            const closeBtnFooter = document.getElementById('close-modal-btn');
+            
+            // Open modal
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    modal.style.display = 'block';
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                });
+            }
+            
+            // Close modal - X button
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+            }
+            
+            // Close modal - Footer button
+            if (closeBtnFooter) {
+                closeBtnFooter.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+            }
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Hover effects for buttons
+            if (closeBtn) {
+                closeBtn.addEventListener('mouseenter', function() {
+                    this.style.background = '#333';
+                    this.style.color = '#fff';
+                });
+                closeBtn.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                    this.style.color = '#888';
+                });
+            }
+            
+            if (closeBtnFooter) {
+                closeBtnFooter.addEventListener('mouseenter', function() {
+                    this.style.background = '#5FE3D8';
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 12px rgba(78, 205, 196, 0.3)';
+                });
+                closeBtnFooter.addEventListener('mouseleave', function() {
+                    this.style.background = '#4ECDC4';
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            }
+            
+            if (btn) {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.background = '#333';
+                    this.style.borderColor = '#4ECDC4';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.background = '#2c2c2c';
+                    this.style.borderColor = '#444';
+                });
+            }
+        })();
+    </script>
     
     <!-- Fallback for old browsers without module support -->
     <script nomodule>

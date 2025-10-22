@@ -15,6 +15,7 @@ import { formatTime } from '../utils/time-formatter.js';
 import { calculateConsistency, calculateAverageLapTime } from '../utils/calculations.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import * as SessionHistoryService from '../services/session-history.service.js';
+import { detectAllIncidents, findMostIncidents } from '../utils/incident-detector.js';
 
 const LAP_TIME_THRESHOLD = 60000; // 60 seconds
 
@@ -70,7 +71,7 @@ export function updateResultsView(elements, sessionData, state, method = null) {
     updateMethodDescription(currentMethod);
     updatePodium(results);
     updateResultsTable(results, searchQuery);
-    updateInsights(sessionData, results);
+    updateInsights(sessionData, results, state);
     
     console.log('✅ Results view updated successfully with method:', currentMethod);
 }
@@ -374,7 +375,120 @@ function calculateResults(runs, method) {
         }
     });
     
+    // Add special awards (second pass to identify winners)
+    addSpecialAwards(results);
+    
     return results;
+}
+
+/**
+ * Add special award badges to results (Ice in Veins, Hot Start, etc.)
+ * This is a second pass after results are calculated
+ */
+function addSpecialAwards(results) {
+    if (results.length === 0) return;
+    
+    // Ice in Veins - smallest best/avg variance (most consistent)
+    const iceWinner = results
+        .filter(r => r.bestLapRaw && r.avgLapRaw && r.bestLapRaw > 0)
+        .map(r => ({
+            ...r,
+            variance: r.avgLapRaw - r.bestLapRaw
+        }))
+        .sort((a, b) => a.variance - b.variance)[0];
+    
+    if (iceWinner) {
+        const result = results.find(r => r.kart_number === iceWinner.kart_number);
+        if (result) {
+            result.awards.push({ icon: '🧊', label: 'Ice in Veins' });
+        }
+    }
+    
+    // Hot Start - fastest lap in laps 2-4
+    let hotStartWinner = null;
+    let hotStartTime = Infinity;
+    
+    results.forEach(r => {
+        if (r.lap_times && r.lap_times.length >= 2) {
+            const earlyLaps = r.lap_times
+                .filter(lap => lap.lapNum >= 2 && lap.lapNum <= 5)
+                .filter(lap => lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD);
+            
+            if (earlyLaps.length > 0) {
+                const bestEarly = Math.min(...earlyLaps.map(lap => lap.lapTimeRaw));
+                if (bestEarly < hotStartTime) {
+                    hotStartTime = bestEarly;
+                    hotStartWinner = r;
+                }
+            }
+        }
+    });
+    
+    if (hotStartWinner) {
+        const result = results.find(r => r.kart_number === hotStartWinner.kart_number);
+        if (result) {
+            result.awards.push({ icon: '🔥', label: 'Hot Start' });
+        }
+    }
+    
+    // Fastest Finisher - best lap in final 3 laps
+    let fastestFinisher = null;
+    let fastestFinishTime = Infinity;
+    
+    results.forEach(r => {
+        if (r.lap_times && r.lap_times.length >= 3) {
+            const finalLaps = r.lap_times
+                .slice(-3)
+                .filter(lap => lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD);
+            
+            if (finalLaps.length > 0) {
+                const bestFinal = Math.min(...finalLaps.map(lap => lap.lapTimeRaw));
+                if (bestFinal < fastestFinishTime) {
+                    fastestFinishTime = bestFinal;
+                    fastestFinisher = r;
+                }
+            }
+        }
+    });
+    
+    if (fastestFinisher) {
+        const result = results.find(r => r.kart_number === fastestFinisher.kart_number);
+        if (result) {
+            result.awards.push({ icon: '🏁', label: 'Fastest Finisher' });
+        }
+    }
+    
+    // Purple Lap King - most personal best improvements
+    let purpleKing = null;
+    let maxPurpleLaps = 0;
+    
+    results.forEach(r => {
+        if (r.lap_times && r.lap_times.length > 0) {
+            let purpleCount = 0;
+            let personalBest = Infinity;
+            
+            r.lap_times.forEach(lap => {
+                if (lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD) {
+                    if (lap.lapTimeRaw < personalBest) {
+                        purpleCount++;
+                        personalBest = lap.lapTimeRaw;
+                    }
+                }
+            });
+            
+            if (purpleCount > maxPurpleLaps) {
+                maxPurpleLaps = purpleCount;
+                purpleKing = r;
+            }
+        }
+    });
+    
+    if (purpleKing && maxPurpleLaps > 1) { // At least 2 improvements to earn award
+        const result = results.find(r => r.kart_number === purpleKing.kart_number);
+        if (result) {
+            result.awards.push({ icon: '👑', label: 'Purple Lap King' });
+        }
+    }
 }
 
 /**
@@ -466,7 +580,7 @@ function updateResultsTable(results, searchQuery) {
 /**
  * Update session insights
  */
-function updateInsights(sessionData, results) {
+function updateInsights(sessionData, results, state) {
     // Fastest lap
     const fastestDriver = results.find(r => r.awards.some(a => a.icon === '⚡'));
     const fastestEl = document.getElementById('insight-fastest');
@@ -522,6 +636,155 @@ function updateInsights(sessionData, results) {
         const rate = (finishers / results.length * 100).toFixed(0);
         completionEl.textContent = `${finishers}/${results.length}`;
         if (completionRateEl) completionRateEl.textContent = `${rate}%`;
+    }
+    
+    // Most incidents ("Crasher of the Day" award 🏆)
+    const incidentsEl = document.getElementById('insight-incidents');
+    const incidentsCountEl = document.getElementById('insight-incidents-count');
+    if (incidentsEl && state && state.lapHistory) {
+        const allIncidents = detectAllIncidents(state.lapHistory, sessionData);
+        const crasher = findMostIncidents(allIncidents, sessionData);
+        
+        if (crasher && crasher.totalIncidents > 0) {
+            incidentsEl.textContent = crasher.name;
+            const countText = crasher.severeIncidents > 0 
+                ? `${crasher.totalIncidents} (${crasher.severeIncidents} major)`
+                : `${crasher.totalIncidents} incident${crasher.totalIncidents > 1 ? 's' : ''}`;
+            if (incidentsCountEl) incidentsCountEl.textContent = countText;
+        } else {
+            incidentsEl.textContent = 'Clean session! 🎯';
+            if (incidentsCountEl) incidentsCountEl.textContent = 'No incidents detected';
+        }
+    }
+    
+    // Ice in Veins (Most Consistent - smallest best/avg gap)
+    const iceEl = document.getElementById('insight-ice');
+    const iceScoreEl = document.getElementById('insight-ice-score');
+    if (iceEl && results.length > 0) {
+        const iceResults = results
+            .filter(r => r.bestLapRaw && r.avgLapRaw && r.bestLapRaw > 0)
+            .map(r => ({
+                ...r,
+                variance: r.avgLapRaw - r.bestLapRaw,
+                consistencyPercent: ((r.bestLapRaw / r.avgLapRaw) * 100).toFixed(1)
+            }))
+            .sort((a, b) => a.variance - b.variance);
+        
+        if (iceResults.length > 0) {
+            const iceWinner = iceResults[0];
+            iceEl.textContent = iceWinner.name;
+            if (iceScoreEl) {
+                const varianceSeconds = (iceWinner.variance / 1000).toFixed(3);
+                iceScoreEl.textContent = `${iceWinner.consistencyPercent}% (±${varianceSeconds}s)`;
+            }
+        }
+    }
+    
+    // Fastest Finisher (Best lap in final 3 laps)
+    const fastestFinisherEl = document.getElementById('insight-fastest-finisher');
+    const fastestFinisherTimeEl = document.getElementById('insight-fastest-finisher-time');
+    if (fastestFinisherEl && state && state.lapHistory) {
+        let fastestFinisher = null;
+        let fastestFinishTime = Infinity;
+        
+        Object.entries(state.lapHistory).forEach(([kartNumber, laps]) => {
+            if (laps.length >= 3) {
+                const finalLaps = laps.slice(-3);
+                const bestFinalLap = finalLaps
+                    .filter(lap => lap.timeRaw && lap.timeRaw <= LAP_TIME_THRESHOLD)
+                    .sort((a, b) => a.timeRaw - b.timeRaw)[0];
+                
+                if (bestFinalLap && bestFinalLap.timeRaw < fastestFinishTime) {
+                    fastestFinishTime = bestFinalLap.timeRaw;
+                    const driverData = sessionData.runs.find(r => r.kart_number === kartNumber);
+                    fastestFinisher = {
+                        name: driverData ? driverData.name : `Kart ${kartNumber}`,
+                        time: bestFinalLap.time,
+                        lapNum: bestFinalLap.lapNum
+                    };
+                }
+            }
+        });
+        
+        if (fastestFinisher) {
+            fastestFinisherEl.textContent = fastestFinisher.name;
+            if (fastestFinisherTimeEl) {
+                fastestFinisherTimeEl.textContent = `${fastestFinisher.time} (Lap ${fastestFinisher.lapNum})`;
+            }
+        }
+    }
+    
+    // Hot Start (Fastest lap in laps 2-4)
+    const hotStartEl = document.getElementById('insight-hot-start');
+    const hotStartTimeEl = document.getElementById('insight-hot-start-time');
+    if (hotStartEl && state && state.lapHistory) {
+        let hotStarter = null;
+        let hotStartTime = Infinity;
+        
+        Object.entries(state.lapHistory).forEach(([kartNumber, laps]) => {
+            if (laps.length >= 2) {
+                const earlyLaps = laps.slice(1, 5); // Laps 2-5 (index 1-4)
+                const bestEarlyLap = earlyLaps
+                    .filter(lap => lap.timeRaw && lap.timeRaw <= LAP_TIME_THRESHOLD)
+                    .sort((a, b) => a.timeRaw - b.timeRaw)[0];
+                
+                if (bestEarlyLap && bestEarlyLap.timeRaw < hotStartTime) {
+                    hotStartTime = bestEarlyLap.timeRaw;
+                    const driverData = sessionData.runs.find(r => r.kart_number === kartNumber);
+                    hotStarter = {
+                        name: driverData ? driverData.name : `Kart ${kartNumber}`,
+                        time: bestEarlyLap.time,
+                        lapNum: bestEarlyLap.lapNum
+                    };
+                }
+            }
+        });
+        
+        if (hotStarter) {
+            hotStartEl.textContent = hotStarter.name;
+            if (hotStartTimeEl) {
+                hotStartTimeEl.textContent = `${hotStarter.time} (Lap ${hotStarter.lapNum})`;
+            }
+        }
+    }
+    
+    // Purple Lap King (Most personal best improvements)
+    const purpleKingEl = document.getElementById('insight-purple-king');
+    const purpleCountEl = document.getElementById('insight-purple-count');
+    if (purpleKingEl && state && state.lapHistory) {
+        let purpleKing = null;
+        let maxPurpleLaps = 0;
+        
+        Object.entries(state.lapHistory).forEach(([kartNumber, laps]) => {
+            let purpleCount = 0;
+            let personalBest = Infinity;
+            
+            laps.forEach(lap => {
+                if (lap.timeRaw && lap.timeRaw <= LAP_TIME_THRESHOLD) {
+                    if (lap.timeRaw < personalBest) {
+                        purpleCount++;
+                        personalBest = lap.timeRaw;
+                    }
+                }
+            });
+            
+            if (purpleCount > maxPurpleLaps) {
+                maxPurpleLaps = purpleCount;
+                const driverData = sessionData.runs.find(r => r.kart_number === kartNumber);
+                purpleKing = {
+                    name: driverData ? driverData.name : `Kart ${kartNumber}`,
+                    count: purpleCount,
+                    totalLaps: laps.length
+                };
+            }
+        });
+        
+        if (purpleKing && maxPurpleLaps > 0) {
+            purpleKingEl.textContent = purpleKing.name;
+            if (purpleCountEl) {
+                purpleCountEl.textContent = `${purpleKing.count} purple laps`;
+            }
+        }
     }
 }
 

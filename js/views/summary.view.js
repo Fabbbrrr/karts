@@ -203,9 +203,186 @@ function updatePersonalRecords(elements, state) {
  * @param {Object} positionHistory - Position history for all drivers
  */
 function updatePositionChart(elements, sessionData, positionHistory) {
-    // This would contain chart rendering logic
-    // For now, just a placeholder
-    console.log('Position chart update', positionHistory);
+    const canvas = document.getElementById('position-chart');
+    if (!canvas) {
+        console.warn('Position chart canvas not found');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Check if we have data
+    if (!positionHistory || Object.keys(positionHistory).length === 0) {
+        ctx.fillStyle = '#666';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('No position data available yet', width / 2, height / 2);
+        return;
+    }
+    
+    // Prepare data: convert position history to chartable format
+    const kartNumbers = Object.keys(positionHistory).sort();
+    const maxLaps = Math.max(...kartNumbers.map(k => positionHistory[k].length));
+    
+    if (maxLaps === 0) {
+        ctx.fillStyle = '#666';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Not enough lap data yet', width / 2, height / 2);
+        return;
+    }
+    
+    // Chart dimensions
+    const padding = { top: 40, right: 100, bottom: 50, left: 50 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    
+    const maxPosition = Math.max(...kartNumbers.map(k => 
+        Math.max(...positionHistory[k].map(p => p.position || 0))
+    ));
+    
+    // Calculate scales
+    const xScale = chartWidth / Math.max(1, maxLaps - 1);
+    const yScale = chartHeight / Math.max(1, maxPosition);
+    
+    // Color palette for karts (vibrant colors)
+    const colors = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+        '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
+        '#FF8FAB', '#00D9FF', '#FFB347', '#7FCDCD', '#EA8685'
+    ];
+    
+    // Draw grid lines
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    
+    for (let i = 0; i <= maxPosition; i++) {
+        const y = padding.top + i * yScale;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(padding.left + chartWidth, y);
+        ctx.stroke();
+        
+        // Position labels (P1, P2, etc.)
+        ctx.fillStyle = '#999';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(`P${i + 1}`, padding.left - 10, y + 4);
+    }
+    
+    // Draw lap labels on x-axis
+    ctx.fillStyle = '#999';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    for (let lap = 1; lap <= maxLaps; lap++) {
+        const x = padding.left + (lap - 1) * xScale;
+        if (lap === 1 || lap === maxLaps || lap % 5 === 0) {
+            ctx.fillText(`L${lap}`, x, height - padding.bottom + 20);
+        }
+    }
+    
+    // Reset line dash
+    ctx.setLineDash([]);
+    
+    // Draw position lines for each kart
+    kartNumbers.forEach((kartNumber, index) => {
+        const positions = positionHistory[kartNumber];
+        if (positions.length === 0) return;
+        
+        const color = colors[index % colors.length];
+        
+        // Draw line
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        
+        positions.forEach((pos, lapIndex) => {
+            const x = padding.left + lapIndex * xScale;
+            const y = padding.top + (pos.position - 1) * yScale;
+            
+            if (lapIndex === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        
+        // Draw dots at each position change
+        positions.forEach((pos, lapIndex) => {
+            const x = padding.left + lapIndex * xScale;
+            const y = padding.top + (pos.position - 1) * yScale;
+            
+            // Check if position changed from previous lap
+            const posChanged = lapIndex > 0 && positions[lapIndex - 1].position !== pos.position;
+            
+            if (posChanged || lapIndex === 0 || lapIndex === positions.length - 1) {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, posChanged ? 6 : 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Add white border for visibility
+                ctx.strokeStyle = '#1a1a1a';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        });
+        
+        // Draw kart label at the end
+        const lastPos = positions[positions.length - 1];
+        const lastX = padding.left + (positions.length - 1) * xScale;
+        const lastY = padding.top + (lastPos.position - 1) * yScale;
+        
+        ctx.fillStyle = color;
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`#${kartNumber}`, lastX + 10, lastY + 4);
+    });
+    
+    // Draw title
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Position Battle Throughout Session', width / 2, 25);
+    
+    // Update legend
+    updatePositionChartLegend(kartNumbers, colors, sessionData);
+}
+
+/**
+ * Update position chart legend with driver info
+ * @param {Array} kartNumbers - Array of kart numbers
+ * @param {Array} colors - Array of colors for each kart
+ * @param {Object} sessionData - Session data with driver names
+ */
+function updatePositionChartLegend(kartNumbers, colors, sessionData) {
+    const legendEl = document.getElementById('position-chart-legend');
+    if (!legendEl) return;
+    
+    legendEl.innerHTML = kartNumbers.map((kartNumber, index) => {
+        const driverData = sessionData.runs.find(r => r.kart_number === kartNumber);
+        const driverName = driverData ? driverData.name : 'Unknown';
+        const color = colors[index % colors.length];
+        
+        return `
+            <div class="legend-item" style="display: inline-flex; align-items: center; margin: 8px 12px;">
+                <div style="width: 20px; height: 3px; background: ${color}; margin-right: 6px; box-shadow: 0 0 5px ${color};"></div>
+                <span style="color: ${color}; font-weight: bold;">#${kartNumber}</span>
+                <span style="color: #999; margin-left: 4px; font-size: 0.9rem;">${driverName}</span>
+            </div>
+        `;
+    }).join('');
 }
 
 /**

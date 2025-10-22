@@ -327,6 +327,7 @@ Pre-defined sounds for events:
 
 Post-race comprehensive analysis:
 - Complete lap-by-lap history
+- **Position battle chart** - Visual timeline of position changes
 - Statistical overview
 - New personal records
 - Session achievements
@@ -339,6 +340,29 @@ Post-race comprehensive analysis:
 - Session duration
 - Winner information
 - Gap analysis
+
+### Position Battle Chart
+
+**Visual Race Story:**
+- **Animated line chart** showing every position change
+- **Color-coded traces** - Each kart gets unique vibrant color
+- **Position markers** - Larger dots highlight position changes
+- **Interactive legend** - Kart numbers with driver names
+- **Lap-by-lap view** - See exact lap when passes occurred
+
+**Features:**
+- Grid lines for easy position reading (P1, P2, P3, etc.)
+- Lap markers on X-axis (L1, L5, L10, etc.)
+- Glowing effect on kart lines for visibility
+- Scales automatically to any number of drivers/laps
+- Canvas-based rendering for smooth performance
+
+**What It Shows:**
+- Who led early vs. late
+- Position swap battles
+- Consistent vs. erratic driving
+- Overtake frequency per driver
+- Starting grid order vs. finishing order
 
 ## 🔧 Settings
 

@@ -6,6 +6,7 @@ import { getLapColor } from '../utils/ui-helpers.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import { getUniqueTrackConfigs, getTrackConfigName } from '../utils/track-config.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
+import { detectIncidents, getIncidentEmoji } from '../utils/incident-detector.js';
 
 /**
  * Update the race view with current session data including track configuration
@@ -19,9 +20,10 @@ import * as LapTrackerService from '../services/lap-tracker.service.js';
  * @param {Object} sessionData - Current session data from WebSocket
  * @param {Object} settings - User preferences and display settings
  * @param {Object} [personalRecords={}] - Driver personal best times
+ * @param {Object} [state={}] - Full app state including lap history
  * @returns {void}
  */
-export function updateRaceView(elements, sessionData, settings, personalRecords = {}) {
+export function updateRaceView(elements, sessionData, settings, personalRecords = {}, state = {}) {
     if (!sessionData) return;
     
     const { event_name, current_lap, total_laps, time_left, runs, track_configuration_id } = sessionData;
@@ -66,10 +68,10 @@ export function updateRaceView(elements, sessionData, settings, personalRecords 
         // Check if we can reuse existing element
         if (existingItem && existingItem.dataset.kartNumber === kartNumber) {
             // Update existing element content (no recreate = no blink)
-            updateRaceItemContent(existingItem, run, settings, personalRecords);
+            updateRaceItemContent(existingItem, run, settings, personalRecords, state);
         } else {
             // Create new element
-            const newItem = createRaceItem(run, settings, personalRecords);
+            const newItem = createRaceItem(run, settings, personalRecords, state);
             if (existingItem) {
                 elements.raceList.replaceChild(newItem, existingItem);
             } else {
@@ -149,9 +151,10 @@ function updateRaceTrackConfigFilter(elements, runs, currentTrackConfig) {
  * @param {Object} run - Driver run data
  * @param {Object} settings - User settings
  * @param {Object} personalRecords - Personal records state
+ * @param {Object} state - Full app state including lap history
  * @returns {HTMLElement} Race item div
  */
-function createRaceItem(run, settings, personalRecords) {
+function createRaceItem(run, settings, personalRecords, state) {
     const div = document.createElement('div');
     div.className = 'race-item';
     div.dataset.kartNumber = run.kart_number;
@@ -198,7 +201,7 @@ function createRaceItem(run, settings, personalRecords) {
         }
     });
     
-    updateRaceItemContent(div, run, settings, personalRecords);
+    updateRaceItemContent(div, run, settings, personalRecords, state);
     
     return div;
 }
@@ -209,8 +212,9 @@ function createRaceItem(run, settings, personalRecords) {
  * @param {Object} run - Driver run data
  * @param {Object} settings - User settings
  * @param {Object} personalRecords - Personal records state
+ * @param {Object} state - Full app state including lap history
  */
-function updateRaceItemContent(div, run, settings, personalRecords) {
+function updateRaceItemContent(div, run, settings, personalRecords, state) {
     // Update classes
     div.className = 'race-item';
     if (settings.mainDriver && run.kart_number === settings.mainDriver) {
@@ -269,6 +273,21 @@ function updateRaceItemContent(div, run, settings, personalRecords) {
             details.push(`<div class="race-detail-item">
                 <span class="race-detail-label">Gap to PB:</span>
                 <span class="race-detail-value ${gapClass}">${pbGap.formatted}</span>
+            </div>`);
+        }
+    }
+    
+    // Add incident detection if lap history is available
+    if (state && state.lapHistory && state.lapHistory[run.kart_number]) {
+        const incidentAnalysis = detectIncidents(state.lapHistory[run.kart_number]);
+        if (incidentAnalysis && incidentAnalysis.totalIncidents > 0) {
+            const emoji = getIncidentEmoji(incidentAnalysis.totalIncidents);
+            const tooltip = incidentAnalysis.severeIncidents > 0 
+                ? `${incidentAnalysis.severeIncidents} major, ${incidentAnalysis.minorIncidents} minor`
+                : `${incidentAnalysis.totalIncidents} incident${incidentAnalysis.totalIncidents > 1 ? 's' : ''}`;
+            details.push(`<div class="race-detail-item" title="${tooltip}">
+                <span class="race-detail-label">${emoji}</span>
+                <span class="race-detail-value incidents">${incidentAnalysis.totalIncidents}</span>
             </div>`);
         }
     }

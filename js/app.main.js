@@ -1698,7 +1698,7 @@ function updateAllViews() {
     
     switch (state.currentTab) {
         case 'race':
-            RaceView.updateRaceView(elements, data, state.settings, state.personalRecords);
+            RaceView.updateRaceView(elements, data, state.settings, state.personalRecords, state);
             break;
         case 'hud':
             HUDView.updateHUDView(elements, data, state);
