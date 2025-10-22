@@ -79,7 +79,15 @@ export function updateResultsView(elements, sessionData, state, method = null) {
  * Enrich runs with lap history data from state
  */
 function enrichRunsWithLapHistory(runs, state) {
-    if (!runs || !state) return runs;
+    if (!runs) return runs;
+    
+    // If no state, just return runs as-is (API data is sufficient for most methods)
+    if (!state || !state.lapHistory) {
+        return runs.map(run => ({
+            ...run,
+            lap_times: [] // Empty array for methods that need it
+        }));
+    }
     
     const lapHistory = state.lapHistory || {};
     
@@ -97,7 +105,7 @@ function enrichRunsWithLapHistory(runs, state) {
                 position: lap.position
             }));
         } else {
-            // Fallback: create empty lap_times array
+            // Empty array if no lap history for this kart
             enrichedRun.lap_times = [];
         }
         
@@ -204,6 +212,8 @@ function calculateResults(runs, method) {
     // Filter stale drivers
     const activeRuns = filterStaleDrivers(runs, TIMESTAMP_THRESHOLDS.RESULTS_DISPLAY, false);
     
+    console.log(`📊 Calculating results for method: ${method}, active runs: ${activeRuns.length}`);
+    
     const results = activeRuns
         .filter(run => run.kart_number && run.total_laps > 0)
         .map(run => {
@@ -215,6 +225,8 @@ function calculateResults(runs, method) {
             const lapTimes = (run.lap_times || [])
                 .filter(lap => lap && lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD)
                 .map(lap => lap.lapTimeRaw);
+            
+            console.log(`Kart ${run.kart_number}: lapHistory=${lapTimes.length} laps, best_time_raw=${run.best_time_raw}, avg_lap_raw=${run.avg_lap_raw}`);
             
             switch (method) {
                 case 'fastest-lap':
@@ -262,8 +274,14 @@ function calculateResults(runs, method) {
                         scoreDisplay = formatTime(rawScore);
                         score = rawScore;
                     } else if (lapTimes.length > 0) {
-                        // Less than 3 laps: use all available laps
+                        // Less than 3 laps in history: use all available laps
                         rawScore = lapTimes.reduce((sum, time) => sum + time, 0) / lapTimes.length;
+                        scoreDisplay = formatTime(rawScore);
+                        score = rawScore;
+                    } else if (run.best_time_raw && run.best_time_raw <= LAP_TIME_THRESHOLD) {
+                        // Fallback: use best lap as approximation when no lap history
+                        // (Best 3 would be close to best lap for consistent drivers)
+                        rawScore = run.best_time_raw;
                         scoreDisplay = formatTime(rawScore);
                         score = rawScore;
                     }
@@ -317,8 +335,16 @@ function calculateResults(runs, method) {
                 bestLapDisplay: run.best_time || '-'
             };
         })
-        .filter(result => result.score !== null && result.score !== Infinity)
+        .filter(result => {
+            const isValid = result.score !== null && result.score !== Infinity;
+            if (!isValid) {
+                console.log(`❌ Kart ${result.kart_number} filtered out: score=${result.score}, rawScore=${result.rawScore}`);
+            }
+            return isValid;
+        })
         .sort((a, b) => a.rawScore - b.rawScore);
+    
+    console.log(`✅ ${results.length} karts passed filter for ${method}`);
     
     // Assign positions and gaps
     results.forEach((result, index) => {
