@@ -1,0 +1,59 @@
+# GitHub Pages Configuration for RaceFacer UI Documentation
+
+# Theme
+theme: jekyll-theme-cayman
+remote_theme: pages-themes/cayman@v0.2.0
+
+# Site settings
+title: RaceFacer UI Documentation
+description: Real-time karting timing and analysis application - Complete documentation
+url: "https://fabbbrrr.github.io"
+baseurl: "/karts"
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-relative-links
+  - jekyll-seo-tag
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Documentation
+    url: /docs
+  - title: GitHub
+    url: https://github.com/Fabbbrrr/karts
+
+# Kramdown settings
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+
+# Exclude from processing
+exclude:
+  - node_modules
+  - server/node_modules
+  - Gemfile
+  - Gemfile.lock
+  - README.md (root)
+
+# Include
+include:
+  - docs
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /docs/:path/
+
+# Defaults
+defaults:
+  - scope:
+      path: "docs"
+    values:
+      layout: "default"
+
