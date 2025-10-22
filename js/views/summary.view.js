@@ -14,7 +14,8 @@ import * as SessionHistoryService from '../services/session-history.service.js';
 export function updateSummaryView(elements, sessionData, state) {
     console.log('📈 updateSummaryView called:', { 
         sessionData: !!sessionData, 
-        runs: sessionData?.runs?.length 
+        runs: sessionData?.runs?.length,
+        mainDriver: state?.settings?.mainDriver 
     });
     
     // Populate session selector
@@ -35,67 +36,164 @@ export function updateSummaryView(elements, sessionData, state) {
     if (noData) noData.classList.add('hidden');
     if (content) content.classList.remove('hidden');
     
-    // Update final positions
-    updateFinalPositions(elements, sessionData, state);
+    // Get main driver's data
+    const mainDriverKart = state?.settings?.mainDriver;
+    const mainDriverData = sessionData.runs.find(r => r.kart_number === mainDriverKart);
     
-    // Update fastest lap
-    updateFastestLap(elements, state.sessionBest);
+    // Update driver statistics
+    updateDriverStats(elements, mainDriverData, state);
+    
+    // Update lap history for driver
+    updateLapHistory(elements, mainDriverData, state);
     
     // Update position chart if available
-    if (elements.positionChart && Object.keys(state.positionHistory).length > 0) {
+    if (elements.positionChart && state.positionHistory && Object.keys(state.positionHistory).length > 0) {
         updatePositionChart(elements, sessionData, state.positionHistory);
     }
+    
+    // Update personal records if any
+    updatePersonalRecords(elements, state);
     
     console.log('✅ Summary view updated');
 }
 
 /**
- * Update final positions table
+ * Update driver statistics cards
  * @param {Object} elements - DOM elements
- * @param {Object} sessionData - Current session data
+ * @param {Object} driverData - Main driver's run data
  * @param {Object} state - Application state
  */
-function updateFinalPositions(elements, sessionData, state) {
-    if (!elements.summaryPositionsList) return;
+function updateDriverStats(elements, driverData, state) {
+    // Update driver name
+    const driverNameEl = document.getElementById('summary-driver-name');
+    if (driverNameEl && driverData) {
+        driverNameEl.textContent = `${driverData.name || 'Driver'} - Kart ${driverData.kart_number}`;
+    }
     
-    // Filter out stale drivers from final positions
-    const activeRuns = filterStaleDrivers(sessionData.runs, TIMESTAMP_THRESHOLDS.SUMMARY_DISPLAY, false);
-    const runs = [...activeRuns].sort((a, b) => a.pos - b.pos);
+    if (!driverData) {
+        // Clear stats if no driver data
+        document.getElementById('summary-best-lap').textContent = '--.-';
+        document.getElementById('summary-avg-lap').textContent = '--.-';
+        document.getElementById('summary-total-laps').textContent = '0';
+        document.getElementById('summary-consistency').textContent = '-';
+        document.getElementById('summary-final-pos').textContent = '-';
+        document.getElementById('summary-pos-change').textContent = '-';
+        return;
+    }
     
-    elements.summaryPositionsList.innerHTML = runs.map(run => {
-        const posClass = run.pos <= 3 ? `p${run.pos}` : '';
-        const isMainDriver = state.settings.mainDriver === run.kart_number;
+    // Best lap
+    const bestLapEl = document.getElementById('summary-best-lap');
+    if (bestLapEl) {
+        bestLapEl.textContent = driverData.best_time || '--.-';
+    }
+    
+    // Average lap
+    const avgLapEl = document.getElementById('summary-avg-lap');
+    if (avgLapEl) {
+        avgLapEl.textContent = driverData.avg_lap || '--.-';
+    }
+    
+    // Total laps
+    const totalLapsEl = document.getElementById('summary-total-laps');
+    if (totalLapsEl) {
+        totalLapsEl.textContent = driverData.total_laps || '0';
+    }
+    
+    // Consistency
+    const consistencyEl = document.getElementById('summary-consistency');
+    if (consistencyEl) {
+        if (driverData.consistency_lap_raw) {
+            const consistency = (driverData.consistency_lap_raw / 1000).toFixed(3);
+            consistencyEl.textContent = `${consistency}s σ`;
+        } else {
+            consistencyEl.textContent = driverData.consistency_lap || '-';
+        }
+    }
+    
+    // Final position
+    const finalPosEl = document.getElementById('summary-final-pos');
+    if (finalPosEl) {
+        finalPosEl.textContent = `P${driverData.pos || '-'}`;
+        finalPosEl.className = 'summary-stat-value';
+        if (driverData.pos <= 3) {
+            finalPosEl.classList.add(`p${driverData.pos}`);
+        }
+    }
+    
+    // Position change
+    const posChangeEl = document.getElementById('summary-pos-change');
+    if (posChangeEl && driverData.pos && state.startingPositions && state.startingPositions[driverData.kart_number]) {
+        const startPos = state.startingPositions[driverData.kart_number];
+        const posChange = startPos - driverData.pos;
+        
+        if (posChange > 0) {
+            posChangeEl.textContent = `▲ ${posChange}`;
+            posChangeEl.style.color = '#00ff88';
+        } else if (posChange < 0) {
+            posChangeEl.textContent = `▼ ${Math.abs(posChange)}`;
+            posChangeEl.style.color = '#ff4444';
+        } else {
+            posChangeEl.textContent = '—';
+            posChangeEl.style.color = '#888';
+        }
+    } else if (posChangeEl) {
+        posChangeEl.textContent = '-';
+        posChangeEl.style.color = '#888';
+    }
+}
+
+/**
+ * Update lap history list
+ * @param {Object} elements - DOM elements
+ * @param {Object} driverData - Main driver's run data
+ * @param {Object} state - Application state
+ */
+function updateLapHistory(elements, driverData, state) {
+    const lapListEl = document.getElementById('summary-lap-list');
+    if (!lapListEl) return;
+    
+    if (!driverData || !state.lapHistory || !state.lapHistory[driverData.kart_number]) {
+        lapListEl.innerHTML = '<p style="text-align: center; color: #888;">No lap data available</p>';
+        return;
+    }
+    
+    const laps = state.lapHistory[driverData.kart_number] || [];
+    
+    if (laps.length === 0) {
+        lapListEl.innerHTML = '<p style="text-align: center; color: #888;">No laps completed yet</p>';
+        return;
+    }
+    
+    lapListEl.innerHTML = laps.map((lap, index) => {
+        const deltaClass = lap.delta < 0 ? 'delta-faster' : lap.delta > 0 ? 'delta-slower' : 'delta-same';
+        const deltaText = lap.delta === 0 ? '—' : (lap.delta > 0 ? '+' : '') + (lap.delta / 1000).toFixed(3);
         
         return `
-            <div class="summary-position-item ${isMainDriver ? 'main-driver' : ''}">
-                <div class="summary-pos ${posClass}">P${run.pos}</div>
-                <div class="summary-driver">
-                    <div class="summary-kart">Kart ${run.kart_number}</div>
-                    <div class="summary-name">${run.name}</div>
-                </div>
-                <div class="summary-best-time">${run.best_time}</div>
-                <div class="summary-laps">${run.total_laps} laps</div>
+            <div class="summary-lap-item">
+                <div class="lap-number">Lap ${lap.lapNum}</div>
+                <div class="lap-time">${lap.time}</div>
+                <div class="lap-delta ${deltaClass}">${deltaText}s</div>
+                <div class="lap-pos">P${lap.position}</div>
             </div>
         `;
     }).join('');
 }
 
 /**
- * Update fastest lap display
+ * Update personal records section
  * @param {Object} elements - DOM elements
- * @param {Object} sessionBest - Session best lap
+ * @param {Object} state - Application state
  */
-function updateFastestLap(elements, sessionBest) {
-    const fastestLapEl = elements.summaryFastestLap;
-    if (!fastestLapEl || !sessionBest) return;
+function updatePersonalRecords(elements, state) {
+    const recordsEl = document.getElementById('summary-records');
+    const recordsListEl = document.getElementById('summary-records-list');
     
-    fastestLapEl.innerHTML = `
-        <div class="summary-fastest-lap">
-            <div class="fastest-lap-label">Fastest Lap</div>
-            <div class="fastest-lap-time">${sessionBest.time}</div>
-            <div class="fastest-lap-driver">Kart ${sessionBest.kartNumber} - ${sessionBest.name}</div>
-        </div>
-    `;
+    if (!recordsEl || !recordsListEl) return;
+    
+    // Check if there are new PBs in this session
+    // This would need to be tracked during the session
+    // For now, hide the records section
+    recordsEl.classList.add('hidden');
 }
 
 /**
