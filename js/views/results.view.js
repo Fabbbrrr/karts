@@ -59,8 +59,11 @@ export function updateResultsView(elements, sessionData, state, method = null) {
     // Update session overview stats
     updateSessionOverview(sessionData, state);
     
+    // Enrich runs with lap history data
+    const enrichedRuns = enrichRunsWithLapHistory(sessionData.runs, state);
+    
     // Calculate results based on current method
-    const results = calculateResults(sessionData.runs, currentMethod);
+    const results = calculateResults(enrichedRuns, currentMethod);
     currentResults = results;
     
     // Update all sections
@@ -70,6 +73,36 @@ export function updateResultsView(elements, sessionData, state, method = null) {
     updateInsights(sessionData, results);
     
     console.log('✅ Results view updated successfully with method:', currentMethod);
+}
+
+/**
+ * Enrich runs with lap history data from state
+ */
+function enrichRunsWithLapHistory(runs, state) {
+    if (!runs || !state) return runs;
+    
+    const lapHistory = state.lapHistory || {};
+    
+    return runs.map(run => {
+        const kartNumber = run.kart_number;
+        const enrichedRun = { ...run };
+        
+        // Get lap times for this kart from lap history
+        if (lapHistory[kartNumber] && lapHistory[kartNumber].length > 0) {
+            enrichedRun.lap_times = lapHistory[kartNumber].map(lap => ({
+                lapNum: lap.lapNum,
+                lapTime: lap.time,
+                lapTimeRaw: lap.timeRaw,
+                delta: lap.delta,
+                position: lap.position
+            }));
+        } else {
+            // Fallback: create empty lap_times array
+            enrichedRun.lap_times = [];
+        }
+        
+        return enrichedRun;
+    });
 }
 
 /**
@@ -122,15 +155,19 @@ function updateSessionOverview(sessionData, state) {
         }
     }
     
-    // Average lap
+    // Average lap - use API-provided averages or calculate from lap history
     const avgEl = document.getElementById('results-avg-time');
     if (avgEl) {
+        // Collect all valid lap times from lap history
         const allLaps = [];
+        const lapHistory = state?.lapHistory || {};
+        
         sessionData.runs.forEach(run => {
-            if (run.lap_times) {
-                const validLaps = run.lap_times
-                    .filter(lap => lap && lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD)
-                    .map(lap => lap.lapTimeRaw);
+            const kartNumber = run.kart_number;
+            if (lapHistory[kartNumber] && lapHistory[kartNumber].length > 0) {
+                const validLaps = lapHistory[kartNumber]
+                    .filter(lap => lap.timeRaw && lap.timeRaw <= LAP_TIME_THRESHOLD)
+                    .map(lap => lap.timeRaw);
                 allLaps.push(...validLaps);
             }
         });
@@ -139,7 +176,17 @@ function updateSessionOverview(sessionData, state) {
             const avg = allLaps.reduce((a, b) => a + b, 0) / allLaps.length;
             avgEl.textContent = formatTime(avg);
         } else {
-            avgEl.textContent = '--.-';
+            // Fallback: use API-provided averages
+            const validAvgs = sessionData.runs
+                .filter(r => r.avg_lap_raw && r.avg_lap_raw <= LAP_TIME_THRESHOLD)
+                .map(r => r.avg_lap_raw);
+            
+            if (validAvgs.length > 0) {
+                const overallAvg = validAvgs.reduce((a, b) => a + b, 0) / validAvgs.length;
+                avgEl.textContent = formatTime(overallAvg);
+            } else {
+                avgEl.textContent = '--.-';
+            }
         }
     }
     
@@ -164,13 +211,14 @@ function calculateResults(runs, method) {
             let scoreDisplay = '-';
             let rawScore = Infinity;
             
-            // Get valid lap times
+            // Get valid lap times from lap history
             const lapTimes = (run.lap_times || [])
                 .filter(lap => lap && lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD)
                 .map(lap => lap.lapTimeRaw);
             
             switch (method) {
                 case 'fastest-lap':
+                    // Use API-provided best_time_raw
                     if (run.best_time_raw && run.best_time_raw <= LAP_TIME_THRESHOLD) {
                         rawScore = run.best_time_raw;
                         scoreDisplay = run.best_time || formatTime(rawScore);
@@ -179,15 +227,27 @@ function calculateResults(runs, method) {
                     break;
                     
                 case 'total-time':
+                    // Calculate total time from lap history
                     if (lapTimes.length > 0) {
                         rawScore = lapTimes.reduce((sum, time) => sum + time, 0);
+                        scoreDisplay = formatTime(rawScore);
+                        score = rawScore;
+                    } else if (run.avg_lap_raw && run.total_laps > 0) {
+                        // Fallback: estimate from average lap time
+                        rawScore = run.avg_lap_raw * run.total_laps;
                         scoreDisplay = formatTime(rawScore);
                         score = rawScore;
                     }
                     break;
                     
                 case 'average-lap':
-                    if (lapTimes.length > 0) {
+                    // Use API-provided avg_lap_raw (more accurate as it includes all laps)
+                    if (run.avg_lap_raw && run.avg_lap_raw <= LAP_TIME_THRESHOLD) {
+                        rawScore = run.avg_lap_raw;
+                        scoreDisplay = run.avg_lap || formatTime(rawScore);
+                        score = rawScore;
+                    } else if (lapTimes.length > 0) {
+                        // Fallback: calculate from lap history
                         rawScore = lapTimes.reduce((sum, time) => sum + time, 0) / lapTimes.length;
                         scoreDisplay = formatTime(rawScore);
                         score = rawScore;
@@ -195,12 +255,14 @@ function calculateResults(runs, method) {
                     break;
                     
                 case 'best-3-avg':
+                    // Calculate from lap history (needs individual lap times)
                     if (lapTimes.length >= 3) {
                         const best3 = [...lapTimes].sort((a, b) => a - b).slice(0, 3);
                         rawScore = best3.reduce((sum, time) => sum + time, 0) / 3;
                         scoreDisplay = formatTime(rawScore);
                         score = rawScore;
                     } else if (lapTimes.length > 0) {
+                        // Less than 3 laps: use all available laps
                         rawScore = lapTimes.reduce((sum, time) => sum + time, 0) / lapTimes.length;
                         scoreDisplay = formatTime(rawScore);
                         score = rawScore;
@@ -208,7 +270,14 @@ function calculateResults(runs, method) {
                     break;
                     
                 case 'consistency':
-                    if (lapTimes.length >= 3) {
+                    // Use API-provided consistency_lap_raw (standard deviation)
+                    if (run.consistency_lap_raw !== undefined && run.consistency_lap_raw !== null) {
+                        // Convert from milliseconds to seconds
+                        rawScore = run.consistency_lap_raw / 1000;
+                        scoreDisplay = `${rawScore.toFixed(3)}s`;
+                        score = rawScore;
+                    } else if (lapTimes.length >= 3) {
+                        // Fallback: calculate from lap history
                         const consistency = calculateConsistency(lapTimes.map(time => ({ lapTimeRaw: time })));
                         if (consistency !== null) {
                             rawScore = consistency;
@@ -224,7 +293,14 @@ function calculateResults(runs, method) {
             if (run.best_time_raw === Math.min(...activeRuns.filter(r => r.best_time_raw).map(r => r.best_time_raw))) {
                 awards.push({ icon: '⚡', label: 'Fastest Lap' });
             }
-            if (lapTimes.length > 0) {
+            
+            // Consistency badge based on API value
+            if (run.consistency_lap_raw !== undefined && run.consistency_lap_raw !== null) {
+                const consistencySec = run.consistency_lap_raw / 1000;
+                if (consistencySec < 1.0) {
+                    awards.push({ icon: '🎯', label: 'Consistent' });
+                }
+            } else if (lapTimes.length > 0) {
                 const consistency = calculateConsistency(lapTimes.map(t => ({ lapTimeRaw: t })));
                 if (consistency !== null && consistency < 1.0) {
                     awards.push({ icon: '🎯', label: 'Consistent' });
@@ -236,7 +312,7 @@ function calculateResults(runs, method) {
                 score,
                 scoreDisplay,
                 rawScore,
-                validLaps: lapTimes.length,
+                validLaps: lapTimes.length || run.total_laps,
                 awards,
                 bestLapDisplay: run.best_time || '-'
             };
@@ -256,8 +332,10 @@ function calculateResults(runs, method) {
             result.gapRaw = gapValue;
             
             if (method === 'consistency') {
+                // Consistency is already in seconds
                 result.gap = `+${gapValue.toFixed(3)}s`;
             } else {
+                // Convert milliseconds to seconds
                 const gapSeconds = gapValue / 1000;
                 if (gapSeconds < 60) {
                     result.gap = `+${gapSeconds.toFixed(3)}s`;
@@ -374,6 +452,12 @@ function updateInsights(sessionData, results) {
     
     // Most consistent
     const consistentResults = results.map(r => {
+        // Use API-provided consistency value if available
+        if (r.consistency_lap_raw !== undefined && r.consistency_lap_raw !== null) {
+            return { ...r, consistencyScore: r.consistency_lap_raw / 1000 }; // Convert ms to seconds
+        }
+        
+        // Fallback: calculate from lap times
         const laps = (r.lap_times || [])
             .filter(lap => lap && lap.lapTimeRaw && lap.lapTimeRaw <= LAP_TIME_THRESHOLD)
             .map(lap => lap.lapTimeRaw);
