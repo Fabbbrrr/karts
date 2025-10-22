@@ -1,0 +1,36 @@
+{
+  "name": "racefacer-analysis-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Standalone server for RaceFacer kart analysis with WebSocket connection and API endpoints",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "racefacer",
+    "karting",
+    "analysis",
+    "websocket",
+    "api"
+  ],
+  "author": "RaceFacer Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "socket.io-client": "4.7.2",
+    "express": "4.21.0",
+    "cors": "2.8.5",
+    "dotenv": "16.3.1",
+    "helmet": "7.1.0",
+    "compression": "1.7.4",
+    "winston": "3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "3.0.1"
+  }
+}
