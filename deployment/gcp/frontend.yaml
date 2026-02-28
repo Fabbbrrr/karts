@@ -1,0 +1,56 @@
+# Cloud Run service configuration for Frontend
+# Deploy with: gcloud run services replace frontend.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: racefacer-frontend
+  labels:
+    app: racefacer
+    component: frontend
+spec:
+  template:
+    metadata:
+      annotations:
+        # Autoscaling (frontend can scale)
+        autoscaling.knative.dev/minScale: "0"  # Scale to zero when idle
+        autoscaling.knative.dev/maxScale: "5"
+        
+        # CPU throttling enabled (stateless, can throttle)
+        run.googleapis.com/cpu-throttling: "true"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      
+      containers:
+      - name: frontend
+        image: gcr.io/PROJECT_ID/racefacer-frontend:latest
+        
+        ports:
+        - name: http1
+          containerPort: 8080
+        
+        # Resources (Cloud Run free tier friendly)
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "256Mi"
+        
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        
+        # Startup probe
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3
+          failureThreshold: 3
+
+

@@ -1,0 +1,14 @@
+{
+  "spec": {
+    "template": {
+      "metadata": {
+        "annotations": {
+          "autoscaling.knative.dev/minScale": "0",
+          "run.googleapis.com/cpu-throttling": "true"
+        }
+      }
+    }
+  }
+}
+
+

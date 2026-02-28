@@ -1,7 +1,9 @@
 // Karting Live Timer - WebSocket Service
-// Manages Socket.IO connection to RaceFacer live timing
+// Manages Socket.IO connection to RaceFacer live timing OR SSE connection to backend
 
 import { CONFIG } from '../core/config.js';
+import * as MockDataService from './mock-data.service.js';
+import * as SSEService from './sse.service.js';
 
 let socket = null;
 let connectionCallbacks = {
@@ -14,15 +16,64 @@ let connectionCallbacks = {
 // Store last 20 socket messages for debugging
 let messageHistory = [];
 
+// Mock mode state
+let mockModeEnabled = false;
+
+// Backend mode state (SSE instead of direct WebSocket)
+let backendModeEnabled = false;
+
 /**
- * Initialize and connect to WebSocket server
+ * Initialize and connect to WebSocket server or Backend SSE
  * @param {Object} callbacks - Event callbacks
- * @param {string} channel - Channel to join
- * @returns {Object} Socket instance
+ * @param {string} channel - Channel to join (only for direct WebSocket)
+ * @returns {Object} Socket instance or null (for SSE)
  */
 export function connect(callbacks = {}, channel = CONFIG.CHANNEL) {
     connectionCallbacks = { ...connectionCallbacks, ...callbacks };
     
+    // If backend mode is enabled, use SSE instead of direct WebSocket
+    if (backendModeEnabled) {
+        console.log('🏢 Backend mode enabled - connecting via SSE');
+        SSEService.connect(CONFIG.SERVER_URL || 'http://localhost:3001', {
+            onConnect: (data) => {
+                console.log('✅ SSE Connected:', data);
+                if (connectionCallbacks.onConnect) {
+                    connectionCallbacks.onConnect();
+                }
+            },
+            onDisconnect: () => {
+                console.warn('⚠️ SSE Disconnected');
+                if (connectionCallbacks.onDisconnect) {
+                    connectionCallbacks.onDisconnect();
+                }
+            },
+            onData: (data) => {
+                // Add to message history
+                messageHistory.unshift({
+                    timestamp: Date.now(),
+                    data: data
+                });
+                messageHistory = messageHistory.slice(0, 20);
+                
+                if (connectionCallbacks.onData) {
+                    connectionCallbacks.onData(data);
+                }
+            },
+            onLap: (lapData) => {
+                console.log('🏁 Lap completed:', lapData);
+                // Lap data is also included in session data
+            },
+            onError: (error) => {
+                console.error('❌ SSE Error:', error);
+                if (connectionCallbacks.onError) {
+                    connectionCallbacks.onError(error);
+                }
+            }
+        });
+        return null; // SSE doesn't return a socket object
+    }
+    
+    // Otherwise, use direct WebSocket connection to RaceFacer
     try {
         socket = io(CONFIG.SOCKET_URL, {
             transports: ['websocket'],
@@ -141,10 +192,13 @@ export function reconnectToChannel(newChannel, oldChannel) {
 }
 
 /**
- * Disconnect from WebSocket
+ * Disconnect from WebSocket or SSE
  */
 export function disconnect() {
-    if (socket) {
+    if (backendModeEnabled) {
+        SSEService.disconnect();
+        console.log('🔌 Disconnected from backend SSE');
+    } else if (socket) {
         socket.disconnect();
         socket = null;
         console.log('🔌 Disconnected from WebSocket');
@@ -156,7 +210,98 @@ export function disconnect() {
  * @returns {boolean} Connection status
  */
 export function isConnected() {
+    // If in mock mode, always return true
+    if (mockModeEnabled) {
+        return true;
+    }
+    // If in backend mode, check SSE connection
+    if (backendModeEnabled) {
+        return SSEService.isConnected();
+    }
     return socket && socket.connected;
+}
+
+/**
+ * Enable mock mode for testing
+ * @param {Object} options - Mock session options
+ */
+export function enableMockMode(options = {}) {
+    console.log('🎭 Enabling mock mode...');
+    
+    // Disconnect from real WebSocket if connected
+    if (socket && socket.connected) {
+        console.log('📡 Disconnecting from live timing for mock mode');
+        socket.disconnect();
+    }
+    
+    mockModeEnabled = true;
+    
+    // Start mock session
+    MockDataService.startMockSession((sessionData) => {
+        // Simulate WebSocket data callback
+        if (connectionCallbacks.onData) {
+            connectionCallbacks.onData(sessionData.data);
+        }
+    }, options);
+    
+    // Simulate connection callback
+    if (connectionCallbacks.onConnect) {
+        connectionCallbacks.onConnect();
+    }
+    
+    console.log('✅ Mock mode enabled');
+}
+
+/**
+ * Disable mock mode and return to live mode
+ */
+export function disableMockMode() {
+    console.log('🎭 Disabling mock mode...');
+    
+    mockModeEnabled = false;
+    
+    // Stop mock session
+    MockDataService.stopMockSession();
+    
+    // Reconnect to real WebSocket
+    if (socket) {
+        console.log('📡 Reconnecting to live timing');
+        socket.connect();
+    }
+    
+    console.log('✅ Mock mode disabled, returning to live mode');
+}
+
+/**
+ * Check if in mock mode
+ * @returns {boolean} Mock mode status
+ */
+export function isMockMode() {
+    return mockModeEnabled;
+}
+
+/**
+ * Enable backend mode (SSE instead of direct WebSocket)
+ */
+export function enableBackendMode() {
+    console.log('🏢 Enabling backend mode...');
+    backendModeEnabled = true;
+}
+
+/**
+ * Disable backend mode (use direct WebSocket)
+ */
+export function disableBackendMode() {
+    console.log('🏢 Disabling backend mode...');
+    backendModeEnabled = false;
+}
+
+/**
+ * Check if in backend mode
+ * @returns {boolean} Backend mode status
+ */
+export function isBackendMode() {
+    return backendModeEnabled;
 }
 
 /**

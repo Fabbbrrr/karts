@@ -1,0 +1,37 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Storage and logs (will be created in container)
+server/storage/
+server/logs/
+
+# Development files
+.git/
+.gitignore
+.env
+.env.*
+*.md
+docs/
+docs-archive/
+tests/
+*.test.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment files (exclude most, keep GCP nginx config)
+deployment/aws/
+deployment/openshift/
+deployment/DEPLOYMENT_GUIDE.md
+Dockerfile*
+docker-compose.yml
+

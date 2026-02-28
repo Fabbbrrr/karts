@@ -16,9 +16,10 @@ export const config = {
   
   // WebSocket
   websocket: {
-    host: process.env.WS_HOST || 'lemansentertainment.loc',
-    port: parseInt(process.env.WS_PORT || '8131', 10),
-    protocol: process.env.WS_PROTOCOL || 'ws',
+    host: process.env.WS_HOST || 'live.racefacer.com',
+    port: parseInt(process.env.WS_PORT || '3123', 10),
+    protocol: process.env.WS_PROTOCOL || 'https',
+    channel: process.env.WS_CHANNEL || 'lemansentertainment',
     get url() {
       return `${this.protocol}://${this.host}:${this.port}`;
     },

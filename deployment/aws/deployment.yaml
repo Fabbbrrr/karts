@@ -1,0 +1,162 @@
+# AWS EKS Deployment (compatible with OpenShift manifests)
+# Differences from OpenShift:
+# - Uses LoadBalancer instead of Route
+# - Uses AWS EBS for PersistentVolume
+# - Can use AWS ALB Ingress Controller
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: racefacer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: racefacer-backend-config
+  namespace: racefacer
+data:
+  PORT: "3001"
+  HOST: "0.0.0.0"
+  NODE_ENV: "production"
+  WS_PROTOCOL: "https"
+  WS_HOST: "live.racefacer.com"
+  WS_PORT: "3123"
+  WS_CHANNEL: "lemansentertainment"
+  STORAGE_PATH: "/app/storage"
+  MAX_SESSIONS: "10"
+  MAX_LAPS_PER_SESSION: "500"
+  LOG_LEVEL: "info"
+  LOG_FILE: "/app/logs/server.log"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: racefacer-storage
+  namespace: racefacer
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3  # AWS EBS gp3 (or gp2)
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Backend Deployment (same as OpenShift)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: racefacer-backend
+  namespace: racefacer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: racefacer
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: racefacer
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: YOUR_ECR_REGISTRY/racefacer-backend:latest
+        ports:
+        - containerPort: 3001
+        envFrom:
+        - configMapRef:
+            name: racefacer-backend-config
+        volumeMounts:
+        - name: storage
+          mountPath: /app/storage
+        - name: logs
+          mountPath: /app/logs
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: racefacer-storage
+      - name: logs
+        emptyDir: {}
+---
+# Frontend Deployment (same as OpenShift)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: racefacer-frontend
+  namespace: racefacer
+spec:
+  replicas: 2  # Can scale more on AWS
+  selector:
+    matchLabels:
+      app: racefacer
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: racefacer
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: YOUR_ECR_REGISTRY/racefacer-frontend:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: racefacer-backend
+  namespace: racefacer
+spec:
+  type: LoadBalancer  # AWS LoadBalancer
+  ports:
+  - port: 3001
+    targetPort: 3001
+  selector:
+    app: racefacer
+    component: backend
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: racefacer-frontend
+  namespace: racefacer
+spec:
+  type: LoadBalancer  # AWS LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: racefacer
+    component: frontend
+
+

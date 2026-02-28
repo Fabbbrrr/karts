@@ -1,0 +1,32 @@
+substitutions:
+  _TAG_NAME: 'latest'  # Default, override with --substitutions=TAG_NAME=xxx
+
+steps:
+  # Step 1: Build with unique tag (timestamp-based)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'CACHEBUST=$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/racefacer-frontend:${_TAG_NAME}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/racefacer-frontend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/racefacer-frontend:latest'
+      - '-f'
+      - 'Dockerfile.frontend'
+      - '.'
+
+images:
+  - 'gcr.io/$PROJECT_ID/racefacer-frontend:${_TAG_NAME}'
+  - 'gcr.io/$PROJECT_ID/racefacer-frontend:$BUILD_ID'
+  - 'gcr.io/$PROJECT_ID/racefacer-frontend:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  # Disable Cloud Build's own cache
+  sourceProvenanceHash: ['SHA256']
+  
+timeout: 1200s
+

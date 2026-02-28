@@ -1,96 +1,64 @@
 # 🏎️ RaceFacer UI - Karting Live Timing & Analysis
 
-**Professional-grade karting telemetry system for your browser. Real-time timing, advanced analytics, and performance tracking - completely free.**
+A powerful Progressive Web App (PWA) for real-time go-karting session monitoring with advanced analytics, multi-device synchronization, and session replay capabilities.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-00ff88?style=for-the-badge)](https://fabbbrrr.github.io/karts/)
-[![Documentation](https://img.shields.io/badge/Read-Documentation-blue?style=for-the-badge)](./docs/)
-[![Install PWA](https://img.shields.io/badge/Install-Add%20to%20Home-orange?style=for-the-badge)](#-installation)
+## 🌟 Key Features
 
----
+### ⭐ NEW: Backend-Controlled Architecture (v2.0)
 
-## ⚡ Quick Start
+- **Multi-Device Sync**: View from phone, tablet, laptop - all in perfect sync
+- **24/7 Data Collection**: Server runs continuously, never lose data
+- **Session Replay**: Replay any of last 10 sessions lap-by-lap
+- **Advanced Analytics**: Server-side processing for complex metrics
+- **Always Available**: View races you missed, analyze past sessions
 
-### 🌐 Try It Now
-**Visit: [https://fabbbrrr.github.io/karts/](https://fabbbrrr.github.io/karts/)**
+### Core Features
 
-### 📱 Install as App
-1. Open the URL on your device
-2. **Android**: Menu → "Add to Home screen"
-3. **iPhone**: Share → "Add to Home Screen"
-4. Launch from home screen!
+- **Real-Time Timing**: Live lap times, positions, gaps, and intervals
+- **Driver Analytics**: Personal bests, consistency metrics, pace tracking
+- **Multi-Driver Support**: Track multiple karts simultaneously
+- **Session History**: Review past sessions with full lap data
+- **Voice Announcements**: Text-to-speech alerts for key events
+- **Driver Awards**: Automatic award system for achievements
+- **Incident Detection**: Automatic detection of unusual patterns
+- **Mock Mode**: Test with simulated data when no race is running
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Progressive Web App**: Install and use offline
 
-### 🏁 Start Racing
-1. Select your driver/kart
-2. Switch to HUD tab
-3. Race with real-time data!
+## 🏗️ Architecture
 
----
-
-## ✨ Key Features
-
-- **🏁 Live Timing** - Real-time WebSocket connection to RaceFacer timing systems
-- **📊 5 Scoring Methods** - Fastest Lap, Total Time, Average, Best 3, Consistency
-- **🎮 HUD Mode** - Full-screen dashboard optimized for racing
-- **📈 Advanced Analytics** - Lap-by-lap analysis with gap tracking
-- **🏅 Personal Bests** - Automatic PB tracking across sessions
-- **📼 Session History** - Auto-saves last 20 sessions for replay
-- **🎤 Text-to-Speech** - Voice announcements for events
-- **📊 Kart Analysis** - Scientific performance rankings
-- **💾 Progressive Web App** - Install like native app, works offline
-- **🌐 Multi-Venue** - Works with any RaceFacer timing system
-
----
-
-## 📚 Documentation
-
-**[📖 Complete Documentation →](./docs/)**
-
-### Quick Links
-
-**Getting Started:**
-- [Installation Guide](./docs/getting-started/installation.md)
-- [Quick Start](./docs/getting-started/quick-start.md)
-- [Configuration](./docs/getting-started/configuration.md)
-
-**Features:**
-- [Core Features](./docs/features/core-features.md)
-- [Personal Best Tracking](./docs/features/personal-best.md)
-- [Session History](./docs/features/session-history.md)
-- [Text-to-Speech](./docs/features/text-to-speech.md)
-
-**Deployment:**
-- [Analysis Server](./docs/deployment/analysis-server.md)
-- [AWS Deployment](./docs/deployment/aws.md)
-- [Docker Guide](./docs/deployment/docker.md)
-
-**Development:**
-- [Development Guide](./docs/development/guide.md)
-- [Architecture Overview](./docs/architecture/overview.md)
-- [API Reference](./docs/api/)
-
----
-
-## 🚀 For Developers
-
-### Local Development
-
-```bash
-# Clone repository
-git clone https://github.com/Fabbbrrr/karts.git
-cd karts
-
-# Serve locally (any method works)
-python -m http.server 8000
-# or
-npx http-server -p 8000
-
-# Open browser
-http://localhost:8000
+```
+┌─────────────┐       ┌──────────────────────────┐       ┌──────────────────┐
+│  Browser 1  │──SSE─→│                          │──WS──→│  RaceFacer Live  │
+└─────────────┘       │   Analysis Server        │       │  Timing System   │
+                      │   (Central Hub)          │       └──────────────────┘
+┌─────────────┐       │                          │
+│  Browser 2  │──SSE─→│  - Multi-client sync     │
+└─────────────┘       │  - Session replay        │
+                      │  - Persistent storage    │
+┌─────────────┐       │  - Advanced analytics    │
+│  Phone      │──SSE─→│  - 24/7 collection       │
+└─────────────┘       └──────────────────────────┘
+                                   │
+                                   ▼
+                      ┌──────────────────────────┐
+                      │  Persistent Storage      │
+                      │  - Last 10 sessions      │
+                      │  - Full replay data      │
+                      └──────────────────────────┘
 ```
 
-### Analysis Server (Optional)
+**Benefits**:
+- ✅ Multiple devices viewing simultaneously
+- ✅ Perfect synchronization across all clients
+- ✅ Session replay capabilities
+- ✅ No data loss
+- ✅ Battery-friendly (browser can close)
+- ✅ Advanced analytics possible
 
-24/7 backend for continuous data collection:
+## 🚀 Quick Start
+
+### 1. Start Backend Server (Recommended)
 
 ```bash
 cd server
@@ -98,101 +66,258 @@ npm install
 npm start
 ```
 
-**[→ Complete Server Documentation](./docs/deployment/analysis-server.md)**
+Expected output:
+```
+🚀 Server started on port 3001
+✅ Connected to RaceFacer timing system
+📡 Joined channel: lemansentertainment
+```
 
-### Deploy Your Own
+### 2. Open UI
 
-**GitHub Pages (Free):**
-1. Fork repository
-2. Settings → Pages → Enable
-3. Access at: `https://YOUR_USERNAME.github.io/karts/`
+Open `http://localhost:8000` in your browser(s)
 
-**Other Options:**
-- Netlify (One-click deploy)
-- Vercel (Optimized hosting)
-- AWS S3 + CloudFront
-- Self-hosted (Nginx/Apache)
+You can now open the same URL on multiple devices - they'll all sync perfectly!
 
-**[→ Deployment Guides](./docs/deployment/)**
+### 3. Verify Connection
 
----
+Browser console should show:
+```
+🏢 Backend mode enabled - connecting via backend server
+✅ SSE Connected
+```
+
+## 📦 Installation
+
+### Frontend (UI)
+
+```bash
+# Clone repository
+git clone https://github.com/Fabbbrrr/karts.git
+cd karts
+
+# Serve with any HTTP server
+python -m http.server 8000
+# OR
+npx http-server -p 8000
+```
+
+### Backend (Analysis Server)
+
+```bash
+cd server
+npm install
+
+# Copy environment template
+cp env.example.txt .env
+
+# Edit .env with your settings
+nano .env
+
+# Start server
+npm start
+```
+
+## 🔧 Configuration
+
+### Backend Mode (Recommended)
+
+**Enable** in `js/core/config.js`:
+```javascript
+export const CONFIG = {
+    BACKEND_MODE: true,  // Use backend (recommended)
+    SERVER_URL: 'http://localhost:3001'
+};
+```
+
+### Direct Mode (Legacy)
+
+**Disable backend** for direct connection:
+```javascript
+export const CONFIG = {
+    BACKEND_MODE: false,  // Connect directly to RaceFacer
+    SOCKET_URL: 'https://live.racefacer.com:3123',
+    CHANNEL: 'lemansentertainment'
+};
+```
+
+### Server Configuration
+
+Edit `server/.env`:
+```bash
+PORT=3001
+WS_CHANNEL=lemansentertainment  # Your track channel
+MAX_SESSIONS=10                 # Keep last 10 sessions
+```
+
+## 📊 API Endpoints
+
+### Live Data
+- `GET /api/stream` - SSE real-time stream (keep open)
+- `GET /api/current` - Current session snapshot
+- `GET /api/clients` - Connected clients stats
+
+### Session Replay
+- `GET /api/replay/sessions` - List replayable sessions
+- `GET /api/replay/:sessionId` - Full replay data
+- `GET /api/replay/:sessionId/metadata` - Session info
+
+### Historical
+- `GET /api/sessions` - All stored sessions
+- `GET /api/sessions/:sessionId` - Session details
+- `GET /api/sessions/:sessionId/export` - Export JSON
 
 ## 🎯 Use Cases
 
-✅ **Practice Sessions** - Track improvements lap-by-lap  
-✅ **Competitive Racing** - Know your exact position  
-✅ **Endurance Events** - Use Total Time scoring  
-✅ **League Racing** - Compare across methods  
-✅ **Coaching** - Analyze student performance  
-✅ **Team Racing** - Compare teammates  
-✅ **Personal Records** - Beat your own times  
+### 1. Race Director
+- Monitor all racers from tablet
+- Voice announcements for incidents
+- Award system for achievements
+- Session history review
 
----
+### 2. Karting Team
+- Coach watches on tablet
+- Driver checks stats on phone
+- All devices perfectly synced
+- Post-race analysis together
 
-## 🛠️ Tech Stack
+### 3. Track Operator
+- 24/7 data collection
+- Review sessions next day
+- Track records database
+- Customer engagement
 
-- **Frontend**: Vanilla JavaScript (ES6), HTML5, CSS3
-- **Backend**: Node.js, Express, Socket.io (optional)
-- **Real-time**: WebSocket connections
-- **Storage**: LocalStorage, JSON files
-- **PWA**: Service Workers, Web App Manifest
-- **Deployment**: Static hosting, Docker, AWS
+### 4. Solo Racer
+- Track personal bests
+- Analyze consistency
+- Compare sessions
+- Improvement tracking
 
----
+## 🆕 What's New in v2.0
 
-## 📊 Screenshots
+### Backend-Controlled Architecture
+- Multi-device synchronization
+- Server-Sent Events (SSE) for real-time updates
+- Persistent WebSocket to RaceFacer
+- 24/7 data collection
 
-| Race View | HUD Mode | Results |
-|-----------|----------|---------|
-| Live leaderboard | Full-screen racing data | Multiple scoring methods |
+### Session Replay
+- Store last 10 sessions completely
+- Replay lap-by-lap
+- Jump to specific lap
+- Export session data
 
----
+### Enhanced Analytics
+- Server-side processing
+- Advanced metrics
+- Historical comparisons
+- Trend analysis
+
+### Mock Mode
+- Test without live race
+- Randomized session generation
+- All features work identically
+- Perfect for development
+
+## 📚 Documentation
+
+- [Backend Mode Guide](docs/getting-started/backend-mode.md) - **Start here!**
+- [Backend-Enabled Features](docs/features/backend-enabled-features.md) - What's possible now
+- [Installation Guide](docs/getting-started/installation.md) - Detailed setup
+- [Configuration](docs/getting-started/configuration.md) - All settings
+- [Core Features](docs/features/core-features.md) - Feature documentation
+- [Architecture Overview](docs/architecture/overview.md) - Technical details
+- [API Documentation](docs/api/) - Integration guide
+- [Deployment Guide](docs/deployment/) - Production setup
+
+## 🛠️ Development
+
+### Run Tests
+
+```bash
+cd server
+npm test                  # All tests
+npm run test:unit         # Unit tests only
+npm run test:integration  # Integration tests
+npm run test:coverage     # With coverage report
+```
+
+### Mock Mode (Testing)
+
+Enable in UI settings:
+- ✅ Mock Mode checkbox
+- Select session type (Practice/Qualifying/Race)
+- Set duration or lap count
+- Configure number of karts
+
+Perfect for:
+- UI development
+- Feature testing
+- Demonstrations
+- No live race needed
+
+## 🌐 Deployment
+
+### Frontend (GitHub Pages)
+```bash
+# Automatically deployed from main branch
+# Visit: https://your-username.github.io/karts/
+```
+
+### Backend (AWS Free Tier)
+```bash
+# See deployment guide
+docs/deployment/aws.md
+
+# Or use Docker
+docker-compose up -d
+```
+
+## 🔒 Security
+
+- No hardcoded secrets
+- Environment variables for config
+- Pinned dependencies (no ^ or ~)
+- Regular security updates
+- Input validation
+- Error handling without info disclosure
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see:
-- [Development Guide](./docs/development/guide.md)
-- [Architecture Overview](./docs/architecture/overview.md)
-- [Code Style Guide](./docs/development/code-style.md)
-
----
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
 ## 📝 License
 
-MIT License - Free to use, modify, and distribute
+MIT License - See [LICENSE](LICENSE) file
 
----
+## 🙏 Acknowledgments
 
-## 🆘 Support
+- **RaceFacer** for the live timing system
+- Open source community
+- All contributors
 
-- **Documentation**: [Complete Docs](./docs/)
+## 📞 Support
+
 - **Issues**: [GitHub Issues](https://github.com/Fabbbrrr/karts/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Fabbbrrr/karts/discussions)
+- **Documentation**: [docs/](docs/)
+
+## ⭐ Star History
+
+If you find this project useful, please consider giving it a star!
 
 ---
 
-## 🌟 Star History
+**Version**: 2.0.0 (Backend-Controlled Architecture)  
+**Status**: ✅ Production Ready  
+**Last Updated**: October 30, 2025
 
-If you find this project useful, please consider giving it a star! ⭐
-
----
-
-## 📱 Connect
-
-- **Live Demo**: [https://fabbbrrr.github.io/karts/](https://fabbbrrr.github.io/karts/)
-- **Documentation**: [./docs/](./docs/)
-- **Server Repo**: [Analysis Server Documentation](./docs/deployment/analysis-server.md)
-
----
-
-<div align="center">
-
-### 🏁 Ready to Race? 🏁
-
-**[OPEN APP NOW →](https://fabbbrrr.github.io/karts/)**
-
-*Made with ❤️ by racers, for racers*
-
-**[⭐ Star this repo](https://github.com/Fabbbrrr/karts)** | **[📖 Read the docs](./docs/)** | **[🐛 Report issues](https://github.com/Fabbbrrr/karts/issues)**
-
-</div>
+**Quick Links**:
+- [📖 Full Documentation](docs/)
+- [🚀 Quick Start](docs/getting-started/quick-start.md)
+- [🏢 Backend Mode Guide](docs/getting-started/backend-mode.md)
+- [⭐ New Features](docs/features/backend-enabled-features.md)

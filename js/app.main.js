@@ -8,6 +8,7 @@ import * as StorageService from './services/storage.service.js';
 import * as LapTrackerService from './services/lap-tracker.service.js';
 import * as DriverSelectionService from './services/driver-selection.service.js';
 import * as SessionHistoryService from './services/session-history.service.js';
+import * as ServerAPI from './services/server-api.service.js';
 import * as AudioService from './utils/audio.js';
 import * as TTSService from './utils/tts.js';
 import { isDriverStale, getLapAge, TIMESTAMP_THRESHOLDS } from './utils/timestamp-filter.js';
@@ -43,6 +44,17 @@ function init() {
     // Load data from localStorage
     // WHY: Restore user settings and persisted analysis data from previous sessions
     loadPersistedData();
+    
+    // Initialize server integration (BACKEND_MODE)
+    // WHY: Enable fetching historical sessions from analysis server
+    if (CONFIG.BACKEND_MODE) {
+        console.log('🔧 Configuring backend mode...');
+        ServerAPI.setServerURL(CONFIG.SERVER_URL);
+        SessionHistoryService.setServerEnabled(true);
+        console.log(`✅ Backend mode enabled: ${CONFIG.SERVER_URL}`);
+    } else {
+        console.log('ℹ️ Direct mode (using local storage only)');
+    }
     
     // Initialize audio
     // WHY: Prepare audio context for lap celebration sounds
@@ -566,6 +578,66 @@ function setupEventListeners() {
         });
     }
     
+    // Mock Mode controls
+    const mockModeEnable = document.getElementById('mock-mode-enable');
+    const mockModeControls = document.getElementById('mock-mode-controls');
+    const mockSessionType = document.getElementById('mock-session-type');
+    const mockMaxLaps = document.getElementById('mock-max-laps');
+    const mockDuration = document.getElementById('mock-duration');
+    const mockKartCount = document.getElementById('mock-kart-count');
+    const mockRestartBtn = document.getElementById('mock-restart-btn');
+    
+    if (mockModeEnable) {
+        mockModeEnable.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            const mockBanner = document.getElementById('mock-mode-banner');
+            
+            if (enabled) {
+                // Enable mock mode
+                mockModeControls.classList.remove('hidden');
+                if (mockBanner) mockBanner.classList.remove('hidden');
+                
+                const options = {
+                    sessionType: mockSessionType.value,
+                    maxLaps: parseInt(mockMaxLaps.value),
+                    durationMinutes: parseInt(mockDuration.value),
+                    kartCount: parseInt(mockKartCount.value)
+                };
+                WebSocketService.enableMockMode(options);
+                
+                console.log('🎭 Mock mode activated');
+            } else {
+                // Disable mock mode
+                mockModeControls.classList.add('hidden');
+                if (mockBanner) mockBanner.classList.add('hidden');
+                WebSocketService.disableMockMode();
+                
+                console.log('🎭 Mock mode deactivated');
+            }
+        });
+    }
+    
+    if (mockRestartBtn) {
+        mockRestartBtn.addEventListener('click', () => {
+            if (mockModeEnable.checked) {
+                // Restart mock session with current settings
+                const options = {
+                    sessionType: mockSessionType.value,
+                    maxLaps: parseInt(mockMaxLaps.value),
+                    durationMinutes: parseInt(mockDuration.value),
+                    kartCount: parseInt(mockKartCount.value)
+                };
+                
+                WebSocketService.disableMockMode();
+                setTimeout(() => {
+                    WebSocketService.enableMockMode(options);
+                }, 100);
+                
+                console.log('🔄 Mock session restarted');
+            }
+        });
+    }
+    
     if (elements.showGapTrend) {
         elements.showGapTrend.addEventListener('change', (e) => {
             state.settings.showGapTrend = e.target.checked;
@@ -829,10 +901,18 @@ function connectWebSocket() {
         onData: handleSessionData
     };
     
+    // Enable backend mode if configured
+    if (CONFIG.BACKEND_MODE) {
+        console.log('🏢 Backend mode enabled - connecting via backend server');
+        WebSocketService.enableBackendMode();
+        updateLoadingStatus('Connecting to Analysis Server...');
+    } else {
+        console.log('🔌 Direct mode - connecting to RaceFacer');
+        updateLoadingStatus('Connecting to RaceFacer...');
+    }
+    
     const channel = state.settings.channel || CONFIG.CHANNEL;
     state.socket = WebSocketService.connect(callbacks, channel);
-    
-    updateLoadingStatus('Connecting to RaceFacer...');
 }
 
 /**
@@ -900,6 +980,17 @@ function handleConnectionError(error) {
  */
 function handleSessionData(data) {
     try {
+        // Validate data structure
+        if (!data || typeof data !== 'object') {
+            console.warn('⚠️ Invalid session data received:', data);
+            return;
+        }
+        
+        // Ensure runs array exists (even if empty)
+        if (!data.runs) {
+            data.runs = [];
+        }
+        
         // Ignore live data if in replay or history mode
         if (state.isReplayMode) {
             console.log('⏸️ Ignoring live data - in replay mode');
@@ -936,7 +1027,9 @@ function handleSessionData(data) {
         // Auto-save previous session if session changed
         if (detection.needsReset && state.currentSessionId && state.sessionData) {
             console.log('💾 Auto-saving previous session to history');
-            SessionHistoryService.saveCurrentSession(state.sessionData, state.currentSessionId);
+            // Don't await - let it run in background
+            SessionHistoryService.saveCurrentSession(state.sessionData, state.currentSessionId)
+                .catch(err => console.error('Error saving session:', err));
         }
         
         state.currentSessionId = detection.sessionId;
@@ -1125,6 +1218,13 @@ function triggerLapFlash() {
 function collectKartAnalysisLap(run, lapNum) {
     const sessionId = state.currentSessionId || 'unknown';
     const trackConfigId = state.sessionData?.track_configuration_id || 'unknown';
+    
+    // FILTER: Exclude mock/test data from kart analysis
+    // WHY: Mock data is for development/testing and shouldn't contaminate real kart performance data
+    if (state.sessionData?.isMock) {
+        console.log(`🎭 Excluding mock data lap from analysis: ${run.name}`);
+        return; // Don't add mock data to kart analysis
+    }
     
     // FILTER: Exclude laps longer than 60 seconds from kart analysis
     // WHY: These are likely incidents, system errors, or forgotten drivers from previous sessions
@@ -1555,14 +1655,14 @@ function switchTab(tabName) {
  * 
  * PURPOSE: Load historical session when user selects from dropdown
  * WHY: Enable viewing past session results and summaries
- * HOW: Load session from history service, update state, refresh views
- * FEATURE: Session History, Historical Data Viewing
+ * HOW: Load session from history service (local or server), update state, refresh views
+ * FEATURE: Session History, Historical Data Viewing, Server Integration
  * 
  * @param {string} sessionId - Selected session ID ("live" or historical ID)
  * @param {string} tab - Which tab triggered the selection ("results" or "summary")
- * @returns {void}
+ * @returns {Promise<void>}
  */
-function handleSessionSelection(sessionId, tab) {
+async function handleSessionSelection(sessionId, tab) {
     console.log(`📂 Session selection: ${sessionId} from ${tab} tab`);
     
     if (sessionId === 'live') {
@@ -1570,8 +1670,8 @@ function handleSessionSelection(sessionId, tab) {
         return;
     }
     
-    // Load historical session
-    const session = SessionHistoryService.loadSession(sessionId);
+    // Load historical session (now async to support server)
+    const session = await SessionHistoryService.loadSession(sessionId);
     if (!session) {
         console.error('❌ Failed to load session:', sessionId);
         alert('Failed to load session. Please try again.');
@@ -1585,7 +1685,8 @@ function handleSessionSelection(sessionId, tab) {
     console.log('📅 Entered history mode:', {
         date: session.date,
         time: session.startTime,
-        winner: session.winner.name
+        winner: session.winner.name,
+        source: session.source || 'local'
     });
     
     // Update banner

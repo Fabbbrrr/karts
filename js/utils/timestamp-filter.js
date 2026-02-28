@@ -115,8 +115,8 @@ export function filterStaleDrivers(runs, thresholdSeconds = 600, logFiltered = t
  */
 export const TIMESTAMP_THRESHOLDS = {
     KART_ANALYSIS: 5 * 60,      // 5 minutes - for kart analysis lap collection
-    RACE_DISPLAY: 10 * 60,      // 10 minutes - for hiding from race view
-    SUMMARY_DISPLAY: 10 * 60,   // 10 minutes - for hiding from summary view
-    RESULTS_DISPLAY: 30 * 60    // 30 minutes - results can show older data
+    RACE_DISPLAY: 30 * 60,      // 30 minutes - INCREASED: allow older data (WebSocket may send cached data)
+    SUMMARY_DISPLAY: 30 * 60,   // 30 minutes - INCREASED: allow older data
+    RESULTS_DISPLAY: 60 * 60    // 60 minutes - results can show older data
 };
 

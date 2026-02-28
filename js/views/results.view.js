@@ -24,6 +24,18 @@ let currentResults = [];
 let searchQuery = '';
 let cachedSessionData = null;
 let cachedState = null;
+let currentTrack = 'all'; // Track filter
+
+/**
+ * Detect track from kart name
+ */
+function getTrackFromKart(kartName) {
+    const firstChar = String(kartName).charAt(0).toUpperCase();
+    if (firstChar === 'M') return 'Mushroom';
+    if (firstChar === 'P') return 'Penrite';
+    if (firstChar === 'E') return 'Rimo';
+    return 'Lakeside';
+}
 
 /**
  * Main update function - orchestrates entire results view
@@ -32,7 +44,8 @@ export function updateResultsView(elements, sessionData, state, method = null) {
     console.log('🏁 Results View Update:', { 
         hasData: !!sessionData, 
         runs: sessionData?.runs?.length,
-        method: method || currentMethod 
+        method: method || currentMethod,
+        track: currentTrack
     });
     
     // Store data for recalculation
@@ -46,8 +59,9 @@ export function updateResultsView(elements, sessionData, state, method = null) {
         updateMethodButtonState(method);
     }
     
-    // Populate session selector
+    // Populate session selector and track filter
     populateSessionSelector('results');
+    updateTrackFilter(elements, sessionData);
     
     // Check for data
     if (!sessionData || !sessionData.runs || sessionData.runs.length === 0) {
@@ -57,11 +71,21 @@ export function updateResultsView(elements, sessionData, state, method = null) {
     
     showNoData(false);
     
+    // Filter runs by track if not "all"
+    let filteredRuns = sessionData.runs;
+    if (currentTrack !== 'all') {
+        filteredRuns = sessionData.runs.filter(run => {
+            const kartName = run.kart || run.kart_number || '';
+            return getTrackFromKart(kartName) === currentTrack;
+        });
+        console.log(`🏁 Filtered to ${currentTrack}: ${filteredRuns.length} karts`);
+    }
+    
     // Update session overview stats
-    updateSessionOverview(sessionData, state);
+    updateSessionOverview({ ...sessionData, runs: filteredRuns }, state);
     
     // Enrich runs with lap history data
-    const enrichedRuns = enrichRunsWithLapHistory(sessionData.runs, state);
+    const enrichedRuns = enrichRunsWithLapHistory(filteredRuns, state);
     
     // Calculate results based on current method
     const results = calculateResults(enrichedRuns, currentMethod);
@@ -71,9 +95,9 @@ export function updateResultsView(elements, sessionData, state, method = null) {
     updateMethodDescription(currentMethod);
     updatePodium(results);
     updateResultsTable(results, searchQuery);
-    updateInsights(sessionData, results, state);
+    updateInsights({ ...sessionData, runs: filteredRuns }, results, state);
     
-    console.log('✅ Results view updated successfully with method:', currentMethod);
+    console.log('✅ Results view updated successfully with method:', currentMethod, 'track:', currentTrack);
 }
 
 /**
@@ -82,15 +106,23 @@ export function updateResultsView(elements, sessionData, state, method = null) {
 function enrichRunsWithLapHistory(runs, state) {
     if (!runs) return runs;
     
-    // If no state, just return runs as-is (API data is sufficient for most methods)
-    if (!state || !state.lapHistory) {
+    // Use session-specific lap history if in history mode, otherwise use global state
+    let lapHistory = {};
+    
+    if (state.isHistoryMode && state.currentHistorySession?.lapHistory) {
+        // Historical session: use session's own lap history
+        lapHistory = state.currentHistorySession.lapHistory;
+        console.log('📜 Using historical lap history:', Object.keys(lapHistory).length, 'karts');
+    } else if (state.lapHistory) {
+        // Live mode: use global state lap history
+        lapHistory = state.lapHistory;
+    } else {
+        // No lap history available
         return runs.map(run => ({
             ...run,
             lap_times: [] // Empty array for methods that need it
         }));
     }
-    
-    const lapHistory = state.lapHistory || {};
     
     return runs.map(run => {
         const kartNumber = run.kart_number;
@@ -880,26 +912,143 @@ function exportResults(results, method) {
 }
 
 /**
- * Populate session selector
+ * Populate session selector (async to support server sessions)
  */
-function populateSessionSelector(tab) {
-    const selector = document.getElementById(`${tab}-session-select`);
-    if (!selector) return;
+/**
+ * Update track filter dropdown
+ */
+function updateTrackFilter(elements, sessionData) {
+    // Find or create track filter
+    let trackFilter = document.getElementById('results-track-filter');
     
-    if (selector.dataset.populated === 'true') return;
-    
-    const sessions = SessionHistoryService.getSessionHistory();
-    selector.innerHTML = '<option value="live">🔴 Live</option>';
-    
-    if (sessions.length > 0) {
-        sessions.forEach(session => {
-            const option = document.createElement('option');
-            option.value = session.sessionId;
-            option.textContent = SessionHistoryService.getSessionLabel(session);
-            selector.appendChild(option);
-        });
+    if (!trackFilter) {
+        // Create track filter if it doesn't exist
+        // Try to find session selector first, then insert after it
+        const sessionSelector = document.getElementById('results-session-select');
+        const insertTarget = sessionSelector?.parentElement || 
+                            document.querySelector('.results-header') || 
+                            document.querySelector('#results .results-controls') ||
+                            document.querySelector('#results');
+        
+        if (insertTarget) {
+            const filterHtml = `
+                <div class="track-filter-container" style="margin: 10px 0; padding: 10px; background: #1a1a1a; border-radius: 5px;">
+                    <label for="results-track-filter" style="margin-right: 10px; color: #fff; font-weight: bold; font-size: 1.1em;">🏁 Track Filter:</label>
+                    <select id="results-track-filter" style="padding: 8px 15px; background: #2a2a2a; color: white; border: 2px solid #444; border-radius: 5px; font-size: 1em; cursor: pointer;">
+                        <option value="all">All Tracks</option>
+                    </select>
+                    <span style="margin-left: 10px; color: #888; font-size: 0.9em;">Select a track to see results for that track only</span>
+                </div>
+            `;
+            
+            if (sessionSelector?.parentElement) {
+                // Insert after session selector
+                sessionSelector.parentElement.insertAdjacentHTML('afterend', filterHtml);
+            } else {
+                // Insert at the beginning
+                insertTarget.insertAdjacentHTML('afterbegin', filterHtml);
+            }
+            
+            trackFilter = document.getElementById('results-track-filter');
+            
+            // Add change handler
+            trackFilter.addEventListener('change', (e) => {
+                currentTrack = e.target.value;
+                console.log(`🏁 Track filter changed to: ${currentTrack}`);
+                // Re-render with new filter
+                if (cachedSessionData && cachedState) {
+                    updateResultsView(elements, cachedSessionData, cachedState, currentMethod);
+                }
+            });
+            
+            console.log('✅ Track filter created and inserted');
+        } else {
+            console.warn('⚠️ Could not find insertion point for track filter');
+        }
     }
     
-    selector.dataset.populated = 'true';
+    if (trackFilter && sessionData?.runs) {
+        // Count karts per track
+        const trackCounts = {
+            'Lakeside': 0,
+            'Penrite': 0,
+            'Mushroom': 0,
+            'Rimo': 0
+        };
+        
+        sessionData.runs.forEach(run => {
+            const kartName = run.kart || run.kart_number || '';
+            const track = getTrackFromKart(kartName);
+            trackCounts[track]++;
+        });
+        
+        // Rebuild options
+        const currentValue = trackFilter.value || 'all';
+        trackFilter.innerHTML = '<option value="all">🌐 All Tracks Combined</option>';
+        
+        const trackOrder = ['Lakeside', 'Penrite', 'Mushroom', 'Rimo'];
+        const trackIcons = {
+            'Lakeside': '⚡',
+            'Penrite': '🏎️',
+            'Mushroom': '🍄',
+            'Rimo': '🎯'
+        };
+        
+        trackOrder.forEach(track => {
+            if (trackCounts[track] > 0) {
+                const option = document.createElement('option');
+                option.value = track;
+                option.textContent = `${trackIcons[track]} ${track} (${trackCounts[track]} karts)`;
+                trackFilter.appendChild(option);
+            }
+        });
+        
+        // Restore selection
+        if ([...trackFilter.options].some(opt => opt.value === currentValue)) {
+            trackFilter.value = currentValue;
+        }
+        
+        console.log(`✅ Track filter updated with ${Object.values(trackCounts).reduce((a,b) => a+b, 0)} total karts`);
+    }
+}
+
+async function populateSessionSelector(tab) {
+    const selector = document.getElementById(`${tab}-session-select`);
+    if (!selector) {
+        console.warn('⚠️ Session selector not found for tab:', tab);
+        return;
+    }
+    
+    console.log('📋 Populating session selector for:', tab);
+    
+    try {
+        const sessions = await SessionHistoryService.getSessionHistory();
+        console.log(`✅ Got ${sessions.length} sessions from backend`);
+        
+        // Store current selection
+        const currentValue = selector.value || 'live';
+        
+        // Rebuild options (always refresh to get latest sessions)
+        selector.innerHTML = '<option value="live">🔴 Live</option>';
+        
+        if (sessions.length > 0) {
+            sessions.forEach(session => {
+                const option = document.createElement('option');
+                option.value = session.sessionId;
+                option.textContent = SessionHistoryService.getSessionLabel(session);
+                selector.appendChild(option);
+            });
+            console.log(`📋 Added ${sessions.length} session options to selector`);
+        } else {
+            console.log('📋 No historical sessions available');
+        }
+        
+        // Restore selection if it still exists
+        if (currentValue !== 'live' && sessions.find(s => String(s.sessionId) === String(currentValue))) {
+            selector.value = currentValue;
+        }
+    } catch (error) {
+        console.error('❌ Error populating session selector:', error);
+    }
 }
 

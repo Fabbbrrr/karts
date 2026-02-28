@@ -3,23 +3,35 @@
  * 
  * PURPOSE: Save and retrieve past race sessions for review
  * WHY: Users want to compare past performance and review historical data
- * HOW: Stores session snapshots in localStorage with winner info
- * FEATURE: Session History, Historical Data Retrieval, Auto-save
+ * HOW: Stores session snapshots in localStorage and fetches from server
+ * FEATURE: Session History, Historical Data Retrieval, Auto-save, Server Integration
  */
+
+import * as ServerAPI from './server-api.service.js';
 
 const STORAGE_KEY = 'karting_session_history';
 const MAX_SESSIONS = 20;
 const LAP_TIME_THRESHOLD = 60000; // 60 seconds
+let serverEnabled = false; // Track if server integration is enabled
 
 /**
- * Get all saved session history
+ * Enable or disable server integration
+ * @param {boolean} enabled - Enable server integration
+ */
+export function setServerEnabled(enabled) {
+    serverEnabled = enabled;
+    console.log(`🔧 Server integration ${enabled ? 'enabled' : 'disabled'}`);
+}
+
+/**
+ * Get all saved session history (local only)
  * 
- * PURPOSE: Retrieve list of past sessions
+ * PURPOSE: Retrieve list of past sessions from localStorage
  * WHY: Populate dropdown selector with available sessions
  * 
  * @returns {Array} Array of session objects, newest first
  */
-export function getSessionHistory() {
+export function getLocalSessionHistory() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return [];
@@ -34,6 +46,33 @@ export function getSessionHistory() {
 }
 
 /**
+ * Get all saved session history (backend or local)
+ * 
+ * PURPOSE: Retrieve list of past sessions from backend or local storage
+ * WHY: Populate dropdown selector with available sessions
+ * 
+ * @returns {Promise<Array>} Array of session objects, newest first
+ */
+export async function getSessionHistory() {
+    // In backend mode, ONLY use backend sessions
+    if (serverEnabled) {
+        try {
+            console.log('📡 Fetching sessions from backend...');
+            const backendSessions = await ServerAPI.getBackendSessions();
+            console.log(`✅ Loaded ${backendSessions.length} sessions from backend`);
+            return backendSessions;
+        } catch (error) {
+            console.error('❌ Error fetching backend sessions:', error);
+            // Fallback to local if backend fails
+            return getLocalSessionHistory();
+        }
+    }
+    
+    // Direct mode: use local storage
+    return getLocalSessionHistory();
+}
+
+/**
  * Save current session to history
  * 
  * PURPOSE: Persist session data for later review
@@ -41,12 +80,18 @@ export function getSessionHistory() {
  * 
  * @param {Object} sessionData - Current session data from WebSocket
  * @param {string} currentSessionId - Current session identifier
- * @returns {Object|null} Saved session object or null if failed
+ * @returns {Promise<Object|null>} Saved session object or null if failed
  */
-export function saveCurrentSession(sessionData, currentSessionId) {
+export async function saveCurrentSession(sessionData, currentSessionId) {
     try {
         if (!sessionData || !sessionData.runs || sessionData.runs.length === 0) {
             console.log('⏭️ No session data to save');
+            return null;
+        }
+        
+        // Don't save mock data
+        if (sessionData.isMock) {
+            console.log('🎭 Skipping save of mock session data');
             return null;
         }
         
@@ -80,20 +125,23 @@ export function saveCurrentSession(sessionData, currentSessionId) {
         };
         
         // Get existing history
-        const history = getSessionHistory();
+        const history = await getSessionHistory();
+        
+        // Ensure history is an array
+        const historyArray = Array.isArray(history) ? history : [];
         
         // Check if this session already exists (avoid duplicates)
-        const existingIndex = history.findIndex(s => s.sessionId === currentSessionId);
+        const existingIndex = historyArray.findIndex(s => s.sessionId === currentSessionId);
         if (existingIndex !== -1) {
             console.log('📝 Updating existing session in history');
-            history[existingIndex] = sessionObj;
+            historyArray[existingIndex] = sessionObj;
         } else {
             console.log('💾 Saving new session to history');
-            history.unshift(sessionObj); // Add to beginning
+            historyArray.unshift(sessionObj); // Add to beginning
         }
         
         // Limit to MAX_SESSIONS, remove oldest
-        const trimmedHistory = history.slice(0, MAX_SESSIONS);
+        const trimmedHistory = historyArray.slice(0, MAX_SESSIONS);
         
         // Save to localStorage
         localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedHistory));
@@ -114,16 +162,27 @@ export function saveCurrentSession(sessionData, currentSessionId) {
  * WHY: User selected a historical session to view
  * 
  * @param {string} sessionId - Session identifier
- * @returns {Object|null} Session object or null if not found
+ * @returns {Promise<Object|null>} Session object or null if not found
  */
-export function loadSession(sessionId) {
+export async function loadSession(sessionId) {
     try {
-        const history = getSessionHistory();
-        const session = history.find(s => s.sessionId === sessionId);
+        // First check local storage
+        const localHistory = getLocalSessionHistory();
+        const localSession = localHistory.find(s => s.sessionId === sessionId);
         
-        if (session) {
-            console.log(`📂 Loaded session: ${session.date} ${session.startTime}`);
-            return session;
+        if (localSession) {
+            console.log(`📂 Loaded local session: ${localSession.date} ${localSession.startTime}`);
+            return localSession;
+        }
+        
+        // If not found locally and server is enabled, try server
+        if (serverEnabled) {
+            const serverSession = await ServerAPI.getSessionById(sessionId);
+            if (serverSession) {
+                const transformed = ServerAPI.transformServerSession(serverSession);
+                console.log(`📂 Loaded server session: ${transformed.date} ${transformed.startTime}`);
+                return transformed;
+            }
         }
         
         console.warn('⚠️ Session not found:', sessionId);
@@ -266,11 +325,14 @@ function calculateSessionAvgLap(runs) {
  * @returns {string} Formatted label
  */
 export function getSessionLabel(session) {
-    const winner = session.winner.name !== 'No Winner' && session.winner.name !== 'Unknown'
+    const winner = session.winner?.name && session.winner.name !== 'No Winner' && session.winner.name !== 'Unknown'
         ? `${session.winner.name} (#${session.winner.kartNumber}) - ${session.winner.bestLap}`
         : session.eventName;
     
-    return `📅 ${session.date} - ${session.startTime} - ${winner}`;
+    const trackLabel = session.trackName ? `${session.trackName} - ` : '';
+    const kartInfo = session.karts ? ` - ${session.karts} karts` : '';
+    const sourceIcon = session.source === 'server' ? '☁️' : '📅';
+    return `${sourceIcon} ${session.date} - ${trackLabel}${session.startTime}${kartInfo} - ${winner}`;
 }
 
 /**

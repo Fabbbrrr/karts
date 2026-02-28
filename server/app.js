@@ -19,11 +19,12 @@ export function createApp() {
   // CORS configuration
   const corsOptions = {
     origin: config.security.allowedOrigins === '*' 
-      ? '*' 
+      ? true  // Allow any origin (for development)
       : config.security.allowedOrigins.split(','),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
+    credentials: false, // SSE/EventSource doesn't use credentials
+    optionsSuccessStatus: 200
   };
   
   app.use(cors(corsOptions));

@@ -257,6 +257,16 @@ export function processSessionData(sessionData, lapHistory) {
     // Find cross-kart drivers
     const crossKartDrivers = findCrossKartDrivers(analysesWithIndex);
     
+    // Determine winner (driver with best lap time)
+    const winner = analysesWithIndex.length > 0
+      ? {
+          name: analysesWithIndex[0].driverName,
+          kartNumber: analysesWithIndex[0].kartNumber,
+          bestLap: analysesWithIndex[0].bestLapFormatted,
+          bestLapRaw: analysesWithIndex[0].bestLap
+        }
+      : null;
+    
     // Calculate session summary
     const summary = {
       timestamp: new Date().toISOString(),
@@ -271,7 +281,8 @@ export function processSessionData(sessionData, lapHistory) {
       fastestDriver: analysesWithIndex.length > 0
         ? analysesWithIndex[0].driverName
         : 'N/A',
-      crossKartDrivers: crossKartDrivers.length
+      crossKartDrivers: crossKartDrivers.length,
+      winner: winner
     };
     
     logger.info(`Analysis complete: ${summary.totalKarts} karts, ${summary.totalLaps} laps`);
@@ -279,7 +290,8 @@ export function processSessionData(sessionData, lapHistory) {
     return {
       summary,
       karts: analysesWithIndex,
-      crossKartDrivers
+      crossKartDrivers,
+      winner
     };
   } catch (error) {
     logger.error('Error processing session data:', error);

@@ -54,6 +54,17 @@
             </div>
         </div>
         
+        <!-- Mock Mode Banner -->
+        <div id="mock-mode-banner" class="mock-mode-banner hidden">
+            <div class="mock-mode-banner-content">
+                <span class="mock-mode-icon">🎭</span>
+                <span class="mock-mode-text">MOCK MODE ACTIVE - Simulated Data (Not Saved)</span>
+                <button class="mock-mode-close" onclick="document.getElementById('mock-mode-enable').click()">
+                    ✕ Exit Mock Mode
+                </button>
+            </div>
+        </div>
+        
         <!-- Race Tab - All Drivers -->
         <div id="race-screen" class="screen tab-content">
             <div class="header">
@@ -231,6 +242,10 @@
                     <select id="results-session-select" class="select-modern">
                         <option value="live">🔴 Live</option>
                     </select>
+                    
+                    <button id="results-delete-btn" class="btn-icon-modern btn-danger" title="Delete Session" style="display: none;">
+                        🗑️
+                    </button>
                     
                     <button id="results-refresh-btn" class="btn-icon-modern" title="Refresh">
                         🔄
@@ -740,6 +755,58 @@
                     <input type="text" id="channel-input" class="settings-input" placeholder="lemansentertainment">
                     <p style="color: #666; font-size: 0.85rem; margin-top: 8px;">
                         💡 Find your channel at live.racefacer.com/YOUR_VENUE_NAME
+                    </p>
+                </div>
+                
+                <!-- Mock Mode Section -->
+                <div class="settings-section">
+                    <h2>🎭 Mock Mode (Testing)</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Generate simulated race data for testing when no live races are available
+                    </p>
+                    
+                    <div style="background: #1a1a2e; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                        <label class="settings-checkbox" style="margin-bottom: 12px;">
+                            <input type="checkbox" id="mock-mode-enable">
+                            <span style="font-weight: bold; color: #00ff88;">Enable Mock Mode</span>
+                        </label>
+                        
+                        <div id="mock-mode-controls" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #333;">
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-session-type">Session Type:</label>
+                                <select id="mock-session-type" class="settings-select">
+                                    <option value="race">Race</option>
+                                    <option value="practice">Practice</option>
+                                    <option value="qualifying">Qualifying</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-max-laps">Maximum Laps:</label>
+                                <input type="number" id="mock-max-laps" class="settings-input" value="10" min="5" max="50">
+                                <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">
+                                    Session will end after this many laps or duration (whichever comes first)
+                                </p>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-duration">Duration (minutes):</label>
+                                <input type="number" id="mock-duration" class="settings-input" value="5" min="1" max="30">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-kart-count">Number of Karts:</label>
+                                <input type="number" id="mock-kart-count" class="settings-input" value="12" min="4" max="20">
+                            </div>
+                            
+                            <button id="mock-restart-btn" class="settings-btn-secondary" style="width: 100%; margin-top: 12px;">
+                                🔄 Restart Mock Session
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p style="color: #ffaa00; font-size: 0.85rem; margin-top: 12px;">
+                        ⚠️ Mock data will NOT be saved to session history or kart analysis
                     </p>
                 </div>
                 

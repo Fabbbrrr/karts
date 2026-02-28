@@ -23,6 +23,10 @@ const state = {
     lastPosition: {},
     positionHistory: {},
     
+    // Multi-track support
+    currentTrackConfig: null,
+    trackSessions: {}, // Store separate sessions per track config: { trackId: { sessionData, lapHistory, etc } }
+    
     // Audio and alerts
     audioContext: null,
     lastProximityAlert: null,

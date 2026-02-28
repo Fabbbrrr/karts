@@ -4,6 +4,7 @@
 import { formatTime } from '../utils/time-formatter.js';
 import * as AnalysisService from '../services/analysis.service.js';
 import { getUniqueTrackConfigs, getTrackConfigName } from '../utils/track-config.js';
+import * as KartPerformanceAnalysis from '../services/kart-performance-analysis.service.js';
 
 /**
  * Update the analysis view with kart rankings and track configuration filter
@@ -46,13 +47,19 @@ export function updateAnalysisView(elements, kartAnalysisData) {
     
     // Get selected track configuration
     const selectedTrackConfig = elements.trackConfigFilter?.value || 'all';
-    const trackConfigId = selectedTrackConfig === 'all' ? null : selectedTrackConfig;
+    // Convert to string for comparison (track config IDs are stored as strings)
+    const trackConfigId = selectedTrackConfig === 'all' ? null : String(selectedTrackConfig);
+    
+    console.log('🔍 Analysis Filter:', { selectedTrackConfig, trackConfigId });
     
     // Update summary stats with track config filter
     updateAnalysisSummaryStats(elements, kartAnalysisData, trackConfigId);
     
     // Update rankings table with track config filter
     updateAnalysisRankingsTable(elements, kartAnalysisData, trackConfigId);
+    
+    // Add advanced kart performance analysis button if not already present
+    addAdvancedAnalysisButton(elements, kartAnalysisData);
 }
 
 /**
@@ -70,8 +77,14 @@ export function updateAnalysisView(elements, kartAnalysisData) {
 function updateTrackConfigFilter(elements, kartAnalysisData) {
     if (!elements.trackConfigFilter) return;
     
-    // Get unique track configurations from laps
-    const trackConfigs = getUniqueTrackConfigs(kartAnalysisData.laps || []);
+    // Filter out mock data first
+    const realLaps = (kartAnalysisData.laps || []).filter(lap => {
+        const trackId = String(lap.trackConfigId || '');
+        return !trackId.startsWith('mock-') && trackId !== 'unknown';
+    });
+    
+    // Get unique track configurations from real laps only
+    const trackConfigs = getUniqueTrackConfigs(realLaps);
     
     // Store current selection
     const currentSelection = elements.trackConfigFilter.value || 'all';
@@ -112,13 +125,24 @@ function updateTrackConfigFilter(elements, kartAnalysisData) {
  * @returns {void}
  */
 function updateAnalysisSummaryStats(elements, kartAnalysisData, trackConfigId = null) {
-    // Filter laps by track configuration if specified
-    let filteredData = kartAnalysisData;
+    // First, filter out mock data (track configs starting with "mock-")
+    let filteredLaps = kartAnalysisData.laps.filter(lap => {
+        const trackId = String(lap.trackConfigId || '');
+        return !trackId.startsWith('mock-') && trackId !== 'unknown';
+    });
+    
+    // Then filter by track configuration if specified
+    let filteredData = { ...kartAnalysisData, laps: filteredLaps };
     if (trackConfigId !== null) {
+        // Ensure both values are strings for comparison
+        const trackConfigStr = String(trackConfigId);
         filteredData = {
             ...kartAnalysisData,
-            laps: kartAnalysisData.laps.filter(lap => lap.trackConfigId === trackConfigId)
+            laps: filteredLaps.filter(lap => String(lap.trackConfigId) === trackConfigStr)
         };
+        console.log(`🔍 Filtered laps for track ${trackConfigStr}: ${filteredData.laps.length} / ${kartAnalysisData.laps.length}`);
+    } else {
+        console.log(`🔍 Filtered out mock data: ${filteredData.laps.length} / ${kartAnalysisData.laps.length} laps remaining`);
     }
     
     const stats = AnalysisService.getSummaryStats(filteredData);
@@ -166,8 +190,20 @@ function updateAnalysisSummaryStats(elements, kartAnalysisData, trackConfigId = 
 function updateAnalysisRankingsTable(elements, kartAnalysisData, trackConfigId = null) {
     if (!elements.analysisTableBody) return;
     
-    // Analyze all karts with track config filter
-    const kartAnalysis = AnalysisService.analyzeAllKarts(kartAnalysisData, trackConfigId);
+    // First, filter out mock data from laps
+    const filteredLaps = kartAnalysisData.laps.filter(lap => {
+        const trackId = String(lap.trackConfigId || '');
+        return !trackId.startsWith('mock-') && trackId !== 'unknown';
+    });
+    
+    // Create filtered dataset without mock data
+    const cleanData = {
+        ...kartAnalysisData,
+        laps: filteredLaps
+    };
+    
+    // Analyze all karts with track config filter (on clean data)
+    const kartAnalysis = AnalysisService.analyzeAllKarts(cleanData, trackConfigId);
     
     console.log('🔍 Analysis View Debug:', {
         hasTableBody: !!elements.analysisTableBody,
@@ -444,5 +480,162 @@ export function closeKartDetails(elements) {
     if (elements.analysisDetails) {
         elements.analysisDetails.classList.add('hidden');
     }
+}
+
+/**
+ * Add advanced analysis button and section
+ */
+function addAdvancedAnalysisButton(elements, kartAnalysisData) {
+    let button = document.getElementById('advanced-analysis-btn');
+    
+    if (!button) {
+        const analysisContent = elements.analysisContent || document.querySelector('.analysis-content');
+        if (!analysisContent) return;
+        
+        // Create button and results container
+        const container = document.createElement('div');
+        container.innerHTML = `
+            <div style="margin: 20px 0; padding: 15px; background: #1a1a1a; border-radius: 8px;">
+                <button id="advanced-analysis-btn" style="
+                    padding: 12px 24px;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    cursor: pointer;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+                    transition: all 0.3s;
+                ">
+                    🔬 Run Advanced Kart Performance Analysis
+                </button>
+                <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
+                    Analyzes karts across tracks, identifies underperformers, and provides detailed performance ratings
+                </p>
+                <div id="advanced-analysis-results" style="margin-top: 20px;"></div>
+            </div>
+        `;
+        
+        analysisContent.appendChild(container);
+        button = document.getElementById('advanced-analysis-btn');
+        
+        // Add hover effect
+        button.addEventListener('mouseenter', () => {
+            button.style.transform = 'translateY(-2px)';
+            button.style.boxShadow = '0 6px 12px rgba(0,0,0,0.4)';
+        });
+        button.addEventListener('mouseleave', () => {
+            button.style.transform = 'translateY(0)';
+            button.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+        });
+        
+        button.addEventListener('click', () => runAdvancedAnalysis(kartAnalysisData));
+    }
+}
+
+/**
+ * Run and display advanced kart performance analysis
+ */
+function runAdvancedAnalysis(kartAnalysisData) {
+    const resultsDiv = document.getElementById('advanced-analysis-results');
+    if (!resultsDiv) return;
+    
+    // Show loading
+    resultsDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #888;">🔄 Analyzing kart performance...</div>';
+    
+    // Run analysis
+    setTimeout(() => {
+        // Transform kartAnalysisData from {laps: [], karts: {}} format
+        // to {kartId: {laps: [], kartNumber, driverName, ...}} format
+        const transformedData = transformKartDataForAdvancedAnalysis(kartAnalysisData);
+        
+        console.log('🔬 Transformed data for advanced analysis:', {
+            kartCount: Object.keys(transformedData).length,
+            sampleKart: Object.values(transformedData)[0]
+        });
+        
+        const analysis = KartPerformanceAnalysis.analyzeKartPerformance(transformedData);
+        console.log('📊 Analysis Result:', analysis);
+        const report = KartPerformanceAnalysis.formatAnalysisReport(analysis);
+        
+        // Display results
+        resultsDiv.innerHTML = `
+            <div style="background: #0a0a0a; padding: 20px; border-radius: 8px; border: 2px solid #333;">
+                <pre style="color: #0f0; font-family: 'Courier New', monospace; font-size: 0.9em; white-space: pre-wrap; margin: 0;">${report}</pre>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="this.parentElement.previousElementSibling.requestFullscreen()" style="
+                    padding: 8px 16px;
+                    background: #2a2a2a;
+                    color: white;
+                    border: 1px solid #444;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    margin-right: 10px;
+                ">📺 Fullscreen</button>
+                <button onclick="navigator.clipboard.writeText(this.parentElement.previousElementSibling.querySelector('pre').textContent)" style="
+                    padding: 8px 16px;
+                    background: #2a2a2a;
+                    color: white;
+                    border: 1px solid #444;
+                    border-radius: 4px;
+                    cursor: pointer;
+                ">📋 Copy Report</button>
+            </div>
+        `;
+        
+        console.log('✅ Advanced analysis complete:', analysis.summary);
+    }, 500);
+}
+
+/**
+ * Transform kartAnalysisData from {laps: [], karts: {}} format
+ * to the format expected by advanced analysis: {kartId: {laps: [], ...}}
+ */
+function transformKartDataForAdvancedAnalysis(kartAnalysisData) {
+    const transformed = {};
+    
+    // Get all karts
+    const karts = kartAnalysisData.karts || {};
+    const allLaps = kartAnalysisData.laps || [];
+    
+    // Process each kart
+    for (const [kartId, kartInfo] of Object.entries(karts)) {
+        // Get all laps for this kart
+        const kartLaps = allLaps.filter(lap => 
+            lap.kartId === kartId || lap.kartNumber === kartInfo.kartNumber
+        );
+        
+        // Skip karts with no laps
+        if (kartLaps.length === 0) continue;
+        
+        // Transform laps to the format expected by advanced analysis
+        const transformedLaps = kartLaps.map(lap => ({
+            timeRaw: lap.lapTimeRaw || lap.timeRaw,
+            driver: lap.driverName,
+            timestamp: lap.timestamp,
+            trackConfigId: lap.trackConfigId
+        }));
+        
+        // Detect track from kart name
+        const firstChar = String(kartInfo.kartName || kartInfo.kartNumber).charAt(0).toUpperCase();
+        let trackName = 'Lakeside';
+        if (firstChar === 'M') trackName = 'Mushroom';
+        else if (firstChar === 'P') trackName = 'Penrite';
+        else if (firstChar === 'E') trackName = 'Rimo';
+        
+        transformed[kartId] = {
+            kartNumber: kartInfo.kartNumber,
+            kartName: kartInfo.kartName,
+            driverName: kartInfo.drivers?.[0] || 'Unknown',
+            drivers: kartInfo.drivers || [],
+            trackName: trackName,
+            trackConfigId: kartLaps[0]?.trackConfigId,
+            laps: transformedLaps
+        };
+    }
+    
+    return transformed;
 }
 

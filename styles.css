@@ -2416,6 +2416,102 @@ body.theme-racing-green .hud-value {
     transform: translateY(0);
 }
 
+/* ========================
+   MOCK MODE BANNER
+   ======================== */
+
+.mock-mode-banner {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #2d1b69, #1b2d69);
+    border-bottom: 3px solid #00ff88;
+    z-index: 900;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.mock-mode-banner.hidden {
+    display: none;
+}
+
+.mock-mode-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.mock-mode-icon {
+    font-size: 1.5rem;
+    animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.mock-mode-text {
+    flex: 1;
+    color: #00ff88;
+    font-weight: bold;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mock-mode-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.mock-mode-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+    .mock-mode-banner-content {
+        padding: 10px 15px;
+        gap: 12px;
+    }
+    
+    .mock-mode-text {
+        font-size: 0.85rem;
+    }
+    
+    .mock-mode-close {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+}
+
 @media (max-width: 768px) {
     .session-selector-wrapper {
         flex-direction: column;

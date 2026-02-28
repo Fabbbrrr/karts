@@ -321,27 +321,37 @@ export function analyzeAllKarts(analysisData, trackConfigId = null) {
     });
     
     // Calculate analysis for all karts with track config filter
-    const kartAnalysis = kartIds.map(kartId => {
-        const kart = karts[kartId];
-        const normalized = calculateNormalizedIndex(kartId, analysisData, trackConfigId);
-        const percentile = calculatePercentileRanking(kartId, analysisData);
-        const stats = getKartStats(kartId, analysisData);
-        const confidence = calculateConfidence(kartId, analysisData);
-        
-        if (!normalized) {
-            console.warn(`⚠️ Kart ID ${kartId}: normalized index is null`);
-        }
-        
-        return {
-            kartId: kartId,
-            kartNumber: kart.kartNumber || kartId,  // Display number for UI
-            kartName: kart.kartName || kart.kartNumber || kartId,
-            normalized,
-            percentile,
-            stats,
-            confidence
-        };
-    }).filter(k => k.normalized !== null);
+    const kartAnalysis = kartIds
+        .filter(kartId => {
+            // Skip invalid kart IDs (unknown_XXX pattern)
+            if (kartId.startsWith('unknown_')) {
+                console.debug(`🔍 Skipping invalid kart ID: ${kartId}`);
+                return false;
+            }
+            return true;
+        })
+        .map(kartId => {
+            const kart = karts[kartId];
+            const normalized = calculateNormalizedIndex(kartId, analysisData, trackConfigId);
+            const percentile = calculatePercentileRanking(kartId, analysisData);
+            const stats = getKartStats(kartId, analysisData);
+            const confidence = calculateConfidence(kartId, analysisData);
+            
+            if (!normalized) {
+                console.warn(`⚠️ Kart ID ${kartId}: normalized index is null`);
+            }
+            
+            return {
+                kartId: kartId,
+                kartNumber: kart.kartNumber || kartId,  // Display number for UI
+                kartName: kart.kartName || kart.kartNumber || kartId,
+                normalized,
+                percentile,
+                stats,
+                confidence
+            };
+        })
+        .filter(k => k.normalized !== null);
     
     console.log(`✅ Analysis complete: ${kartAnalysis.length} karts with valid data`);
     

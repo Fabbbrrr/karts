@@ -1,0 +1,59 @@
+# Git files
+.git
+.gitignore
+
+# Node modules
+node_modules/
+server/node_modules/
+
+# Logs
+*.log
+server/logs/
+logs/
+
+# Storage (don't upload session data)
+server/storage/
+
+# Documentation
+docs/
+docs-archive/
+*.md
+!README.md
+
+# Test files
+tests/
+server/tests/
+test-*.js
+test-*.sh
+test-*.ps1
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Deployment files (exclude AWS/OpenShift, keep GCP)
+deployment/aws/
+deployment/openshift/
+deployment/DEPLOYMENT_GUIDE.md
+
+# Docker files (not needed for cloud build)
+docker-compose.yml
+
+# Scripts
+*.sh
+!deploy-gcp.sh
+*.ps1
+!deploy-gcp.ps1
+
+# Misc
+MANUAL_RECOVERY_SCRIPT.js
+app.legacy.js
+data-example.json
+tyles.css
+

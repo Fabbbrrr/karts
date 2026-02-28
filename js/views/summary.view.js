@@ -5,6 +5,21 @@ import { formatTime } from '../utils/time-formatter.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import * as SessionHistoryService from '../services/session-history.service.js';
 
+let currentTrack = 'all'; // Track filter
+let cachedSessionData = null;
+let cachedState = null;
+
+/**
+ * Detect track from kart name
+ */
+function getTrackFromKart(kartName) {
+    const firstChar = String(kartName).charAt(0).toUpperCase();
+    if (firstChar === 'M') return 'Mushroom';
+    if (firstChar === 'P') return 'Penrite';
+    if (firstChar === 'E') return 'Rimo';
+    return 'Lakeside';
+}
+
 /**
  * Update summary view with session results
  * @param {Object} elements - DOM elements
@@ -15,11 +30,17 @@ export function updateSummaryView(elements, sessionData, state) {
     console.log('📈 updateSummaryView called:', { 
         sessionData: !!sessionData, 
         runs: sessionData?.runs?.length,
-        mainDriver: state?.settings?.mainDriver 
+        mainDriver: state?.settings?.mainDriver,
+        track: currentTrack
     });
     
-    // Populate session selector
+    // Store for recalculation
+    cachedSessionData = sessionData;
+    cachedState = state;
+    
+    // Populate session selector and track filter
     populateSessionSelector('summary');
+    updateTrackFilter(elements, sessionData);
     
     if (!sessionData || !sessionData.runs || sessionData.runs.length === 0) {
         console.warn('⚠️ No session data for summary');
@@ -30,15 +51,25 @@ export function updateSummaryView(elements, sessionData, state) {
         return;
     }
     
+    // Filter runs by track if not "all"
+    let filteredRuns = sessionData.runs;
+    if (currentTrack !== 'all') {
+        filteredRuns = sessionData.runs.filter(run => {
+            const kartName = run.kart || run.kart_number || '';
+            return getTrackFromKart(kartName) === currentTrack;
+        });
+        console.log(`📈 Filtered to ${currentTrack}: ${filteredRuns.length} karts`);
+    }
+    
     // Show content, hide placeholder
     const noData = document.getElementById('summary-no-data');
     const content = document.getElementById('summary-content');
     if (noData) noData.classList.add('hidden');
     if (content) content.classList.remove('hidden');
     
-    // Get main driver's data
+    // Get main driver's data (from filtered runs)
     const mainDriverKart = state?.settings?.mainDriver;
-    const mainDriverData = sessionData.runs.find(r => r.kart_number === mainDriverKart);
+    const mainDriverData = filteredRuns.find(r => r.kart_number === mainDriverKart);
     
     // Update driver statistics
     updateDriverStats(elements, mainDriverData, state);
@@ -48,7 +79,7 @@ export function updateSummaryView(elements, sessionData, state) {
     
     // Update position chart if available
     if (elements.positionChart && state.positionHistory && Object.keys(state.positionHistory).length > 0) {
-        updatePositionChart(elements, sessionData, state.positionHistory);
+        updatePositionChart(elements, { ...sessionData, runs: filteredRuns }, state.positionHistory);
     }
     
     // Update personal records if any
@@ -152,12 +183,24 @@ function updateLapHistory(elements, driverData, state) {
     const lapListEl = document.getElementById('summary-lap-list');
     if (!lapListEl) return;
     
-    if (!driverData || !state.lapHistory || !state.lapHistory[driverData.kart_number]) {
+    // Use session-specific lap history if in history mode, otherwise use global state
+    let lapHistory = {};
+    
+    if (state.isHistoryMode && state.currentHistorySession?.lapHistory) {
+        // Historical session: use session's own lap history
+        lapHistory = state.currentHistorySession.lapHistory;
+        console.log('📜 Using historical lap history for summary');
+    } else if (state.lapHistory) {
+        // Live mode: use global state lap history
+        lapHistory = state.lapHistory;
+    }
+    
+    if (!driverData || !lapHistory[driverData.kart_number]) {
         lapListEl.innerHTML = '<p style="text-align: center; color: #888;">No lap data available</p>';
         return;
     }
     
-    const laps = state.lapHistory[driverData.kart_number] || [];
+    const laps = lapHistory[driverData.kart_number] || [];
     
     if (laps.length === 0) {
         lapListEl.innerHTML = '<p style="text-align: center; color: #888;">No laps completed yet</p>';
@@ -396,38 +439,135 @@ function updatePositionChartLegend(kartNumbers, colors, sessionData) {
  * @param {string} tab - Which tab's selector to populate ("results" or "summary")
  * @returns {void}
  */
-function populateSessionSelector(tab) {
-    const selector = document.getElementById(`${tab}-session-select`);
-    if (!selector) return;
+/**
+ * Update track filter dropdown
+ */
+function updateTrackFilter(elements, sessionData) {
+    let trackFilter = document.getElementById('summary-track-filter');
     
-    // Check if already populated (avoid re-populating on every update)
-    if (selector.dataset.populated === 'true') return;
-    
-    // Get saved sessions
-    const sessions = SessionHistoryService.getSessionHistory();
-    
-    // Clear existing options except "Live"
-    selector.innerHTML = '<option value="live">🔴 Live Session (Current)</option>';
-    
-    if (sessions.length > 0) {
-        // Add separator
-        const separator = document.createElement('option');
-        separator.disabled = true;
-        separator.textContent = '─────────────';
-        selector.appendChild(separator);
+    if (!trackFilter) {
+        const sessionSelector = document.getElementById('summary-session-select');
+        const insertTarget = sessionSelector?.parentElement || 
+                            document.querySelector('.summary-header') || 
+                            document.querySelector('#summary');
         
-        // Add session options
-        sessions.forEach(session => {
-            const option = document.createElement('option');
-            option.value = session.sessionId;
-            option.textContent = SessionHistoryService.getSessionLabel(session);
-            selector.appendChild(option);
-        });
-        
-        console.log(`📂 Populated ${tab} selector with ${sessions.length} sessions`);
+        if (insertTarget) {
+            const filterHtml = `
+                <div class="track-filter-container" style="margin: 10px 0; padding: 10px; background: #1a1a1a; border-radius: 5px;">
+                    <label for="summary-track-filter" style="margin-right: 10px; color: #fff; font-weight: bold; font-size: 1.1em;">🏁 Track Filter:</label>
+                    <select id="summary-track-filter" style="padding: 8px 15px; background: #2a2a2a; color: white; border: 2px solid #444; border-radius: 5px; font-size: 1em; cursor: pointer;">
+                        <option value="all">All Tracks</option>
+                    </select>
+                    <span style="margin-left: 10px; color: #888; font-size: 0.9em;">Select a track to see summary for that track only</span>
+                </div>
+            `;
+            
+            if (sessionSelector?.parentElement) {
+                sessionSelector.parentElement.insertAdjacentHTML('afterend', filterHtml);
+            } else {
+                insertTarget.insertAdjacentHTML('afterbegin', filterHtml);
+            }
+            
+            trackFilter = document.getElementById('summary-track-filter');
+            
+            trackFilter.addEventListener('change', (e) => {
+                currentTrack = e.target.value;
+                console.log(`📈 Track filter changed to: ${currentTrack}`);
+                if (cachedSessionData && cachedState) {
+                    updateSummaryView(elements, cachedSessionData, cachedState);
+                }
+            });
+            
+            console.log('✅ Track filter created for summary');
+        }
     }
     
-    // Mark as populated
-    selector.dataset.populated = 'true';
+    if (trackFilter && sessionData?.runs) {
+        const trackCounts = {
+            'Lakeside': 0,
+            'Penrite': 0,
+            'Mushroom': 0,
+            'Rimo': 0
+        };
+        
+        sessionData.runs.forEach(run => {
+            const kartName = run.kart || run.kart_number || '';
+            const track = getTrackFromKart(kartName);
+            trackCounts[track]++;
+        });
+        
+        const currentValue = trackFilter.value || 'all';
+        trackFilter.innerHTML = '<option value="all">🌐 All Tracks Combined</option>';
+        
+        const trackOrder = ['Lakeside', 'Penrite', 'Mushroom', 'Rimo'];
+        const trackIcons = {
+            'Lakeside': '⚡',
+            'Penrite': '🏎️',
+            'Mushroom': '🍄',
+            'Rimo': '🎯'
+        };
+        
+        trackOrder.forEach(track => {
+            if (trackCounts[track] > 0) {
+                const option = document.createElement('option');
+                option.value = track;
+                option.textContent = `${trackIcons[track]} ${track} (${trackCounts[track]} karts)`;
+                trackFilter.appendChild(option);
+            }
+        });
+        
+        if ([...trackFilter.options].some(opt => opt.value === currentValue)) {
+            trackFilter.value = currentValue;
+        }
+    }
+}
+
+async function populateSessionSelector(tab) {
+    const selector = document.getElementById(`${tab}-session-select`);
+    if (!selector) {
+        console.warn('⚠️ Session selector not found for tab:', tab);
+        return;
+    }
+    
+    console.log('📋 Populating session selector for:', tab);
+    
+    try {
+        // Get saved sessions (async now to support server)
+        const sessions = await SessionHistoryService.getSessionHistory();
+        console.log(`✅ Got ${sessions.length} sessions from backend`);
+        
+        // Store current selection
+        const currentValue = selector.value || 'live';
+        
+        // Clear existing options except "Live" (always refresh to get latest sessions)
+        selector.innerHTML = '<option value="live">🔴 Live Session (Current)</option>';
+        
+        if (sessions.length > 0) {
+            // Add separator
+            const separator = document.createElement('option');
+            separator.disabled = true;
+            separator.textContent = '─────────────';
+            selector.appendChild(separator);
+            
+            // Add session options
+            sessions.forEach(session => {
+                const option = document.createElement('option');
+                option.value = session.sessionId;
+                option.textContent = SessionHistoryService.getSessionLabel(session);
+                selector.appendChild(option);
+            });
+            
+            console.log(`📋 Added ${sessions.length} session options to selector`);
+        } else {
+            console.log('📋 No historical sessions available');
+        }
+        
+        // Restore selection if it still exists
+        if (currentValue !== 'live' && sessions.find(s => String(s.sessionId) === String(currentValue))) {
+            selector.value = currentValue;
+        }
+    } catch (error) {
+        console.error('❌ Error populating session selector:', error);
+    }
 }
 

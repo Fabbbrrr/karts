@@ -36,7 +36,6 @@ const consoleFormat = winston.format.combine(
 const logger = winston.createLogger({
   level: config.logging.level,
   format: logFormat,
-  defaultMeta: { service: 'racefacer-analysis-server' },
   transports: [
     // Write all logs to console
     new winston.transports.Console({

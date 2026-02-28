@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cross-env NODE_ENV=test mocha --exit",
+    "test:unit": "cross-env NODE_ENV=test mocha 'tests/unit/**/*.test.js' --timeout 5000 --exit",
+    "test:integration": "cross-env NODE_ENV=test mocha 'tests/integration/**/*.test.js' --timeout 10000 --exit",
+    "test:watch": "cross-env NODE_ENV=test mocha 'tests/**/*.test.js' --watch",
+    "test:coverage": "cross-env NODE_ENV=test c8 mocha --exit"
   },
   "keywords": [
     "racefacer",
@@ -31,6 +35,12 @@
     "winston": "3.11.0"
   },
   "devDependencies": {
-    "nodemon": "3.0.1"
+    "nodemon": "3.0.1",
+    "mocha": "10.2.0",
+    "chai": "4.3.10",
+    "sinon": "17.0.1",
+    "supertest": "6.3.3",
+    "c8": "8.0.1",
+    "cross-env": "7.0.3"
   }
 }

@@ -1,0 +1,108 @@
+# Cloud Run service configuration for Backend
+# Deploy with: gcloud run services replace backend.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: racefacer-backend
+  labels:
+    app: racefacer
+    component: backend
+spec:
+  template:
+    metadata:
+      annotations:
+        # Autoscaling
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "1"  # Keep at most 1 for WebSocket stability
+        
+        # CPU allocation (always allocated for WebSocket)
+        run.googleapis.com/cpu-throttling: "true"
+
+        # Use Gen2 for GCSFuse volume support
+        run.googleapis.com/execution-environment: "gen2"
+        
+        # Startup probe (generous timeout for WebSocket connection)
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 1
+      timeoutSeconds: 3600  # 1 hour timeout for long-lived connections
+      
+      # Persistent storage via Cloud Storage (GCS Fuse)
+      volumes:
+      - name: storage-volume
+        csi:
+          driver: gcsfuse.run.googleapis.com
+          readOnly: false
+          volumeAttributes:
+            bucketName: GCS_BUCKET_NAME
+      
+      containers:
+      - name: backend
+        image: gcr.io/PROJECT_ID/racefacer-backend:latest
+        
+        ports:
+        - name: http1
+          containerPort: 8080
+
+        volumeMounts:
+        - name: storage-volume
+          mountPath: /app/storage
+        
+        env:
+        # Server configuration (PORT is auto-set by Cloud Run)
+        - name: HOST
+          value: "0.0.0.0"
+        - name: NODE_ENV
+          value: "production"
+        
+        # WebSocket configuration for RaceFacer
+        - name: WS_PROTOCOL
+          value: "https"
+        - name: WS_HOST
+          value: "live.racefacer.com"
+        - name: WS_PORT
+          value: "3123"
+        - name: WS_CHANNEL
+          value: "lemansentertainment"
+        
+        # Storage configuration (Cloud Storage mount or local)
+        - name: STORAGE_PATH
+          value: "/app/storage"
+        - name: MAX_SESSIONS
+          value: "10"
+        - name: MAX_LAPS_PER_SESSION
+          value: "500"
+        
+        # Logging
+        - name: LOG_LEVEL
+          value: "warn"
+        - name: LOG_FILE
+          value: "/app/logs/server.log"
+        
+        # Resources (Gen2 min 1 vCPU; scheduler ups minScale only during open hours)
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "512Mi"
+        
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Startup probe
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 10
+

@@ -8,6 +8,60 @@ import { getUniqueTrackConfigs, getTrackConfigName } from '../utils/track-config
 import * as LapTrackerService from '../services/lap-tracker.service.js';
 import { detectIncidents, getIncidentEmoji } from '../utils/incident-detector.js';
 
+// Track collapsed state (persists across updates)
+const trackCollapsedState = {
+    'Lakeside': false,  // Expanded by default
+    'Penrite': false,
+    'Mushroom': false,
+    'Rimo': false
+};
+
+/**
+ * Detect track from kart name
+ * Based on venue analysis:
+ * - Numeric/no prefix = Lakeside (Super Karts, fastest, 32s record)
+ * - P* = Penrite (Sprint Karts, 32s record)
+ * - M* = Mushroom (Mini karts, kids)
+ * - E* = Rimo or Unknown
+ */
+function getTrackFromKart(run) {
+    const kartName = run.kart || '';
+    const firstChar = String(kartName).charAt(0).toUpperCase();
+    
+    if (firstChar === 'M') return 'Mushroom';
+    if (firstChar === 'P') return 'Penrite';
+    if (firstChar === 'E') return 'Rimo';
+    
+    // Numeric or no prefix = Lakeside (Super Karts)
+    return 'Lakeside';
+}
+
+/**
+ * Get track color for pill styling
+ */
+function getTrackColor(trackName) {
+    const colors = {
+        'Lakeside': '#ffffff',  // White - Super Karts
+        'Penrite': '#808080',   // Grey - Sprint Karts
+        'Mushroom': '#ff0000',  // Red - Mini Karts (kids)
+        'Rimo': '#ffaa00'       // Orange - Unknown/Rookie
+    };
+    return colors[trackName] || '#808080';
+}
+
+/**
+ * Get track order (for display priority)
+ */
+function getTrackOrder(trackName) {
+    const order = {
+        'Lakeside': 1,  // Top/default
+        'Penrite': 2,
+        'Mushroom': 3,
+        'Rimo': 4
+    };
+    return order[trackName] || 99;
+}
+
 /**
  * Update the race view with current session data including track configuration
  * 
@@ -24,65 +78,235 @@ import { detectIncidents, getIncidentEmoji } from '../utils/incident-detector.js
  * @returns {void}
  */
 export function updateRaceView(elements, sessionData, settings, personalRecords = {}, state = {}) {
-    if (!sessionData) return;
+    // Validate sessionData
+    if (!sessionData || typeof sessionData !== 'object') {
+        console.warn('⚠️ Invalid session data in race view');
+        return;
+    }
     
-    const { event_name, current_lap, total_laps, time_left, runs, track_configuration_id } = sessionData;
+    // Extract with defaults
+    const { 
+        event_name = 'RaceFacer Live Timing', 
+        current_lap = 0, 
+        total_laps = 0, 
+        time_left = '', 
+        runs = [],  // Always an array
+        track_configuration_id = null 
+    } = sessionData;
     
-    // Update header with track configuration
-    // WHY: Users need to know which track layout is being used
-    // FEATURE: Track Configuration Display
-    elements.eventName.textContent = event_name || 'RaceFacer Live Timing';
-    const trackInfo = track_configuration_id ? ` | Track Config #${track_configuration_id}` : '';
-    elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}${trackInfo}`;
+    // Update header
+    elements.eventName.textContent = event_name;
+    elements.sessionInfo.textContent = `Lap ${current_lap}/${total_laps} • ${time_left}`;
     
-    // Update track configuration filter
-    updateRaceTrackConfigFilter(elements, runs, track_configuration_id);
-    
-    // Get selected track configuration filter
-    const selectedTrackConfig = elements.raceTrackConfigFilter?.value || 'all';
-    
-    // Filter out stale drivers (lap started more than 10 minutes ago)
-    // WHY: Venues sometimes forget to remove drivers from previous sessions
-    // FEATURE: Timestamp Filtering (automatically hides abandoned/forgotten drivers)
+    // Filter out stale drivers
     let runsWithKarts = runs.filter(run => run.kart_number && run.kart_number !== '');
     let activeRuns = filterStaleDrivers(runsWithKarts, TIMESTAMP_THRESHOLDS.RACE_DISPLAY, true);
     
-    // Filter by track configuration if specified
-    // WHY: Different track layouts must be shown separately
-    // FEATURE: Track Configuration Filtering
-    if (selectedTrackConfig !== 'all' && track_configuration_id && selectedTrackConfig === String(track_configuration_id)) {
-        // Only show drivers from current track config (already filtered by sessionData)
-        // This is a redundant check since all drivers in current session should match current track config
-    } else if (selectedTrackConfig !== 'all') {
-        // User selected a different track config - no drivers to show from current session
-        activeRuns = [];
-    }
+    // Group by track
+    const trackGroups = {
+        'Mushroom': [],
+        'Penrite': [],
+        'Lakeside': [],
+        'Rimo': []
+    };
     
-    // Efficient update: reuse existing elements
-    const existingItems = Array.from(elements.raceList.children);
-    
-    activeRuns.forEach((run, index) => {
-        const existingItem = existingItems[index];
-        const kartNumber = run.kart_number;
-        
-        // Check if we can reuse existing element
-        if (existingItem && existingItem.dataset.kartNumber === kartNumber) {
-            // Update existing element content (no recreate = no blink)
-            updateRaceItemContent(existingItem, run, settings, personalRecords, state);
-        } else {
-            // Create new element
-            const newItem = createRaceItem(run, settings, personalRecords, state);
-            if (existingItem) {
-                elements.raceList.replaceChild(newItem, existingItem);
-            } else {
-                elements.raceList.appendChild(newItem);
-            }
-        }
+    activeRuns.forEach(run => {
+        const track = getTrackFromKart(run);
+        trackGroups[track].push(run);
     });
     
-    // Remove extra items if any
-    while (elements.raceList.children.length > activeRuns.length) {
-        elements.raceList.removeChild(elements.raceList.lastChild);
+    // Sort each group by BEST LAP TIME (ascending = faster first)
+    Object.values(trackGroups).forEach(group => {
+        group.sort((a, b) => {
+            // Sort by best lap time (lower is better)
+            const timeA = a.best_time_raw || 999999999;
+            const timeB = b.best_time_raw || 999999999;
+            return timeA - timeB; // Ascending: fastest (lowest time) first
+        });
+        
+        // RECALCULATE positions for each track (1 = fastest, 2 = second, etc.)
+        group.forEach((run, index) => {
+            run.trackPosition = index + 1;
+        });
+    });
+    
+    // Update track selector
+    updateTrackSelector(elements, trackGroups);
+    
+    // Get selected track from selector
+    const selectedTrack = elements.raceTrackSelector?.value || 'all';
+    
+    // Don't clear innerHTML - we'll update intelligently to preserve collapse state
+    // elements.raceList.innerHTML = '';
+    
+    // Render selected track or all tracks
+    if (selectedTrack === 'all') {
+        // Show all tracks with headers (Lakeside first)
+        const tracksInOrder = ['Lakeside', 'Penrite', 'Mushroom', 'Rimo'];
+        
+        // Always recreate the structure for "All Tracks" view to ensure all tracks are rendered
+        const hasExistingTracks = elements.raceList.querySelector('[id^="track-header-"]');
+        if (!hasExistingTracks) {
+            elements.raceList.innerHTML = '';
+        }
+        
+        tracksInOrder.forEach(trackName => {
+            const trackRuns = trackGroups[trackName];
+            if (!trackRuns || trackRuns.length === 0) return;
+            
+            renderTrackGroup(elements, trackName, trackRuns, settings, personalRecords, state);
+        });
+    } else {
+        // Show single track (max 15 karts) - clear and rebuild
+        elements.raceList.innerHTML = '';
+        const trackRuns = trackGroups[selectedTrack] || [];
+        if (trackRuns.length > 0) {
+            renderTrackGroup(elements, selectedTrack, trackRuns, settings, personalRecords, state, false);
+        } else {
+            elements.raceList.innerHTML = '<div style="padding: 20px; text-align: center; color: #888;">No karts on this track</div>';
+        }
+    }
+}
+
+/**
+ * Update track selector dropdown
+ */
+function updateTrackSelector(elements, trackGroups) {
+    if (!elements.raceTrackSelector) {
+        // Create selector if it doesn't exist
+        const container = document.querySelector('.race-header') || document.querySelector('#race');
+        if (container) {
+            const selectorHtml = `
+                <div class="track-selector-container" style="margin: 10px 0; padding: 10px; background: #1a1a1a; border-radius: 5px;">
+                    <label for="race-track-selector" style="margin-right: 10px; color: #ccc;">Track:</label>
+                    <select id="race-track-selector" style="padding: 5px 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 3px;">
+                        <option value="all">All Tracks</option>
+                    </select>
+                </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', selectorHtml);
+            elements.raceTrackSelector = document.getElementById('race-track-selector');
+            
+            // Add change handler
+            elements.raceTrackSelector.addEventListener('change', () => {
+                // Trigger view update by dispatching a custom event
+                if (window.kartingApp && window.kartingApp.updateAllViews) {
+                    window.kartingApp.updateAllViews();
+                }
+            });
+        }
+    }
+    
+    if (elements.raceTrackSelector) {
+        const currentValue = elements.raceTrackSelector.value;
+        
+        // Rebuild options (Lakeside first)
+        elements.raceTrackSelector.innerHTML = '<option value="all">All Tracks</option>';
+        
+        const tracksInOrder = ['Lakeside', 'Penrite', 'Mushroom', 'Rimo'];
+        tracksInOrder.forEach(trackName => {
+            if (trackGroups[trackName].length > 0) {
+                const option = document.createElement('option');
+                option.value = trackName;
+                option.textContent = `${trackName} (${trackGroups[trackName].length} karts)`;
+                elements.raceTrackSelector.appendChild(option);
+            }
+        });
+        
+        // Restore selection if still valid
+        if (currentValue && [...elements.raceTrackSelector.options].some(opt => opt.value === currentValue)) {
+            elements.raceTrackSelector.value = currentValue;
+        }
+    }
+}
+
+/**
+ * Render a track group
+ */
+function renderTrackGroup(elements, trackName, trackRuns, settings, personalRecords, state, showHeader = true) {
+    const trackColor = getTrackColor(trackName);
+    const trackId = trackName.toLowerCase().replace(/\s+/g, '-');
+    
+    if (showHeader) {
+        // Check if header and container already exist
+        let header = document.getElementById(`track-header-${trackId}`);
+        let container = document.getElementById(`track-container-${trackId}`);
+        let toggle = document.getElementById(`track-toggle-${trackId}`);
+        
+        if (!header || !container) {
+            // Create new header and container
+            header = document.createElement('div');
+            header.id = `track-header-${trackId}`;
+            header.className = 'track-group-header';
+            header.style.cssText = 'cursor: pointer; user-select: none;';
+            header.innerHTML = `
+                <h3 style="margin: 15px 0 5px 0; padding: 10px; background: #2a2a2a; border-left: 4px solid ${trackColor}; font-size: 1.1em; display: flex; align-items: center; justify-content: space-between;">
+                    <span>
+                        <span id="track-toggle-${trackId}" style="display: inline-block; width: 20px;">${trackCollapsedState[trackName] ? '▶' : '▼'}</span>
+                        🏁 ${trackName} Track (<span id="track-count-${trackId}">${trackRuns.length}</span> karts)
+                    </span>
+                    <span style="font-size: 0.85em; color: #888;">Click to expand/collapse</span>
+                </h3>
+            `;
+            
+            // Toggle collapse on click
+            header.addEventListener('click', () => {
+                const containerEl = document.getElementById(`track-container-${trackId}`);
+                const toggleEl = document.getElementById(`track-toggle-${trackId}`);
+                if (containerEl && toggleEl) {
+                    const isCollapsed = containerEl.style.display === 'none';
+                    containerEl.style.display = isCollapsed ? 'block' : 'none';
+                    toggleEl.textContent = isCollapsed ? '▼' : '▶';
+                    trackCollapsedState[trackName] = !isCollapsed;
+                }
+            });
+            
+            elements.raceList.appendChild(header);
+            
+            // Create container for karts (collapsible)
+            container = document.createElement('div');
+            container.id = `track-container-${trackId}`;
+            container.style.display = trackCollapsedState[trackName] ? 'none' : 'block';
+            elements.raceList.appendChild(container);
+        } else {
+            // Update kart count in existing header
+            const countEl = document.getElementById(`track-count-${trackId}`);
+            if (countEl) {
+                countEl.textContent = trackRuns.length;
+            }
+            // Clear existing container content
+            container.innerHTML = '';
+        }
+        
+        // Add karts (limit to 15 per track)
+        const displayRuns = trackRuns.slice(0, 15);
+        displayRuns.forEach(run => {
+            const item = createRaceItem(run, settings, personalRecords, state, trackName);
+            container.appendChild(item);
+        });
+        
+        // Show warning if more than 15 karts
+        if (trackRuns.length > 15) {
+            const warning = document.createElement('div');
+            warning.style.cssText = 'padding: 10px; text-align: center; color: #ff9900; font-style: italic;';
+            warning.textContent = `⚠️ Showing top 15 of ${trackRuns.length} karts`;
+            container.appendChild(warning);
+        }
+    } else {
+        // No header, just show karts (for single track view)
+        const displayRuns = trackRuns.slice(0, 15);
+        displayRuns.forEach(run => {
+            const item = createRaceItem(run, settings, personalRecords, state, trackName);
+            elements.raceList.appendChild(item);
+        });
+        
+        // Show warning if more than 15 karts
+        if (trackRuns.length > 15) {
+            const warning = document.createElement('div');
+            warning.style.cssText = 'padding: 10px; text-align: center; color: #ff9900; font-style: italic;';
+            warning.textContent = `⚠️ Showing top 15 of ${trackRuns.length} karts`;
+            elements.raceList.appendChild(warning);
+        }
     }
 }
 
@@ -154,10 +378,11 @@ function updateRaceTrackConfigFilter(elements, runs, currentTrackConfig) {
  * @param {Object} state - Full app state including lap history
  * @returns {HTMLElement} Race item div
  */
-function createRaceItem(run, settings, personalRecords, state) {
+function createRaceItem(run, settings, personalRecords, state, trackName = '') {
     const div = document.createElement('div');
     div.className = 'race-item';
     div.dataset.kartNumber = run.kart_number;
+    div.dataset.trackName = trackName; // Store track name
     div.style.cursor = 'pointer';
     
     // Touch tracking for scroll vs tap detection
@@ -221,7 +446,9 @@ function updateRaceItemContent(div, run, settings, personalRecords, state) {
         div.classList.add('main-driver');
     }
     
-    const positionClass = run.pos <= 3 ? `p${run.pos}` : '';
+    // Use track position if available, otherwise fall back to overall position
+    const displayPosition = run.trackPosition || run.pos || run.position || 0;
+    const positionClass = displayPosition <= 3 ? `p${displayPosition}` : '';
     
     // Get personal best info
     const personalBest = LapTrackerService.getPersonalBest(run.name, personalRecords);
@@ -293,18 +520,29 @@ function updateRaceItemContent(div, run, settings, personalRecords, state) {
     }
     
     // Update content
+    const trackName = div.dataset.trackName || getTrackFromKart(run);
+    const trackColor = getTrackColor(trackName);
+    const kartName = run.kart || run.kart_number || 'Unknown';
+    
+    // Track badge - smaller and less visible
+    const trackBadge = `<span class="track-badge" style="display: inline-block; background: ${trackColor}; color: ${trackName === 'Lakeside' ? '#666' : '#aaa'}; padding: 1px 4px; border-radius: 4px; font-size: 0.55em; font-weight: normal; margin-left: 6px; opacity: 0.6;">${trackName}</span>`;
+    
     div.innerHTML = `
-        <div class="race-position ${positionClass}">P${run.pos}</div>
+        <div class="race-position ${positionClass}">P${displayPosition}</div>
         <div class="race-driver-info">
-            <div class="race-driver-name">Kart ${run.kart_number}</div>
-            <div class="race-driver-kart">${run.name}</div>
+            <div class="race-driver-name" style="font-size: 1.15em; font-weight: bold; margin-bottom: 2px;">
+                ${run.name}
+                ${trackBadge}
+            </div>
+            <div class="race-driver-kart" style="font-size: 0.85em; color: #888; margin-bottom: 4px;">Kart ${kartName}</div>
             <div class="race-driver-details">
                 ${details.join('')}
             </div>
         </div>
         <div class="race-timing">
-            <div class="race-best-time">${run.best_time}</div>
+            <div class="race-best-time" style="font-size: 1.2em; font-weight: bold;">${run.best_time}</div>
             ${settings.showGaps ? `<div class="race-gap">${run.gap}</div>` : ''}
+            ${settings.showLastLap && run.last_time ? `<div class="race-last-time" style="font-size: 1.05em; color: #aaa; margin-top: 2px;">Last: ${run.last_time}</div>` : ''}
         </div>
     `;
 }
