@@ -1,0 +1,175 @@
+/* Layout Styles - Frontend Only */
+
+/* Tab Navigation */
+.tab-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    background: #1a1a1a;
+    border-top: 2px solid #00ff88;
+    z-index: 999;
+    padding: 0;
+}
+
+.tab-nav.hidden {
+    display: none !important;
+}
+
+.nav-btn {
+    flex: 1;
+    padding: 1rem;
+    background: transparent;
+    color: #666;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+    color: #00ff88;
+}
+
+.nav-btn.active {
+    background: rgba(0, 255, 136, 0.1);
+    color: #00ff88;
+    border-top: 2px solid #00ff88;
+}
+
+/* Main Content Area */
+.main-content {
+    padding-bottom: 4rem; /* Space for tab nav */
+    overflow-y: auto;
+    height: calc(100vh - 4rem);
+}
+
+/* Section Styles */
+section[data-section] {
+    display: none;
+}
+
+section[data-section].active {
+    display: block;
+}
+
+/* Race View Layout */
+.race-content {
+    padding: 1rem;
+}
+
+.driver-list {
+    list-style: none;
+    margin-top: 0.5rem;
+}
+
+.driver-item {
+    background: rgba(20, 20, 20, 0.9);
+    border-left: 4px solid #333;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.driver-item:hover {
+    background: rgba(20, 20, 20, 1);
+    border-left-color: #00ff88;
+}
+
+.driver-item.selected {
+    background: rgba(0, 255, 136, 0.15);
+    border-left-color: #00ff88;
+}
+
+.driver-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.driver-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.driver-position {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-width: 3rem;
+    text-align: right;
+}
+
+.driver-lap-time {
+    font-family: 'Courier New', monospace;
+    color: #00aaff;
+    font-size: 0.9rem;
+}
+
+/* Compare View Layout */
+.compare-content {
+    padding: 1rem;
+}
+
+.comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.comparison-card {
+    background: rgba(20, 20, 20, 0.9);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Settings View Layout */
+.settings-content {
+    padding: 1rem;
+}
+
+.setting-item {
+    background: rgba(20, 20, 20, 0.9);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.setting-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+}
+
+/* Summary View Layout */
+.summary-content {
+    padding: 1rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    background: rgba(20, 20, 20, 0.9);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #00ff88;
+}
+
+.stat-label {
+    color: #666;
+    margin-top: 0.5rem;
+}"

@@ -1,0 +1,191 @@
+/* HUD Styles - Frontend Only Mobile Optimized */
+
+/* Full Screen HUD Container */
+.hud-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+    z-index: 9999;
+    overflow: hidden;
+}
+
+/* HUD Header */
+.hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    border-bottom: 2px solid #00ff88;
+}
+
+.hud-track-name {
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+.hud-session-info {
+    text-align: right;
+}
+
+.hud-lap-counter {
+    font-size: 1.2rem;
+    color: #ffaa00;
+}
+
+/* Main HUD Area */
+.hud-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem;
+    height: calc(100vh - 150px);
+}
+
+/* Driver Display */
+.driver-display {
+    width: 45%;
+    text-align: center;
+}
+
+.driver-name {
+    font-size: 2.5rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.driver-position {
+    font-size: 3rem;
+    color: #00ff88;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.driver-lap-time {
+    font-family: 'Courier New', monospace;
+    font-size: 2.5rem;
+    color: #00aaff;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.driver-lap-number {
+    font-size: 1.2rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+/* Gap Display */
+.gap-display {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.gap-value {
+    font-size: 2rem;
+    color: #ffaa00;
+    font-family: 'Courier New', monospace;
+}
+
+/* Footer Controls */
+.hud-footer {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.hud-btn {
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    border: 2px solid #00ff88;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+}
+
+.hud-btn:hover {
+    background: rgba(0, 255, 136, 0.2);
+}
+
+/* Mobile Landscape Optimizations */
+@media (orientation: landscape) and (max-height: 500px) {
+    .hud-main {
+        padding: 1rem;
+    }
+    
+    .driver-name {
+        font-size: 2rem;
+    }
+    
+    .driver-position {
+        font-size: 2.5rem;
+    }
+    
+    .driver-lap-time {
+        font-size: 1.8rem;
+    }
+}
+
+/* Mobile Portrait Optimizations */
+@media (orientation: portrait) and (max-width: 600px) {
+    .hud-main {
+        flex-direction: column;
+        padding: 0.5rem;
+    }
+    
+    .driver-display {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .gap-display {
+        order: -1; /* Put gap at top */
+    }
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+    .hud-track-name {
+        font-size: 1.2rem;
+    }
+    
+    .driver-name {
+        font-size: 2rem;
+    }
+    
+    .driver-position {
+        font-size: 2.5rem;
+    }
+}
+
+/* High Contrast Mode */
+.hud-contrast {
+    background: #000;
+}
+
+.hud-contrast .hud-header {
+    border-color: #fff;
+}
+
+.hud-contrast .driver-name,
+.hud-contrast .driver-position {
+    color: #fff;
+}
+
+.hud-contrast .driver-lap-time {
+    background: rgba(0, 255, 136, 0.8);
+    color: #000;
+    border: 2px solid #fff;
+}

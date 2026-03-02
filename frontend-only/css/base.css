@@ -1,0 +1,138 @@
+/* Base Styles - Frontend Only */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    background: #000000;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Typography */
+body {
+    font-family: 'Courier New', monospace;
+    line-height: 1.4;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+}
+
+.text-primary { color: #00ff88; }
+.text-secondary { color: #00aaff; }
+.text-accent { color: #ffaa00; }
+.text-danger { color: #ff4444; }
+
+/* Layout Containers */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+/* Utility Classes */
+.hidden { display: none !important; }
+.visible { display: block !important; }
+
+.m-1 { margin: 0.5rem; }
+.p-1 { padding: 0.5rem; }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Card Styles */
+.card {
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    font-weight: bold;
+    color: #00ff88;
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Button Styles */
+.btn {
+    background: #1a1a1a;
+    color: #ffffff;
+    border: 1px solid #00ff88;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background: #00ff88;
+    color: #000;
+}
+
+.btn-primary {
+    background: #00ff88;
+    color: #000;
+}
+
+.btn-secondary {
+    background: #00aaff;
+    color: #fff;
+}
+
+/* Loading State */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top-color: #00ff88;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Real-time go-karting session viewer">
+    
+    <title>RaceFacer Live Timing</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Connection Indicator -->
+        <div id="connection-indicator" class="disconnected"></div>
+        
+        <!-- Tab Navigation -->
+        <nav id="tab-nav" class="tab-nav hidden">
+            <button class="tab-btn active" data-tab="race">Race</button>
+            <button class="tab-btn" data-tab="hud">HUD</button>
+            <button class="tab-btn" data-tab="results">Results</button>
+            <button class="tab-btn" data-tab="compare">Compare</button>
+            <button class="tab-btn" data-tab="summary">Summary</button>
+            <button class="tab-btn" data-tab="settings">Settings</button>
+        </nav>
+        
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading-content">
+                <h1>🏎️ Karting Live Timer</h1>
+                <div class="spinner"></div>
+                <p id="loading-status">Connecting to RaceFacer...</p>
+                <button id="skip-loading-btn" class="skip-loading-btn">
+                    Skip & Explore App →
+                </button>
+                <p style="color: #888; font-size: 0.9rem; margin-top: 8px;">
+                    App will auto-open in 5 seconds or you can skip now
+                </p>
+            </div>
+        </div>
+        
+        <!-- Mock Mode Banner -->
+        <div id="mock-mode-banner" class="mock-mode-banner hidden">
+            <div class="mock-mode-banner-content">
+                <span class="mock-mode-icon">🎭</span>
+                <span class="mock-mode-text">MOCK MODE ACTIVE - Simulated Data (Not Saved)</span>
+                <button class="mock-mode-close" onclick="document.getElementById('mock-mode-enable').click()">
+                    ✕ Exit Mock Mode
+                </button>
+            </div>
+        </div>
+        
+        <!-- Race Tab - All Drivers -->
+        <div id="race-screen" class="screen tab-content">
+            <div class="header">
+                <h1 id="event-name">RaceFacer Live Timing</h1>
+                <div id="session-info" class="session-info"></div>
+            </div>
+            
+            <!-- Track Configuration Filter -->
+            <div class="race-filter-section" id="race-filter-section" style="display: none;">
+                <label for="race-track-config-filter">Track Configuration:</label>
+                <select id="race-track-config-filter" class="track-config-select">
+                    <option value="all">All Tracks</option>
+                </select>
+            </div>
+            
+            <div id="race-list" class="race-list">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- HUD Tab - Single Driver Focus -->
+        <div id="hud-screen" class="screen tab-content">
+            <div id="hud-no-driver" class="hud-placeholder">
+                <h2>Select Your Driver</h2>
+                <p style="color: #888; margin-bottom: 20px;">Choose a kart number to view your personal HUD</p>
+                <div class="hud-driver-selector">
+                    <label for="hud-driver-select" style="color: #00ff88; font-size: 1.1rem; margin-bottom: 8px; display: block;">Kart Number:</label>
+                    <select id="hud-driver-select" class="hud-driver-select">
+                        <option value="">-- Select Kart --</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="hud-content" class="hud-content hidden">
+                <div class="hud-header">
+                    <div class="hud-header-left">
+                        <div id="hud-event-name" class="hud-event-name"></div>
+                        <div id="hud-lap-info" class="hud-lap-info"></div>
+                        <div class="hud-quick-selector">
+                            <label for="hud-quick-driver-select" style="font-size: 0.85rem; color: #888; margin-right: 8px;">Switch Driver:</label>
+                            <select id="hud-quick-driver-select" class="hud-quick-driver-select">
+                                <option value="">-- Select Kart --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="hud-header-right">
+                        <button class="hud-tts-toggle" id="hud-tts-toggle" onclick="window.kartingApp.toggleHUDTTS()" title="Toggle Voice Announcements">
+                            <span class="tts-icon">📢</span>
+                            <span class="tts-status">TTS</span>
+                        </button>
+                        <div id="hud-session-timer" class="hud-session-timer"></div>
+                        <div class="hud-header-stats">
+                            <div id="hud-pace-trend" class="hud-stat-badge"></div>
+                            <div id="hud-position-change" class="hud-stat-badge"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hud-main">
+                    <div class="hud-position-row">
+                        <div id="hud-position" class="hud-position">P1</div>
+                        <div id="hud-kart" class="hud-kart">KART 29</div>
+                    </div>
+                    
+                    <div class="hud-timing-grid">
+                        <div class="hud-card primary" id="hud-card-last-lap">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowLastLap')">−</button>
+                            <div class="hud-label">LAST LAP</div>
+                            <div id="hud-last-time" class="hud-value">--.-</div>
+                            <div id="hud-pct-off-best" class="hud-sub-value"></div>
+                        </div>
+                        
+                        <div class="hud-card primary" id="hud-card-best-lap">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowBestLap')">−</button>
+                            <div class="hud-label">BEST LAP</div>
+                            <div id="hud-best-time" class="hud-value">--.-</div>
+                            <div id="hud-ideal-lap" class="hud-sub-value"></div>
+                            <div id="hud-session-best" class="hud-sub-value"></div>
+                        </div>
+                        
+                        <div class="hud-card" id="hud-card-avg">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowAvgLap')">−</button>
+                            <div class="hud-label">AVG</div>
+                            <div id="hud-avg-time" class="hud-value">--.-</div>
+                        </div>
+                        
+                        <div class="hud-card" id="hud-card-gap">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowGap')">−</button>
+                            <div class="hud-label">GAP</div>
+                            <div id="hud-gap" class="hud-value">-</div>
+                            <div id="hud-gap-trend" class="hud-sub-value"></div>
+                        </div>
+                        
+                        <div class="hud-card" id="hud-card-interval">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowInterval')">−</button>
+                            <div class="hud-label">INTERVAL</div>
+                            <div id="hud-interval" class="hud-value">-</div>
+                        </div>
+                        
+                        <div class="hud-card" id="hud-card-consistency">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowConsistency')">−</button>
+                            <div class="hud-label">CONSISTENCY</div>
+                            <div id="hud-consistency" class="hud-value">-</div>
+                            <div id="hud-consistency-score" class="hud-sub-value"></div>
+                        </div>
+                        
+                        <div class="hud-card primary" id="hud-card-personal-best">
+                            <div class="hud-label">PERSONAL BEST</div>
+                            <div id="hud-personal-best" class="hud-value">--.-</div>
+                            <div class="hud-sub-value" style="color: #00ff88;">All-Time PB</div>
+                        </div>
+                        
+                        <div class="hud-card" id="hud-card-pb-gap">
+                            <div class="hud-label">GAP TO PB</div>
+                            <div id="hud-pb-gap" class="hud-value">-</div>
+                            <div class="hud-sub-value">Last lap vs PB</div>
+                        </div>
+                        
+                        <div class="hud-card" id="hud-card-lap-count">
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowLapCount')">−</button>
+                            <div class="hud-label">LAP</div>
+                            <div id="hud-lap-count" class="hud-value">0</div>
+                            <div class="hud-sub-value">Current Lap</div>
+                        </div>
+                    </div>
+                    
+                    <div class="hud-footer">
+                        <div class="hud-info-item">
+                            <div class="hud-info-label">Laps</div>
+                            <div id="hud-laps" class="hud-info-value">0</div>
+                        </div>
+                        <div class="hud-info-item">
+                            <div class="hud-info-label">Time Left</div>
+                            <div id="hud-time-left" class="hud-info-value">--:--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="hud-lap-history" id="hud-card-lap-history">
+                        <div class="hud-section-header">
+                            <h3 class="hud-history-title">Lap History</h3>
+                            <button class="hud-toggle-btn" onclick="window.kartingApp.toggleHUDCard('hudShowLapHistory')">−</button>
+                        </div>
+                        <div id="hud-lap-list" class="hud-lap-list">
+                            <div class="hud-no-laps">No lap data yet...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="hud-notes-card" id="hud-notes-card">
+                        <div class="hud-card-header">
+                            <span>📝 Driver Notes</span>
+                        </div>
+                        <div class="hud-note-input-container">
+                            <input type="text" id="hud-note-input" class="hud-note-input" placeholder="Add note for current lap...">
+                            <button id="hud-add-note-btn" class="hud-add-note-btn">Add Note</button>
+                        </div>
+                        <div id="hud-notes-list" class="hud-notes-list"></div>
+                    </div>
+                    
+                    <!-- Proximity Alert -->
+                    <div id="proximity-alert" class="proximity-alert"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Tab - Complete Redesign -->
+        <div id="results-screen" class="screen tab-content">
+            <!-- Header with Controls -->
+            <div class="results-header-modern">
+                <div class="results-title-section">
+                    <h1>🏁 Race Results</h1>
+                    <p class="results-subtitle" id="results-subtitle">Final standings and analysis</p>
+                </div>
+                
+                <div class="results-controls">
+                    <select id="results-session-select" class="select-modern">
+                        <option value="live">🔴 Live</option>
+                    </select>
+                    
+                    <button id="results-delete-btn" class="btn-icon-modern btn-danger" title="Delete Session" style="display: none;">
+                        🗑️
+                    </button>
+                    
+                    <button id="results-refresh-btn" class="btn-icon-modern" title="Refresh">
+                        🔄
+                    </button>
+                    
+                    <button id="results-export-btn" class="btn-icon-modern" title="Export">
+                        📥
+                    </button>
+                </div>
+            </div>
+            
+            <!-- History Banner -->
+            <div id="results-history-banner" class="banner-modern hidden">
+                <span class="banner-icon">📂</span>
+                <div class="banner-info">
+                    <strong id="results-history-title"></strong>
+                    <span id="results-history-details"></span>
+                </div>
+                <button class="btn-back-live" id="results-back-to-live">
+                    🔴 Live
+                </button>
+            </div>
+            
+            <!-- No Data State -->
+            <div id="results-no-data" class="placeholder-modern hidden">
+                <div class="placeholder-icon">⏱️</div>
+                <h2>Waiting for Data</h2>
+                <p>Results will appear once the session starts</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div id="results-content" class="results-content-modern">
+                <!-- Session Overview -->
+                <div class="overview-card">
+                    <div class="overview-grid">
+                        <div class="overview-stat">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-label">Drivers</div>
+                            <div class="stat-value" id="results-drivers-count">0</div>
+                        </div>
+                        <div class="overview-stat">
+                            <div class="stat-icon">🏁</div>
+                            <div class="stat-label">Total Laps</div>
+                            <div class="stat-value" id="results-laps-count">0</div>
+                        </div>
+                        <div class="overview-stat">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-label">Fastest Lap</div>
+                            <div class="stat-value" id="results-fastest-time">--.-</div>
+                        </div>
+                        <div class="overview-stat">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-label">Avg Lap</div>
+                            <div class="stat-value" id="results-avg-time">--.-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Scoring Methods -->
+                <div class="method-selector-modern">
+                    <button class="method-btn-modern active" data-method="fastest-lap">
+                        <span class="method-icon">⚡</span>
+                        <span class="method-name">Fastest Lap</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="total-time">
+                        <span class="method-icon">🏃</span>
+                        <span class="method-name">Total Time</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="average-lap">
+                        <span class="method-icon">📊</span>
+                        <span class="method-name">Average</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="best-3-avg">
+                        <span class="method-icon">🎯</span>
+                        <span class="method-name">Best 3</span>
+                    </button>
+                    <button class="method-btn-modern" data-method="consistency">
+                        <span class="method-icon">🎚️</span>
+                        <span class="method-name">Consistency</span>
+                    </button>
+                </div>
+                
+                <div id="results-method-description" class="method-description"></div>
+                
+                <!-- Podium -->
+                <div class="podium-modern">
+                    <h2 class="section-title">🏆 Podium</h2>
+                    <div class="podium-cards">
+                        <div class="podium-card silver" id="podium-p2-modern">
+                            <div class="podium-badge">2</div>
+                            <div class="podium-medal">🥈</div>
+                            <div class="podium-kart" id="podium-p2-kart">#-</div>
+                            <div class="podium-name" id="podium-p2-name">-</div>
+                            <div class="podium-time" id="podium-p2-time">--.-</div>
+                            <div class="podium-gap" id="podium-p2-gap">-</div>
+                        </div>
+                        
+                        <div class="podium-card gold" id="podium-p1-modern">
+                            <div class="podium-badge">1</div>
+                            <div class="podium-medal winner">🥇</div>
+                            <div class="podium-kart" id="podium-p1-kart">#-</div>
+                            <div class="podium-name" id="podium-p1-name">-</div>
+                            <div class="podium-time" id="podium-p1-time">--.-</div>
+                            <div class="podium-label">WINNER</div>
+                        </div>
+                        
+                        <div class="podium-card bronze" id="podium-p3-modern">
+                            <div class="podium-badge">3</div>
+                            <div class="podium-medal">🥉</div>
+                            <div class="podium-kart" id="podium-p3-kart">#-</div>
+                            <div class="podium-name" id="podium-p3-name">-</div>
+                            <div class="podium-time" id="podium-p3-time">--.-</div>
+                            <div class="podium-gap" id="podium-p3-gap">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Full Results -->
+                <div class="results-table-modern">
+                    <div class="table-header-modern">
+                        <h3>Full Results</h3>
+                        <input type="text" id="results-search" class="search-modern" placeholder="🔍 Search...">
+                    </div>
+                    
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Kart</th>
+                                <th>Driver</th>
+                                <th>Score</th>
+                                <th>Gap</th>
+                                <th>Best</th>
+                                <th>Laps</th>
+                                <th>Awards</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body-modern">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Insights -->
+                <div class="insights-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h3 class="section-title" style="margin: 0;">🎯 Session Insights</h3>
+                        <button id="awards-info-btn" class="awards-info-button" style="padding: 8px 16px; background: #2c2c2c; border: 1px solid #444; border-radius: 6px; color: #4ECDC4; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 1.2rem;">ℹ️</span>
+                            What do these mean?
+                        </button>
+                    </div>
+                    <div class="insights-grid">
+                        <div class="insight-card" title="Overall fastest single lap in the session">
+                            <div class="insight-icon">⚡</div>
+                            <div class="insight-label">Fastest Lap</div>
+                            <div class="insight-value" id="insight-fastest">-</div>
+                            <div class="insight-sub" id="insight-fastest-time">--.-</div>
+                        </div>
+                        <div class="insight-card" title="Smallest standard deviation - most predictable lap times">
+                            <div class="insight-icon">🎯</div>
+                            <div class="insight-label">Most Consistent</div>
+                            <div class="insight-value" id="insight-consistent">-</div>
+                            <div class="insight-sub" id="insight-consistent-score">-</div>
+                        </div>
+                        <div class="insight-card" title="Biggest position gain from start to finish">
+                            <div class="insight-icon">📈</div>
+                            <div class="insight-label">Most Improved</div>
+                            <div class="insight-value" id="insight-improved">-</div>
+                            <div class="insight-sub" id="insight-improved-gain">-</div>
+                        </div>
+                        <div class="insight-card" title="Percentage of drivers who finished the session">
+                            <div class="insight-icon">🔥</div>
+                            <div class="insight-label">Completion</div>
+                            <div class="insight-value" id="insight-completion">-</div>
+                            <div class="insight-sub" id="insight-completion-rate">-</div>
+                        </div>
+                        <div class="insight-card" title="Most crashes, spins, and off-track incidents detected">
+                            <div class="insight-icon">💥</div>
+                            <div class="insight-label">Most Incidents</div>
+                            <div class="insight-value" id="insight-incidents">-</div>
+                            <div class="insight-sub" id="insight-incidents-count">-</div>
+                        </div>
+                        <div class="insight-card" title="Smallest gap between average and best lap - ultra-consistent">
+                            <div class="insight-icon">🧊</div>
+                            <div class="insight-label">Ice in Veins</div>
+                            <div class="insight-value" id="insight-ice">-</div>
+                            <div class="insight-sub" id="insight-ice-score">-</div>
+                        </div>
+                        <div class="insight-card" title="Best lap time in the final 3 laps - strong finish">
+                            <div class="insight-icon">🏁</div>
+                            <div class="insight-label">Fastest Finisher</div>
+                            <div class="insight-value" id="insight-fastest-finisher">-</div>
+                            <div class="insight-sub" id="insight-fastest-finisher-time">-</div>
+                        </div>
+                        <div class="insight-card" title="Fastest lap in laps 2-5 - quick to find pace">
+                            <div class="insight-icon">🔥</div>
+                            <div class="insight-label">Hot Start</div>
+                            <div class="insight-value" id="insight-hot-start">-</div>
+                            <div class="insight-sub" id="insight-hot-start-time">-</div>
+                        </div>
+                        <div class="insight-card" title="Most personal best improvements - continuous learning">
+                            <div class="insight-icon">👑</div>
+                            <div class="insight-label">Purple Lap King</div>
+                            <div class="insight-value" id="insight-purple-king">-</div>
+                            <div class="insight-sub" id="insight-purple-count">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Compare Tab -->
+        <div id="compare-screen" class="screen tab-content">
+            <div class="compare-container">
+                <h1>📊 Driver Comparison</h1>
+                
+                <div class="compare-selectors">
+                    <div class="compare-selector">
+                        <label>Driver 1:</label>
+                        <select id="compare-driver1" class="settings-select">
+                            <option value="">-- Select Driver --</option>
+                        </select>
+                    </div>
+                    <div class="compare-vs">VS</div>
+                    <div class="compare-selector">
+                        <label>Driver 2:</label>
+                        <select id="compare-driver2" class="settings-select">
+                            <option value="">-- Select Driver --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="compare-content" class="compare-content hidden">
+                    <div class="compare-table-wrapper">
+                        <table class="compare-table">
+                            <thead>
+                                <tr class="compare-header-row">
+                                    <th class="compare-stat-col">Stat</th>
+                                    <th class="compare-driver-col" id="compare-driver1-header">Driver 1</th>
+                                    <th class="compare-gap-col">Gap</th>
+                                    <th class="compare-driver-col" id="compare-driver2-header">Driver 2</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Position</td>
+                                    <td class="compare-value" id="compare-driver1-pos">-</td>
+                                    <td class="compare-gap" id="compare-gap-pos">-</td>
+                                    <td class="compare-value" id="compare-driver2-pos">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Kart Number</td>
+                                    <td class="compare-value" id="compare-driver1-kart">-</td>
+                                    <td class="compare-gap">-</td>
+                                    <td class="compare-value" id="compare-driver2-kart">-</td>
+                                </tr>
+                                <tr class="compare-row highlight-row">
+                                    <td class="compare-stat-label">Best Lap</td>
+                                    <td class="compare-value" id="compare-driver1-best">-</td>
+                                    <td class="compare-gap" id="compare-gap-best">-</td>
+                                    <td class="compare-value" id="compare-driver2-best">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Last Lap</td>
+                                    <td class="compare-value" id="compare-driver1-last">-</td>
+                                    <td class="compare-gap" id="compare-gap-last">-</td>
+                                    <td class="compare-value" id="compare-driver2-last">-</td>
+                                </tr>
+                                <tr class="compare-row highlight-row">
+                                    <td class="compare-stat-label">Average Lap</td>
+                                    <td class="compare-value" id="compare-driver1-avg">-</td>
+                                    <td class="compare-gap" id="compare-gap-avg">-</td>
+                                    <td class="compare-value" id="compare-driver2-avg">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Consistency</td>
+                                    <td class="compare-value" id="compare-driver1-consistency">-</td>
+                                    <td class="compare-gap" id="compare-gap-consistency">-</td>
+                                    <td class="compare-value" id="compare-driver2-consistency">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Total Laps</td>
+                                    <td class="compare-value" id="compare-driver1-laps">-</td>
+                                    <td class="compare-gap" id="compare-gap-laps">-</td>
+                                    <td class="compare-value" id="compare-driver2-laps">-</td>
+                                </tr>
+                                <tr class="compare-row">
+                                    <td class="compare-stat-label">Gap to Leader</td>
+                                    <td class="compare-value" id="compare-driver1-gap">-</td>
+                                    <td class="compare-gap">-</td>
+                                    <td class="compare-value" id="compare-driver2-gap">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="compare-no-selection" class="compare-placeholder">
+                    <p>Select two drivers to compare their stats side-by-side</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Tab -->
+        <div id="summary-screen" class="screen tab-content">
+            <div class="summary-container">
+                <h1>📈 Session Summary</h1>
+                
+                <!-- Session Selector -->
+                <div class="session-selector-wrapper">
+                    <label for="summary-session-select">📂 Session:</label>
+                    <select id="summary-session-select" class="session-select">
+                        <option value="live">🔴 Live Session (Current)</option>
+                    </select>
+                </div>
+                
+                <!-- History Banner (hidden by default) -->
+                <div id="summary-history-banner" class="history-banner hidden">
+                    <div class="history-banner-content">
+                        <div class="history-banner-info">
+                            <div class="history-banner-title">📅 Viewing Historical Session</div>
+                            <div class="history-banner-details" id="summary-history-details">
+                                Date • Winner • Best Lap
+                            </div>
+                        </div>
+                        <button class="history-back-btn" id="summary-back-to-live">
+                            🔴 Back to Live
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="summary-no-data" class="summary-placeholder">
+                    <p>Complete a session to see your summary and statistics</p>
+                </div>
+                
+                <div id="summary-content" class="summary-content hidden">
+                    <div class="summary-header">
+                        <h3 id="summary-driver-name">Your Session</h3>
+                        <button id="summary-export" class="settings-btn-secondary">Export Data</button>
+                    </div>
+                    
+                    <div class="summary-stats-grid">
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Best Lap</div>
+                            <div id="summary-best-lap" class="summary-stat-value">--.-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Average Lap</div>
+                            <div id="summary-avg-lap" class="summary-stat-value">--.-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Total Laps</div>
+                            <div id="summary-total-laps" class="summary-stat-value">0</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Consistency</div>
+                            <div id="summary-consistency" class="summary-stat-value">-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Final Position</div>
+                            <div id="summary-final-pos" class="summary-stat-value">-</div>
+                        </div>
+                        <div class="summary-stat-card">
+                            <div class="summary-stat-label">Position Change</div>
+                            <div id="summary-pos-change" class="summary-stat-value">-</div>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-position-chart">
+                        <h3>📊 Position Changes</h3>
+                        <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                            Track position changes lap-by-lap throughout the session
+                        </p>
+                        <canvas id="position-chart" width="800" height="400"></canvas>
+                        <div id="position-chart-legend" class="position-chart-legend"></div>
+                    </div>
+                    
+                    <div class="summary-lap-table">
+                        <h3>All Laps</h3>
+                        <div id="summary-lap-list" class="summary-lap-list"></div>
+                    </div>
+                    
+                    <div id="summary-records" class="summary-records hidden">
+                        <h3>🏆 New Personal Records!</h3>
+                        <div id="summary-records-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Settings Tab -->
+        <div id="settings-screen" class="screen tab-content">
+            <div class="settings-container">
+                <h1>⚙️ Settings</h1>
+                
+                <div class="settings-section">
+                    <h2>Track/Venue Configuration</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Enter the RaceFacer channel name for your track/venue
+                    </p>
+                    <label for="channel-input">Channel Name:</label>
+                    <input type="text" id="channel-input" class="settings-input" placeholder="lemansentertainment">
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 8px;">
+                        💡 Find your channel at live.racefacer.com/YOUR_VENUE_NAME
+                    </p>
+                </div>
+                
+                <!-- Mock Mode Section -->
+                <div class="settings-section">
+                    <h2>🎭 Mock Mode (Testing)</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Generate simulated race data for testing when no live races are available
+                    </p>
+                    
+                    <div style="background: #1a1a2e; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                        <label class="settings-checkbox" style="margin-bottom: 12px;">
+                            <input type="checkbox" id="mock-mode-enable">
+                            <span style="font-weight: bold; color: #00ff88;">Enable Mock Mode</span>
+                        </label>
+                        
+                        <div id="mock-mode-controls" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #333;">
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-session-type">Session Type:</label>
+                                <select id="mock-session-type" class="settings-select">
+                                    <option value="race">Race</option>
+                                    <option value="practice">Practice</option>
+                                    <option value="qualifying">Qualifying</option>
+                                </select>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-max-laps">Maximum Laps:</label>
+                                <input type="number" id="mock-max-laps" class="settings-input" value="10" min="5" max="50">
+                                <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">
+                                    Session will end after this many laps or duration (whichever comes first)
+                                </p>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-duration">Duration (minutes):</label>
+                                <input type="number" id="mock-duration" class="settings-input" value="5" min="1" max="30">
+                            </div>
+                            
+                            <div style="margin-bottom: 16px;">
+                                <label for="mock-kart-count">Number of Karts:</label>
+                                <input type="number" id="mock-kart-count" class="settings-input" value="12" min="4" max="20">
+                            </div>
+                            
+                            <button id="mock-restart-btn" class="settings-btn-secondary" style="width: 100%; margin-top: 12px;">
+                                🔄 Restart Mock Session
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p style="color: #ffaa00; font-size: 0.85rem; margin-top: 12px;">
+                        ⚠️ Mock data will NOT be saved to session history or kart analysis
+                    </p>
+                </div>
+                
+                <div class="settings-section" id="session-selector-bar">
+                    <h2>Session Replay</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Review previously recorded sessions or return to live data
+                    </p>
+                    <label for="session-selector">Recorded Session:</label>
+                    <select id="session-selector" class="settings-select">
+                        <option value="">Live Data (Current Session)</option>
+                    </select>
+                    <button id="go-live-btn" class="settings-btn-secondary hidden" style="margin-top: 12px;">
+                        🔴 Return to Live Data
+                    </button>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Driver Selection</h2>
+                    <label for="main-driver-select">Main Driver (Kart Number):</label>
+                    <select id="main-driver-select" class="settings-select">
+                        <option value="">-- Select Kart --</option>
+                    </select>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Race Tab Display</h2>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-intervals" checked>
+                        <span>Show Intervals (time to car ahead)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-gaps" checked>
+                        <span>Show Gaps (time to leader)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-consistency" checked>
+                        <span>Show Consistency</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-avg-lap" checked>
+                        <span>Show Average Lap</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-last-lap" checked>
+                        <span>Show Last Lap</span>
+                    </label>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Advanced Stats</h2>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-pace-trend" checked>
+                        <span>📈 Pace Trend (improving/declining indicator)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-percentage-off-best" checked>
+                        <span>% Off Best (percentage comparison)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-gap-trend" checked>
+                        <span>Gap Trend (closing/opening indicator)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="show-position-changes" checked>
+                        <span>↑↓ Position Changes (vs starting position)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="enable-best-lap-celebration" checked>
+                        <span>🎊 Best Lap Celebration (animation + vibration)</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="enable-tts">
+                        <span>📢 Voice Announcements (reads lap times out loud)</span>
+                    </label>
+                    <div class="setting-description">
+                        Configure what information gets announced after each lap
+                    </div>
+                    
+                    <!-- TTS Configuration Subsection -->
+                    <div class="tts-config-section" id="tts-config-section">
+                        <h4 class="tts-config-title">🎙️ What to Announce</h4>
+                        <div class="tts-config-options">
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-laptime" checked disabled>
+                                <span>⏱️ Lap Time <em>(always on)</em></span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-position" checked disabled>
+                                <span>🏁 Position <em>(always on)</em></span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-gap-best" checked disabled>
+                                <span>⭐ Gap to Session Best <em>(always on)</em></span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-gap-p1" checked>
+                                <span>👑 Gap to P1 Leader</span>
+                            </label>
+                            <label class="settings-checkbox tts-option">
+                                <input type="checkbox" id="tts-announce-gap-pb" checked>
+                                <span>🎯 Gap to Personal Best</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- TTS Test Buttons -->
+                    <div class="tts-test-section">
+                        <h3 class="tts-test-title">🎤 Test Voice Announcements</h3>
+                        <p class="tts-test-description">
+                            Try different announcement scenarios to hear what you'll get during racing:
+                        </p>
+                        <div class="tts-test-buttons">
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('fast')">
+                                🟢 Fast Lap<br>
+                                <span class="btn-subtitle">(30.5s, faster than best)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('slow')">
+                                🟡 Slower Lap<br>
+                                <span class="btn-subtitle">(31.2s, +0.7s)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('best')">
+                                🏆 Best Lap!<br>
+                                <span class="btn-subtitle">(29.8s, session best)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('pb')">
+                                ⭐ New Personal Best<br>
+                                <span class="btn-subtitle">(29.5s, -0.3s from PB)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('leader')">
+                                👑 Leader Position<br>
+                                <span class="btn-subtitle">(30.1s, P1 reference)</span>
+                            </button>
+                            <button class="tts-test-btn" onclick="window.kartingApp.testTTS('chase')">
+                                🏁 Chase Mode<br>
+                                <span class="btn-subtitle">(30.3s, +1.5s to P1)</span>
+                            </button>
+                        </div>
+                        <button class="tts-stop-btn" onclick="window.kartingApp.stopTTS()">
+                            🔇 Stop Speaking
+                        </button>
+                    </div>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="enable-proximity-alert" checked>
+                        <span>⚠️ Opponent Proximity Alert (sound + visual)</span>
+                    </label>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>🎨 Color Theme</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Choose your preferred color scheme
+                    </p>
+                    <label for="color-theme-select">Theme:</label>
+                    <select id="color-theme-select" class="settings-select">
+                        <option value="dark">🌙 Dark (Default)</option>
+                        <option value="light">☀️ Light</option>
+                        <option value="f1-red">🏎️ F1 Red</option>
+                        <option value="racing-green">🏁 Racing Green</option>
+                    </select>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Data Management</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Backup and restore your lap history, personal records, and settings
+                    </p>
+                    
+                    <button id="export-all-data" class="settings-btn-secondary">
+                        📦 Export All Data
+                    </button>
+                    
+                    <button id="import-all-data" class="settings-btn-secondary" style="margin-top: 8px;">
+                        📥 Import Data from File
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                    
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 12px;">
+                        💾 Exports include: lap history, personal records, and settings
+                    </p>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Kart Analysis Data</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Manage collected kart performance data
+                    </p>
+                    
+                    <!-- Storage Status -->
+                    <div id="storage-status" style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="color: #00ff88;">📊 Storage Status</strong>
+                            <button onclick="window.kartingApp.refreshStorageStatus()" style="background: none; border: none; color: #888; cursor: pointer; padding: 4px 8px;">🔄</button>
+                        </div>
+                        <div id="storage-status-content">
+                            <p style="margin: 4px 0; color: #888;">Loading...</p>
+                        </div>
+                    </div>
+                    
+                    
+                    <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-top: 16px;">
+                        <p style="color: #00ff88; font-size: 0.9rem; margin-bottom: 4px;">
+                            💾 <strong>Storage Optimized</strong>
+                        </p>
+                        <p style="color: #888; font-size: 0.85rem;">
+                            Data is stored in your browser's localStorage. Auto-cleanup maintains the last 140 sessions (~30k laps).
+                            Manual exports create downloadable JSON files for long-term backup and database imports.
+                        </p>
+                        <p style="color: #ffaa00; font-size: 0.85rem; margin-top: 8px;">
+                            ⚠️ Export data regularly to avoid loss. Clearing browser data will delete all analysis.
+                        </p>
+                    </div>
+                    
+                    <button onclick="window.kartingApp.recoverFromBackup()" class="settings-btn-secondary" style="margin-top: 20px; background: #ff8800; color: white;">
+                        🔄 Recover Data from Backup
+                    </button>
+                    
+                    <button id="reset-analysis-btn" class="settings-btn-danger" onclick="window.kartingApp.resetKartAnalysisData()" style="margin-top: 8px;">
+                        🗑️ Reset All Analysis Data
+                    </button>
+                    
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 12px;">
+                        ⚠️ Reset will permanently delete all collected lap data
+                    </p>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>HUD Components</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        Toggle visibility of HUD components (or use mini buttons on HUD)
+                    </p>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-last-lap" checked>
+                        <span>Show Last Lap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-best-lap" checked>
+                        <span>Show Best Lap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-avg-lap" checked>
+                        <span>Show Average Lap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-gap" checked>
+                        <span>Show Gap Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-interval" checked>
+                        <span>Show Interval Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-consistency" checked>
+                        <span>Show Consistency Card</span>
+                    </label>
+                    
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="hud-show-lap-history" checked>
+                        <span>Show Lap History</span>
+                    </label>
+                    
+                    <button id="show-all-hud" class="settings-btn-secondary" style="margin-top: 12px;">
+                        ✅ Show All HUD Components
+                    </button>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>🔍 Developer Tools</h2>
+                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
+                        View live WebSocket data for debugging and monitoring
+                    </p>
+                    
+                    <button id="view-socket-data-btn" class="settings-btn-secondary">
+                        📡 View Live Socket Data
+                    </button>
+                    
+                    <p style="color: #666; font-size: 0.85rem; margin-top: 12px;">
+                        💡 Shows last 20 messages received from RaceFacer server
+                    </p>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>About</h2>
+                    <p>Karting Live Timer v2.0</p>
+                    <p>Default Channel: lemansentertainment</p>
+                    <p><a href="https://github.com/Fabbbrrr/karts" target="_blank">GitHub Repository</a></p>
+                </div>
+                
+                <button id="reset-settings" class="settings-btn-secondary">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Install Prompt -->
+    <div id="install-prompt" class="install-prompt hidden">
+        <div class="install-content">
+            <p>📱 Install this app for full-screen experience!</p>
+            <button id="install-btn" class="install-btn">Install</button>
+            <button id="dismiss-install" class="dismiss-btn">×</button>
+        </div>
+    </div>
+    
+    <!-- Main App Module (ES6 Modules) -->
+    <script type="module" src="js/app.main.js"></script>
+    
+    <!-- Awards Info Modal -->
+    <div id="awards-modal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); overflow: auto;">
+        <div class="modal-content" style="background-color: #1e1e1e; margin: 5% auto; padding: 0; border: 1px solid #444; border-radius: 12px; width: 90%; max-width: 800px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+            <div class="modal-header" style="padding: 24px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; color: #fff; font-size: 1.5rem;">🏆 Driver Awards Guide</h2>
+                <button id="close-modal" style="background: transparent; border: none; color: #888; font-size: 2rem; cursor: pointer; padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px; color: #ccc; max-height: 60vh; overflow-y: auto;">
+                <p style="margin-bottom: 24px; font-size: 1.05rem; color: #aaa;">Every driver deserves recognition! Here's what each award means and how to earn it:</p>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #4ECDC4; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">⚡</span>
+                        <h3 style="margin: 0; color: #fff;">Fastest Lap</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You set the single fastest lap time in the entire session.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Pure speed! You had the best lap anyone achieved.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #45B7D1; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🧊</span>
+                        <h3 style="margin: 0; color: #fff;">Ice in Veins</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> Your average lap time was closest to your best lap - ultra-consistent driving.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> You drive like a robot! Lap after lap, same pace. This is crucial for endurance racing and shows mental/physical consistency.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #FF6B6B; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🔥</span>
+                        <h3 style="margin: 0; color: #fff;">Hot Start</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You had the fastest lap in laps 2-5 (early in the session).</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> You nail it immediately! No warm-up needed - you're fast from the get-go. Great qualifying pace.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #52B788; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🏁</span>
+                        <h3 style="margin: 0; color: #fff;">Fastest Finisher</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You had the best lap time in the final 3 laps of the session.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> You saved the best for last! Shows great tire management, physical endurance, and the ability to push when tired.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #F7DC6F; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">👑</span>
+                        <h3 style="margin: 0; color: #fff;">Purple Lap King</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You beat your own personal best more times than anyone else.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Continuous improvement! You learn and adapt throughout the session. "Purple laps" (beating your PB) show you never stop pushing.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #85C1E2; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">🎯</span>
+                        <h3 style="margin: 0; color: #fff;">Most Consistent</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> Your lap times had the smallest variation (standard deviation < 1 second).</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Predictability! Your times don't vary much - very reliable pace.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #BB8FCE; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">📈</span>
+                        <h3 style="margin: 0; color: #fff;">Most Improved</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You gained the most positions from start to finish.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's cool:</strong> Great overtaking! Started low, finished high - impressive racing.</p>
+                </div>
+                
+                <div class="award-explanation" style="margin-bottom: 20px; padding: 16px; background: #252525; border-left: 4px solid #EA8685; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 2rem;">💥</span>
+                        <h3 style="margin: 0; color: #fff;">Most Incidents</h3>
+                    </div>
+                    <p style="margin: 8px 0; line-height: 1.6;"><strong>What it means:</strong> You had the most crashes, spins, or off-track moments detected.</p>
+                    <p style="margin: 8px 0; line-height: 1.6; color: #888;"><strong>Why it's shown:</strong> For fun and motivation to improve! Everyone crashes while learning. Track your progress over time.</p>
+                </div>
+                
+                <div style="margin-top: 32px; padding: 20px; background: #2a2a2a; border-radius: 8px; border: 1px solid #444;">
+                    <h3 style="margin: 0 0 12px 0; color: #4ECDC4; font-size: 1.1rem;">💡 Pro Tips</h3>
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.8; color: #aaa;">
+                        <li><strong>Multiple awards?</strong> You can win multiple awards in one session!</li>
+                        <li><strong>Hover for details:</strong> Hover your mouse over any award card for a quick explanation.</li>
+                        <li><strong>Table badges:</strong> Look for emoji badges in the results table - these show who won each award.</li>
+                        <li><strong>Track your progress:</strong> Try to collect different awards each session to improve all-around skills!</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #333; text-align: right;">
+                <button id="close-modal-btn" style="padding: 10px 24px; background: #4ECDC4; color: #1a1a1a; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.2s;">Got it!</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Awards Modal Script -->
+    <script>
+        // Modal controls for Awards Info
+        (function() {
+            const modal = document.getElementById('awards-modal');
+            const btn = document.getElementById('awards-info-btn');
+            const closeBtn = document.getElementById('close-modal');
+            const closeBtnFooter = document.getElementById('close-modal-btn');
+            
+            // Open modal
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    modal.style.display = 'block';
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                });
+            }
+            
+            // Close modal - X button
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+            }
+            
+            // Close modal - Footer button
+            if (closeBtnFooter) {
+                closeBtnFooter.addEventListener('click', function() {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+            }
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Hover effects for buttons
+            if (closeBtn) {
+                closeBtn.addEventListener('mouseenter', function() {
+                    this.style.background = '#333';
+                    this.style.color = '#fff';
+                });
+                closeBtn.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                    this.style.color = '#888';
+                });
+            }
+            
+            if (closeBtnFooter) {
+                closeBtnFooter.addEventListener('mouseenter', function() {
+                    this.style.background = '#5FE3D8';
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 12px rgba(78, 205, 196, 0.3)';
+                });
+                closeBtnFooter.addEventListener('mouseleave', function() {
+                    this.style.background = '#4ECDC4';
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            }
+            
+            if (btn) {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.background = '#333';
+                    this.style.borderColor = '#4ECDC4';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.background = '#2c2c2c';
+                    this.style.borderColor = '#444';
+                });
+            }
+        })();
+    </script>
+    
+    <!-- Fallback for old browsers without module support -->
+    <script nomodule>
+        alert('Your browser does not support JavaScript modules. Please use a modern browser (Chrome, Firefox, Safari, Edge).');
+    </script>
+</body>
+</html>
+

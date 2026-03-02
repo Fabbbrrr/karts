@@ -1,0 +1,178 @@
+/* Mobile & Kart Mounting Optimizations - Frontend Only */
+
+/* Force portrait orientation for kart mounting */
+@media screen and (orientation: landscape) {
+    .force-portrait {
+        transform: rotate(90deg);
+        transform-origin: center;
+        width: 100vh;
+        height: 100vw;
+        position: fixed;
+        top: -50%;
+        left: 50%;
+    }
+}
+
+/* Portrait orientation styles */
+@media screen and (orientation: portrait) {
+    .force-portrait {
+        transform: none;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+/* Full Screen Kiosk Mode */
+.kiosk-mode {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.kiosk-mode .tab-nav,
+.kiosk-mode .settings-panel {
+    display: none !important;
+}
+
+/* Touch Target Optimization for Kart Mounting */
+.touch-optimized {
+    /* Larger touch targets - minimum 48px per Material Design */
+    min-height: 48px;
+    padding: 1rem;
+}
+
+.btn {
+    min-height: 56px; /* Large button for easy tapping */
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+}
+
+.nav-btn {
+    min-height: 64px; /* Very large navigation buttons */
+}
+
+/* Responsive Touch Targets */
+@media (max-width: 768px) {
+    .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .nav-btn {
+        min-height: 48px;
+        padding: 0.75rem;
+    }
+}
+
+/* Battery Optimization Styles */
+.battery-saving {
+    filter: grayscale(100%);
+    contrast: 120%;
+}
+
+.battery-saving .driver-name,
+.battery-saving .driver-position {
+    color: #fff;
+}
+
+.battery-saving .hud-container {
+    background: #000;
+}
+
+/* Auto-Rotation Support */
+.auto-rotate-enabled {
+    transition: transform 0.5s ease;
+}
+
+/* High Contrast for Sunlight Visibility */
+.sunlight-mode {
+    background: #fff;
+    color: #000 !important;
+}
+
+.sunlight-mode .hud-container {
+    background: #fff;
+}
+
+.sunlight-mode .driver-name,
+.sunlight-mode .driver-position {
+    color: #000 !important;
+}
+
+/* Mobile Layout Adjustments */
+.mobile-layout {
+    padding-bottom: 4rem; /* Space for bottom navigation */
+}
+
+.mobile-content {
+    padding: 1rem;
+}
+
+/* Kart Mounting Specific Styles */
+.kart-mounted {
+    /* Ensure app stays in portrait mode */
+    transform-origin: center;
+}
+
+/* Orientation Alert (for testing) */
+.orientation-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #1a1a1a;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.orientation-alert.hidden {
+    display: none;
+}
+
+.orientation-message {
+    text-align: center;
+    color: #fff;
+    padding: 2rem;
+}
+
+/* Performance Optimization */
+.performance-optimized {
+    /* Reduce animations for better performance */
+    transition: none;
+    animation: none;
+}
+
+/* Mobile Tab Navigation */
+.mobile-tab-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    background: #1a1a1a;
+    border-top: 2px solid #00ff88;
+    z-index: 999;
+}
+
+.mobile-tab-btn {
+    flex: 1;
+    padding: 1rem;
+    background: transparent;
+    color: #666;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.mobile-tab-btn.active {
+    background: rgba(0, 255, 136, 0.1);
+    color: #00ff88;
+    border-top: 2px solid #00ff88;
+}
