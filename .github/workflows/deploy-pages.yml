@@ -28,6 +28,12 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Inject build info
+        run: |
+          BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+          SHORT_SHA=${GITHUB_SHA::7}
+          sed -i "s|__BUILD_INFO__|${BUILD_DATE} · ${SHORT_SHA}|g" frontend-only/index.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
