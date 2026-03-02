@@ -856,6 +856,16 @@ window.kartingApp = {
             elements.hudTTSToggle.classList.toggle('active', state.settings.enableTTS);
         }
         saveSettings();
+    },
+    selectDriverAndSwitchToHUD(kartNumber) {
+        state.settings.mainDriver = kartNumber;
+        saveSettings();
+        if (elements.mainDriverSelect) elements.mainDriverSelect.value = kartNumber;
+        switchTab('hud');
+        updateAllViews();
+    },
+    updateAllViews() {
+        updateAllViews();
     }
 };
 
