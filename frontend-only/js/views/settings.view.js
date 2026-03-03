@@ -47,6 +47,23 @@ export function applySettings(elements, settings) {
         elements.themeGlassToggle.checked = settings.theme === 'glass';
     }
     applyTheme(settings.theme);
+
+    // Apply TTS settings
+    updateCheckbox(elements.enableTTSCheckbox, settings.enableTTS ?? false);
+    updateCheckbox(elements.ttsAnnounceGapP1Checkbox, settings.ttsAnnounceGapP1 ?? true);
+    updateCheckbox(elements.ttsAnnounceGapPBCheckbox, settings.ttsAnnounceGapPB ?? true);
+    if (elements.ttsRateSlider) {
+        elements.ttsRateSlider.value = settings.ttsRate ?? 0.9;
+    }
+    if (elements.ttsRateValue) {
+        elements.ttsRateValue.textContent = `${(settings.ttsRate ?? 0.9).toFixed(1)}×`;
+    }
+    if (elements.ttsPauseSlider) {
+        elements.ttsPauseSlider.value = settings.ttsPause ?? 2000;
+    }
+    if (elements.ttsPauseValue) {
+        elements.ttsPauseValue.textContent = `${((settings.ttsPause ?? 2000) / 1000).toFixed(1)}s`;
+    }
 }
 
 /**
@@ -92,7 +109,12 @@ export function getSettingsFromUI(elements) {
         enableBestLapCelebration: elements.enableBestLapCheckbox?.checked ?? true,
         enableProximityAlert: elements.enableProximityCheckbox?.checked ?? true,
         proximityThreshold: parseFloat(elements.proximityThresholdInput?.value) || 1.0,
-        theme: elements.themeGlassToggle?.checked ? 'glass' : 'classic'
+        theme: elements.themeGlassToggle?.checked ? 'glass' : 'classic',
+        enableTTS: elements.enableTTSCheckbox?.checked ?? false,
+        ttsAnnounceGapP1: elements.ttsAnnounceGapP1Checkbox?.checked ?? true,
+        ttsAnnounceGapPB: elements.ttsAnnounceGapPBCheckbox?.checked ?? true,
+        ttsRate: parseFloat(elements.ttsRateSlider?.value) || 0.9,
+        ttsPause: parseInt(elements.ttsPauseSlider?.value, 10) || 2000
     };
 }
 
