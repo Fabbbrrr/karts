@@ -37,25 +37,45 @@ export function speak(text, options = {}) {
         console.warn('⚠️ TTS not supported in this browser');
         return;
     }
-    
-    // Cancel any ongoing speech to avoid queue buildup
-    // WHY: Only the latest lap time is relevant
+
     window.speechSynthesis.cancel();
-    
+
     const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Configure speech parameters
-    utterance.rate = options.rate || 1.1; // Slightly faster than normal for brevity
-    utterance.pitch = options.pitch || 1.0;
-    utterance.volume = options.volume || 0.8; // Not too loud
+    utterance.rate = options.rate ?? 0.9;
+    utterance.pitch = options.pitch ?? 1.0;
+    utterance.volume = options.volume ?? 0.9;
     utterance.lang = options.lang || 'en-US';
-    
-    // Error handling
-    utterance.onerror = (event) => {
-        console.error('TTS error:', event.error);
-    };
-    
+    utterance.onerror = (event) => { console.error('TTS error:', event.error); };
+
     window.speechSynthesis.speak(utterance);
+}
+
+/**
+ * Speak an array of phrases sequentially with a configurable pause between each
+ * @param {string[]} parts - Phrases to speak in order
+ * @param {number} [rate=0.9] - Speech rate (0.5 slow – 1.5 fast)
+ * @param {number} [pauseMs=2000] - Milliseconds of silence between phrases
+ */
+export function speakSequence(parts, rate = 0.9, pauseMs = 2000) {
+    if (!isTTSSupported() || !parts || parts.length === 0) return;
+
+    window.speechSynthesis.cancel();
+
+    let index = 0;
+
+    function next() {
+        if (index >= parts.length) return;
+        const utterance = new SpeechSynthesisUtterance(parts[index]);
+        utterance.rate = rate;
+        utterance.pitch = 1.0;
+        utterance.volume = 0.9;
+        utterance.lang = 'en-US';
+        utterance.onend = () => { index++; if (index < parts.length) setTimeout(next, pauseMs); };
+        utterance.onerror = (e) => { console.error('TTS error:', e.error); index++; if (index < parts.length) setTimeout(next, pauseMs); };
+        window.speechSynthesis.speak(utterance);
+    }
+
+    next();
 }
 
 /**
@@ -213,9 +233,9 @@ export function announceLap(data) {
         }
     }
     
-    // Speak combined announcement
+    // Speak each stat as a separate utterance with a pause between them
     if (parts.length > 0) {
-        speak(parts.join(', '));
+        speakSequence(parts, data.rate ?? 0.9, data.pauseMs ?? 2000);
     }
 }
 

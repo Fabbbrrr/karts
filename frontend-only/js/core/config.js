@@ -89,6 +89,8 @@ export const DEFAULT_SETTINGS = {
     enableTTS: false,
     ttsAnnounceGapP1: true,
     ttsAnnounceGapPB: true,
+    ttsRate: 0.9,
+    ttsPause: 2000,
 
     // Proximity alert threshold (seconds)
     proximityThreshold: 2,

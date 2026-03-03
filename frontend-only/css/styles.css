@@ -1314,6 +1314,31 @@ html, body {
     gap: 8px;
 }
 
+.tts-speed-controls {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tts-slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tts-slider-row label {
+    font-size: 0.85rem;
+    color: #ccc;
+}
+
+.tts-slider-row input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent, #00ff88);
+    cursor: pointer;
+    height: 6px;
+}
+
 .tts-option {
     margin: 0 !important;
     padding-left: 8px;

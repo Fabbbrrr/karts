@@ -120,6 +120,13 @@ function cacheDOMElements() {
     elements.enableProximityCheckbox = document.getElementById('enable-proximity');
     elements.proximityThresholdInput = document.getElementById('proximity-threshold');
     elements.themeGlassToggle = document.getElementById('theme-glass-toggle');
+    elements.enableTTSCheckbox = document.getElementById('enable-tts');
+    elements.ttsAnnounceGapP1Checkbox = document.getElementById('tts-announce-gap-p1');
+    elements.ttsAnnounceGapPBCheckbox = document.getElementById('tts-announce-gap-pb');
+    elements.ttsRateSlider = document.getElementById('tts-rate');
+    elements.ttsRateValue = document.getElementById('tts-rate-value');
+    elements.ttsPauseSlider = document.getElementById('tts-pause');
+    elements.ttsPauseValue = document.getElementById('tts-pause-value');
 
     // Session selector / history
     elements.sessionSelectorBar = document.getElementById('session-selector-bar');
@@ -147,6 +154,9 @@ function cacheDOMElements() {
 function loadPersistedData() {
     state.settings = StorageService.loadSettings(DEFAULT_SETTINGS);
     SettingsView.applySettings(elements, state.settings);
+    if (elements.hudTTSToggle) {
+        elements.hudTTSToggle.classList.toggle('active', !!state.settings.enableTTS);
+    }
 
     state.personalRecords = StorageService.loadPersonalRecords();
     state.driverNotes = StorageService.loadDriverNotes();
@@ -360,11 +370,41 @@ function setupEventListeners() {
         });
     }
 
-    // TTS toggle in HUD
-    if (elements.hudTTSToggle) {
-        elements.hudTTSToggle.addEventListener('click', () => {
-            state.settings.enableTTS = !state.settings.enableTTS;
-            elements.hudTTSToggle.classList.toggle('active', state.settings.enableTTS);
+    // TTS settings checkboxes
+    if (elements.enableTTSCheckbox) {
+        elements.enableTTSCheckbox.addEventListener('change', (e) => {
+            state.settings.enableTTS = e.target.checked;
+            if (elements.hudTTSToggle) {
+                elements.hudTTSToggle.classList.toggle('active', state.settings.enableTTS);
+            }
+            saveSettings();
+        });
+    }
+    if (elements.ttsAnnounceGapP1Checkbox) {
+        elements.ttsAnnounceGapP1Checkbox.addEventListener('change', (e) => {
+            state.settings.ttsAnnounceGapP1 = e.target.checked;
+            saveSettings();
+        });
+    }
+    if (elements.ttsAnnounceGapPBCheckbox) {
+        elements.ttsAnnounceGapPBCheckbox.addEventListener('change', (e) => {
+            state.settings.ttsAnnounceGapPB = e.target.checked;
+            saveSettings();
+        });
+    }
+    if (elements.ttsRateSlider) {
+        elements.ttsRateSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            state.settings.ttsRate = val;
+            if (elements.ttsRateValue) elements.ttsRateValue.textContent = `${val.toFixed(1)}×`;
+            saveSettings();
+        });
+    }
+    if (elements.ttsPauseSlider) {
+        elements.ttsPauseSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            state.settings.ttsPause = val;
+            if (elements.ttsPauseValue) elements.ttsPauseValue.textContent = `${(val / 1000).toFixed(1)}s`;
             saveSettings();
         });
     }
@@ -536,7 +576,9 @@ function handleNewLap(run) {
             gapToP1: run.gap,
             isBestLap: run.last_time_raw === run.best_time_raw,
             announceGapP1: state.settings.ttsAnnounceGapP1,
-            announceGapPB: state.settings.ttsAnnounceGapPB
+            announceGapPB: state.settings.ttsAnnounceGapPB,
+            rate: state.settings.ttsRate ?? 0.9,
+            pauseMs: state.settings.ttsPause ?? 2000
         });
     }
 }
@@ -863,6 +905,9 @@ window.kartingApp = {
         state.settings.enableTTS = !state.settings.enableTTS;
         if (elements.hudTTSToggle) {
             elements.hudTTSToggle.classList.toggle('active', state.settings.enableTTS);
+        }
+        if (elements.enableTTSCheckbox) {
+            elements.enableTTSCheckbox.checked = state.settings.enableTTS;
         }
         saveSettings();
     },
