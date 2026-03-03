@@ -1,0 +1,14 @@
+# .continueignore
+.git/
+node_modules/
+dist/
+build/
+.next/
+*.log
+*.lock
+package-lock.json
+*.svg
+*.png
+# Ignore large data files that the LLM can't "read" anyway
+*.csv
+*.json

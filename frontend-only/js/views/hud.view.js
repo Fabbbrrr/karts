@@ -6,7 +6,7 @@
  * FEATURE: HUD View, Driver Focus, Live Timing Display, Drag & Drop Reordering
  */
 
-import { formatDelta } from '../utils/time-formatter.js';
+import { formatDelta, normalizeTime } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
 import { calculateConsistency } from '../utils/calculations.js';
 import * as LapTrackerService from '../services/lap-tracker.service.js';
@@ -92,9 +92,9 @@ export function updateHUDView(elements, sessionData, state) {
     elements.hudKart.textContent = `KART ${run.kart_number}`;
     
     // Update timing data
-    elements.hudLastTime.textContent = run.last_time || '--.-';
-    elements.hudBestTime.textContent = run.best_time || '--.-';
-    elements.hudAvgTime.textContent = run.avg_lap || '--.-';
+    elements.hudLastTime.textContent = normalizeTime(run.last_time) || '--.-';
+    elements.hudBestTime.textContent = normalizeTime(run.best_time) || '--.-';
+    elements.hudAvgTime.textContent = normalizeTime(run.avg_lap) || '--.-';
     elements.hudGap.textContent = run.gap || '-';
     elements.hudInterval.textContent = run.int || '-';
     elements.hudConsistency.textContent = run.consistency_lap || '-';
@@ -345,7 +345,7 @@ function updateLapHistoryDisplay(elements, kartNumber, bestTimeRaw, lapHistory, 
         
         div.innerHTML = `
             <div class="hud-lap-number">L${lap.lapNum}</div>
-            <div class="hud-lap-time">${lap.time}</div>
+            <div class="hud-lap-time">${normalizeTime(lap.time)}</div>
             <div class="hud-lap-delta ${deltaClass}">${deltaText}</div>
             ${pbGapText}
         `;

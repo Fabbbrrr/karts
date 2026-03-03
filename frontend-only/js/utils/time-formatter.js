@@ -44,19 +44,28 @@ export function parseLapTime(timeStr) {
 }
 
 /**
- * Format milliseconds to MM:SS.mmm format
+ * Format milliseconds as total seconds with 3 decimal places (e.g., "94.123")
  * @param {number} ms - Time in milliseconds
- * @returns {string} Formatted time (e.g., "1:25.123")
+ * @returns {string} Formatted time (e.g., "34.123" or "94.123")
  */
 export function formatLapTime(ms) {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    const milliseconds = ms % 1000;
-    
-    if (minutes > 0) {
-        return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-    }
-    return `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
+    return formatTime(ms);
+}
+
+/**
+ * Normalize a server-provided time string to SS.mmm format.
+ * Converts "M:SS.mmm" → "SSS.mmm"; passes through "SS.mmm" unchanged.
+ * @param {string} str - Time string from server (e.g., "34.123" or "1:34.123")
+ * @returns {string} Normalised time string (e.g., "34.123" or "94.123")
+ */
+export function normalizeTime(str) {
+    if (!str || str === '-' || str === '--.-') return str;
+    if (!str.includes(':')) return str; // already SS.mmm
+    const [minPart, secPart] = str.split(':');
+    const minutes = parseInt(minPart, 10);
+    const [sec, ms = '000'] = secPart.split('.');
+    const totalSeconds = minutes * 60 + parseInt(sec, 10);
+    return `${totalSeconds}.${ms.padEnd(3, '0').substring(0, 3)}`;
 }
 
 /**
