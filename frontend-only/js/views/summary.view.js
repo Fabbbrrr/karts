@@ -1,7 +1,7 @@
 // Karting Live Timer - Summary View
 // Session summary with charts and final results
 
-import { formatTime } from '../utils/time-formatter.js';
+import { formatTime, normalizeTime } from '../utils/time-formatter.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import * as SessionHistoryService from '../services/session-history.service.js';
 
@@ -115,13 +115,13 @@ function updateDriverStats(elements, driverData, state) {
     // Best lap
     const bestLapEl = document.getElementById('summary-best-lap');
     if (bestLapEl) {
-        bestLapEl.textContent = driverData.best_time || '--.-';
+        bestLapEl.textContent = normalizeTime(driverData.best_time) || '--.-';
     }
     
     // Average lap
     const avgLapEl = document.getElementById('summary-avg-lap');
     if (avgLapEl) {
-        avgLapEl.textContent = driverData.avg_lap || '--.-';
+        avgLapEl.textContent = normalizeTime(driverData.avg_lap) || '--.-';
     }
     
     // Total laps
@@ -214,7 +214,7 @@ function updateLapHistory(elements, driverData, state) {
         return `
             <div class="summary-lap-item">
                 <div class="lap-number">Lap ${lap.lapNum}</div>
-                <div class="lap-time">${lap.time}</div>
+                <div class="lap-time">${normalizeTime(lap.time)}</div>
                 <div class="lap-delta ${deltaClass}">${deltaText}s</div>
                 <div class="lap-pos">P${lap.position}</div>
             </div>

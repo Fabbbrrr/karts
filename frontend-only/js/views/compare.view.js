@@ -7,7 +7,7 @@
  * FEATURE: Head-to-Head Comparison, Gap Analysis, Winner Highlighting
  */
 
-import { formatTime } from '../utils/time-formatter.js';
+import { formatTime, normalizeTime } from '../utils/time-formatter.js';
 import { calculateConsistency, calculateAverageLapTime } from '../utils/calculations.js';
 
 const LAP_TIME_THRESHOLD = 60000; // 60 seconds
@@ -63,9 +63,9 @@ export function updateCompareView(elements, sessionData) {
     // Update table cells
     updateCompareRow('pos', driver1.pos, driver2.pos, true, driver1.pos, driver2.pos);
     updateCompareRow('kart', driver1.kart_number, driver2.kart_number, false);
-    updateCompareRow('best', driver1.best_time, driver2.best_time, true, driver1.best_time_raw, driver2.best_time_raw);
-    updateCompareRow('last', driver1.last_time, driver2.last_time, true, driver1.last_time_raw, driver2.last_time_raw);
-    updateCompareRow('avg', driver1.avg_lap || '-', driver2.avg_lap || '-', true, driver1.avg_lap_raw, driver2.avg_lap_raw);
+    updateCompareRow('best', normalizeTime(driver1.best_time), normalizeTime(driver2.best_time), true, driver1.best_time_raw, driver2.best_time_raw);
+    updateCompareRow('last', normalizeTime(driver1.last_time), normalizeTime(driver2.last_time), true, driver1.last_time_raw, driver2.last_time_raw);
+    updateCompareRow('avg', normalizeTime(driver1.avg_lap) || '-', normalizeTime(driver2.avg_lap) || '-', true, driver1.avg_lap_raw, driver2.avg_lap_raw);
     updateCompareRow('consistency', 
         driver1.consistency_lap || '-',
         driver2.consistency_lap || '-',

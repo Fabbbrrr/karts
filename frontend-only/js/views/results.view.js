@@ -11,7 +11,7 @@
  * - Export functionality
  */
 
-import { formatTime } from '../utils/time-formatter.js';
+import { formatTime, normalizeTime } from '../utils/time-formatter.js';
 import { calculateConsistency, calculateAverageLapTime } from '../utils/calculations.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import * as SessionHistoryService from '../services/session-history.service.js';
@@ -266,7 +266,7 @@ function calculateResults(runs, method) {
                     // Use API-provided best_time_raw
                     if (run.best_time_raw && run.best_time_raw <= LAP_TIME_THRESHOLD) {
                         rawScore = run.best_time_raw;
-                        scoreDisplay = run.best_time || formatTime(rawScore);
+                        scoreDisplay = normalizeTime(run.best_time) || formatTime(rawScore);
                         score = rawScore;
                     }
                     break;
@@ -289,7 +289,7 @@ function calculateResults(runs, method) {
                     // Use API-provided avg_lap_raw (more accurate as it includes all laps)
                     if (run.avg_lap_raw && run.avg_lap_raw <= LAP_TIME_THRESHOLD) {
                         rawScore = run.avg_lap_raw;
-                        scoreDisplay = run.avg_lap || formatTime(rawScore);
+                        scoreDisplay = normalizeTime(run.avg_lap) || formatTime(rawScore);
                         score = rawScore;
                     } else if (lapTimes.length > 0) {
                         // Fallback: calculate from lap history

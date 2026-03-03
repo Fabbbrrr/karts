@@ -1,7 +1,7 @@
 // Karting Live Timer - Race View
 // Render the race tab with all drivers, positions, and timing
 
-import { formatTime } from '../utils/time-formatter.js';
+import { formatTime, normalizeTime } from '../utils/time-formatter.js';
 import { getLapColor } from '../utils/ui-helpers.js';
 import { filterStaleDrivers, TIMESTAMP_THRESHOLDS } from '../utils/timestamp-filter.js';
 import { getUniqueTrackConfigs, getTrackConfigName } from '../utils/track-config.js';
@@ -462,14 +462,14 @@ function updateRaceItemContent(div, run, settings, personalRecords, state) {
     if (settings.showLastLap && run.last_time) {
         details.push(`<div class="race-detail-item">
             <span class="race-detail-label">Last:</span>
-            <span class="race-detail-value last">${run.last_time}</span>
+            <span class="race-detail-value last">${normalizeTime(run.last_time)}</span>
         </div>`);
     }
-    
+
     if (settings.showAvgLap && run.avg_lap) {
         details.push(`<div class="race-detail-item">
             <span class="race-detail-label">Avg:</span>
-            <span class="race-detail-value">${run.avg_lap}</span>
+            <span class="race-detail-value">${normalizeTime(run.avg_lap)}</span>
         </div>`);
     }
     
@@ -491,7 +491,7 @@ function updateRaceItemContent(div, run, settings, personalRecords, state) {
     if (personalBest) {
         details.push(`<div class="race-detail-item">
             <span class="race-detail-label">PB:</span>
-            <span class="race-detail-value pb">${personalBest.bestLapFormatted}</span>
+            <span class="race-detail-value pb">${normalizeTime(personalBest.bestLapFormatted)}</span>
         </div>`);
         
         // Add gap to PB if last lap is available
@@ -540,9 +540,9 @@ function updateRaceItemContent(div, run, settings, personalRecords, state) {
             </div>
         </div>
         <div class="race-timing">
-            <div class="race-best-time" style="font-size: 1.2em; font-weight: bold;">${run.best_time}</div>
+            <div class="race-best-time" style="font-size: 1.2em; font-weight: bold;">${normalizeTime(run.best_time)}</div>
             ${settings.showGaps ? `<div class="race-gap">${run.gap}</div>` : ''}
-            ${settings.showLastLap && run.last_time ? `<div class="race-last-time" style="font-size: 1.05em; color: #aaa; margin-top: 2px;">Last: ${run.last_time}</div>` : ''}
+            ${settings.showLastLap && run.last_time ? `<div class="race-last-time" style="font-size: 1.05em; color: #aaa; margin-top: 2px;">Last: ${normalizeTime(run.last_time)}</div>` : ''}
         </div>
     `;
 }
