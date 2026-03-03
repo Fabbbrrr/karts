@@ -2,13 +2,17 @@
 // Utility functions for formatting time values and lap times
 
 /**
- * Format milliseconds to seconds with 3 decimal places
+ * Format milliseconds to M:SS.mmm (or SS.mmm when under 1 minute)
  * @param {number} ms - Time in milliseconds
- * @returns {string} Formatted time string (e.g., "25.123")
+ * @returns {string} Formatted time string (e.g., "34.123" or "1:34.123")
  */
 export function formatTime(ms) {
-    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
     const milliseconds = ms % 1000;
+    if (minutes > 0) {
+        return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+    }
     return `${seconds}.${milliseconds.toString().padStart(3, '0')}`;
 }
 
@@ -44,28 +48,22 @@ export function parseLapTime(timeStr) {
 }
 
 /**
- * Format milliseconds as total seconds with 3 decimal places (e.g., "94.123")
+ * Format milliseconds to M:SS.mmm — alias for formatTime
  * @param {number} ms - Time in milliseconds
- * @returns {string} Formatted time (e.g., "34.123" or "94.123")
+ * @returns {string} Formatted time (e.g., "34.123" or "1:34.123")
  */
 export function formatLapTime(ms) {
     return formatTime(ms);
 }
 
 /**
- * Normalize a server-provided time string to SS.mmm format.
- * Converts "M:SS.mmm" → "SSS.mmm"; passes through "SS.mmm" unchanged.
- * @param {string} str - Time string from server (e.g., "34.123" or "1:34.123")
- * @returns {string} Normalised time string (e.g., "34.123" or "94.123")
+ * Pass-through for server-provided time strings.
+ * Server already sends M:SS.mmm or SS.mmm; this keeps them unchanged.
+ * @param {string} str - Time string from server
+ * @returns {string} Same string
  */
 export function normalizeTime(str) {
-    if (!str || str === '-' || str === '--.-') return str;
-    if (!str.includes(':')) return str; // already SS.mmm
-    const [minPart, secPart] = str.split(':');
-    const minutes = parseInt(minPart, 10);
-    const [sec, ms = '000'] = secPart.split('.');
-    const totalSeconds = minutes * 60 + parseInt(sec, 10);
-    return `${totalSeconds}.${ms.padEnd(3, '0').substring(0, 3)}`;
+    return str || '--.-';
 }
 
 /**
