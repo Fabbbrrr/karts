@@ -390,8 +390,8 @@ function createRaceItem(run, settings, personalRecords, state, trackName = '') {
     let touchStartY = 0;
     let touchStartX = 0;
     let touchStartTime = 0;
-    const SCROLL_THRESHOLD = 10; // pixels
-    const TAP_TIME_THRESHOLD = 300; // milliseconds
+    const SCROLL_THRESHOLD = 16; // pixels — more forgiving for gloved hands
+    const TAP_TIME_THRESHOLD = 400; // ms — allows slightly slower taps while driving
     
     div.addEventListener('touchstart', (e) => {
         touchStartY = e.touches[0].clientY;
@@ -552,7 +552,7 @@ function updateRaceItemContent(div, run, settings, personalRecords, state) {
  * @param {Object} elements - DOM elements
  * @param {Object} sessionData - Current session data
  */
-export function updateDriverDropdown(elements, sessionData) {
+export function updateDriverDropdown(elements, sessionData, state) {
     if (!sessionData || !sessionData.runs) {
         console.warn('⚠️ updateDriverDropdown: No session data or runs');
         return;
@@ -639,15 +639,12 @@ export function updateDriverDropdown(elements, sessionData) {
         elements.compareDriver2Select.value = compareDriver2Value;
     }
     
-    // Set HUD dropdowns to current main driver if set
-    const currentMainDriver = elements.mainDriverSelect?.value;
+    // Restore all driver selects to the persisted main driver
+    const currentMainDriver = state?.settings?.mainDriver || null;
     if (currentMainDriver) {
-        if (elements.hudDriverSelect) {
-            elements.hudDriverSelect.value = currentMainDriver;
-        }
-        if (elements.hudQuickDriverSelect) {
-            elements.hudQuickDriverSelect.value = currentMainDriver;
-        }
+        if (elements.mainDriverSelect) elements.mainDriverSelect.value = currentMainDriver;
+        if (elements.hudDriverSelect) elements.hudDriverSelect.value = currentMainDriver;
+        if (elements.hudQuickDriverSelect) elements.hudQuickDriverSelect.value = currentMainDriver;
     }
 }
 

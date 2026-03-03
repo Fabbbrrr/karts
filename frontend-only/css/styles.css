@@ -1,3 +1,35 @@
+/* ============================================================
+   Theme Variables
+   Classic (default) vs Glass (data-theme="glass" on body)
+   ============================================================ */
+:root {
+    --bg:           #000000;
+    --surface:      #1a1a1a;
+    --surface-2:    #252525;
+    --border:       transparent;
+    --accent:       #00ff88;
+    --text:         #ffffff;
+    --text-muted:   #888888;
+    --radius-card:  12px;
+    --blur:         none;
+    --nav-bg:       #1a1a1a;
+    --nav-border:   #00ff88;
+}
+
+[data-theme="glass"] {
+    --bg:           #09090f;
+    --surface:      rgba(255, 255, 255, 0.06);
+    --surface-2:    rgba(255, 255, 255, 0.11);
+    --border:       rgba(255, 255, 255, 0.10);
+    --accent:       #00e077;
+    --text:         #ffffff;
+    --text-muted:   #aaaaaa;
+    --radius-card:  14px;
+    --blur:         blur(14px);
+    --nav-bg:       rgba(9, 9, 15, 0.85);
+    --nav-border:   rgba(0, 224, 119, 0.45);
+}
+
 /* Reset & Base Styles */
 * {
     margin: 0;
@@ -5,13 +37,23 @@
     box-sizing: border-box;
 }
 
+/* Universal tap feedback — prevents double-tap zoom and gives press feel */
+button, [role="button"], select, input[type="checkbox"], label {
+    touch-action: manipulation;
+}
+
+button:active:not(.tab-btn):not(.race-item):not(.hud-toggle-btn) {
+    transform: scale(0.94);
+    transition: transform 0.06s;
+}
+
 html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
     font-family: 'Courier New', monospace;
-    background: #000000;
-    color: #ffffff;
+    background: var(--bg);
+    color: var(--text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -29,8 +71,10 @@ html, body {
     left: 0;
     right: 0;
     display: flex;
-    background: #1a1a1a;
-    border-top: 2px solid #00ff88;
+    background: var(--nav-bg);
+    border-top: 2px solid var(--nav-border);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
     z-index: 999;
     padding: 0;
 }
@@ -45,7 +89,7 @@ html, body {
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
-    scrollbar-color: #00ff88 #1a1a1a;
+    scrollbar-color: var(--accent) var(--nav-bg);
 }
 
 .tab-nav::-webkit-scrollbar {
@@ -53,38 +97,45 @@ html, body {
 }
 
 .tab-nav::-webkit-scrollbar-track {
-    background: #1a1a1a;
+    background: var(--nav-bg);
 }
 
 .tab-nav::-webkit-scrollbar-thumb {
-    background: #00ff88;
+    background: var(--accent);
     border-radius: 2px;
 }
 
 .tab-btn {
     flex: 0 0 auto;
     min-width: 90px;
+    min-height: 48px;
     background: transparent;
     border: none;
-    color: #888;
-    padding: 16px;
+    color: var(--text-muted);
+    padding: 14px 16px;
     font-size: 1rem;
     font-family: inherit;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
     border-bottom: 3px solid transparent;
+    touch-action: manipulation;
 }
 
 .tab-btn:hover {
-    background: #252525;
-    color: #fff;
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.tab-btn:active {
+    transform: scale(0.93);
+    transition: transform 0.06s;
 }
 
 .tab-btn.active {
-    color: #00ff88;
-    border-bottom-color: #00ff88;
-    background: #0a0a0a;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(0, 0, 0, 0.3);
 }
 
 /* Connection Indicator */
@@ -102,8 +153,8 @@ html, body {
 }
 
 #connection-indicator.connected {
-    background: #00ff88;
-    box-shadow: 0 0 12px rgba(0, 255, 136, 0.5);
+    background: var(--accent);
+    box-shadow: 0 0 14px rgba(0, 224, 119, 0.6);
 }
 
 #connection-indicator.replay-mode {
@@ -256,31 +307,39 @@ html, body {
 }
 
 .race-item {
-    background: #1a1a1a;
+    background: var(--surface);
     border-radius: 8px;
     padding: 12px 16px;
     display: grid;
     grid-template-columns: 60px 1fr auto;
     gap: 12px;
     align-items: center;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
     cursor: pointer;
+    touch-action: manipulation;
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
 }
 
 .race-item:hover {
-    background: #252525;
-    border-color: #00ff88;
+    background: var(--surface-2);
+    border-color: var(--accent);
     transform: translateX(2px);
 }
 
 .race-item:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
+    transition: transform 0.06s;
 }
 
 .race-item.main-driver {
-    border-color: #00ff88;
+    border-color: var(--accent);
     background: #1a2a1a;
+}
+
+[data-theme="glass"] .race-item.main-driver {
+    background: rgba(0, 224, 119, 0.08);
 }
 
 .race-position {
@@ -785,11 +844,14 @@ html, body {
 }
 
 .hud-card {
-    background: #1a1a1a;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
     padding: 16px;
     text-align: center;
     position: relative;
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
 }
 
 .hud-card.primary {
@@ -802,10 +864,10 @@ html, body {
 
 .hud-toggle-btn {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
+    top: 6px;
+    right: 6px;
+    width: 32px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50%;
@@ -818,6 +880,7 @@ html, body {
     justify-content: center;
     transition: all 0.2s ease;
     z-index: 10;
+    touch-action: manipulation;
 }
 
 .hud-toggle-btn:hover {
@@ -1056,10 +1119,13 @@ html, body {
 }
 
 .settings-section {
-    background: #1a1a1a;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
     padding: 20px;
     margin-bottom: 1.5rem;
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
 }
 
 .settings-section h2 {

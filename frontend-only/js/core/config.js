@@ -91,7 +91,10 @@ export const DEFAULT_SETTINGS = {
     ttsAnnounceGapPB: true,
 
     // Proximity alert threshold (seconds)
-    proximityThreshold: 2
+    proximityThreshold: 2,
+
+    // UI theme: 'classic' (solid dark) | 'glass' (translucent + blur)
+    theme: 'classic'
 };
 
 // App metadata

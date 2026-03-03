@@ -41,6 +41,20 @@ export function applySettings(elements, settings) {
     if (elements.proximityThresholdInput) {
         elements.proximityThresholdInput.value = settings.proximityThreshold;
     }
+
+    // Apply theme
+    if (elements.themeGlassToggle) {
+        elements.themeGlassToggle.checked = settings.theme === 'glass';
+    }
+    applyTheme(settings.theme);
+}
+
+/**
+ * Apply theme by setting data-theme attribute on body
+ * @param {string} theme - 'glass' or 'classic'
+ */
+export function applyTheme(theme) {
+    document.body.dataset.theme = theme === 'glass' ? 'glass' : '';
 }
 
 /**
@@ -77,7 +91,8 @@ export function getSettingsFromUI(elements) {
         hudShowLapHistory: elements.hudShowLapHistoryCheckbox?.checked ?? true,
         enableBestLapCelebration: elements.enableBestLapCheckbox?.checked ?? true,
         enableProximityAlert: elements.enableProximityCheckbox?.checked ?? true,
-        proximityThreshold: parseFloat(elements.proximityThresholdInput?.value) || 1.0
+        proximityThreshold: parseFloat(elements.proximityThresholdInput?.value) || 1.0,
+        theme: elements.themeGlassToggle?.checked ? 'glass' : 'classic'
     };
 }
 

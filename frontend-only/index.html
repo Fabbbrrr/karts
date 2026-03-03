@@ -677,7 +677,7 @@
                             
                             <div style="margin-bottom: 16px;">
                                 <label for="mock-max-laps">Maximum Laps:</label>
-                                <input type="number" id="mock-max-laps" class="settings-input" value="10" min="5" max="50">
+                                <input type="number" id="mock-max-laps" class="settings-input" value="10" min="5" max="50" inputmode="numeric">
                                 <p style="color: #666; font-size: 0.85rem; margin-top: 4px;">
                                     Session will end after this many laps or duration (whichever comes first)
                                 </p>
@@ -685,12 +685,12 @@
                             
                             <div style="margin-bottom: 16px;">
                                 <label for="mock-duration">Duration (minutes):</label>
-                                <input type="number" id="mock-duration" class="settings-input" value="5" min="1" max="30">
+                                <input type="number" id="mock-duration" class="settings-input" value="5" min="1" max="30" inputmode="numeric">
                             </div>
                             
                             <div style="margin-bottom: 16px;">
                                 <label for="mock-kart-count">Number of Karts:</label>
-                                <input type="number" id="mock-kart-count" class="settings-input" value="12" min="4" max="20">
+                                <input type="number" id="mock-kart-count" class="settings-input" value="12" min="4" max="20" inputmode="numeric">
                             </div>
                             
                             <button id="mock-restart-btn" class="settings-btn-secondary" style="width: 100%; margin-top: 12px;">
@@ -862,17 +862,14 @@
                 </div>
                 
                 <div class="settings-section">
-                    <h2>🎨 Color Theme</h2>
-                    <p style="color: #888; font-size: 0.9rem; margin-bottom: 12px;">
-                        Choose your preferred color scheme
+                    <h2>🎨 Appearance</h2>
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="theme-glass-toggle">
+                        <span>Glass theme — translucent cards with blur effect</span>
+                    </label>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">
+                        Classic: solid dark cards &nbsp;|&nbsp; Glass: frosted-glass cards + blur
                     </p>
-                    <label for="color-theme-select">Theme:</label>
-                    <select id="color-theme-select" class="settings-select">
-                        <option value="dark">🌙 Dark (Default)</option>
-                        <option value="light">☀️ Light</option>
-                        <option value="f1-red">🏎️ F1 Red</option>
-                        <option value="racing-green">🏁 Racing Green</option>
-                    </select>
                 </div>
                 
                 <div class="settings-section">

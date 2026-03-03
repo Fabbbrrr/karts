@@ -119,6 +119,7 @@ function cacheDOMElements() {
     elements.enableBestLapCheckbox = document.getElementById('enable-best-lap');
     elements.enableProximityCheckbox = document.getElementById('enable-proximity');
     elements.proximityThresholdInput = document.getElementById('proximity-threshold');
+    elements.themeGlassToggle = document.getElementById('theme-glass-toggle');
 
     // Session selector / history
     elements.sessionSelectorBar = document.getElementById('session-selector-bar');
@@ -310,6 +311,15 @@ function setupEventListeners() {
         });
     }
 
+    // Theme toggle
+    if (elements.themeGlassToggle) {
+        elements.themeGlassToggle.addEventListener('change', (e) => {
+            state.settings.theme = e.target.checked ? 'glass' : 'classic';
+            SettingsView.applyTheme(state.settings.theme);
+            saveSettings();
+        });
+    }
+
     // Export / Import
     if (elements.summaryExport) {
         elements.summaryExport.addEventListener('click', () => exportSessionData());
@@ -460,7 +470,7 @@ function handleSessionData(data) {
         }
 
         // Update driver dropdown and views
-        RaceView.updateDriverDropdown(elements, data);
+        RaceView.updateDriverDropdown(elements, data, state);
         updateAllViews();
 
     } catch (error) {
