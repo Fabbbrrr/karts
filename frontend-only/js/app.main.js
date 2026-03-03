@@ -185,11 +185,10 @@ function setupEventListeners() {
                 setTimeout(() => { raceItem.style.transform = ''; }, 100);
 
                 state.settings.mainDriver = kartNumber;
-                saveSettings();
-
                 if (elements.mainDriverSelect) {
                     elements.mainDriverSelect.value = kartNumber;
                 }
+                saveSettings();
                 switchTab('hud');
                 updateAllViews();
             }
@@ -859,8 +858,8 @@ window.kartingApp = {
     },
     selectDriverAndSwitchToHUD(kartNumber) {
         state.settings.mainDriver = kartNumber;
-        saveSettings();
         if (elements.mainDriverSelect) elements.mainDriverSelect.value = kartNumber;
+        saveSettings();
         switchTab('hud');
         updateAllViews();
     },
