@@ -196,10 +196,9 @@ function setupEventListeners() {
                 setTimeout(() => { raceItem.style.transform = ''; }, 100);
 
                 state.settings.mainDriver = kartNumber;
-                if (elements.mainDriverSelect) {
-                    elements.mainDriverSelect.value = kartNumber;
-                }
-                saveSettings();
+                if (elements.mainDriverSelect) elements.mainDriverSelect.value = kartNumber;
+                // Save state directly — avoids getSettingsFromUI() reading empty select values
+                StorageService.saveSettings(state.settings);
                 switchTab('hud');
                 updateAllViews();
             }
@@ -892,6 +891,43 @@ function updateSocketDataViewer() {
 }
 
 // ============================================================
+// Driver picker helpers
+// ============================================================
+
+/**
+ * Render glove-friendly driver buttons into a grid element.
+ * @param {HTMLElement} gridEl - Target grid container
+ * @param {Object} data - Session data
+ * @param {string} currentKart - Currently selected kart number
+ */
+function populateDriverGrid(gridEl, data, currentKart) {
+    if (!data || !data.runs) {
+        gridEl.innerHTML = '<div style="color:#555;padding:20px;text-align:center;grid-column:1/-1">No race data</div>';
+        return;
+    }
+
+    const runs = data.runs
+        .filter(r => r.kart_number)
+        .sort((a, b) => (a.pos || 99) - (b.pos || 99));
+
+    if (runs.length === 0) {
+        gridEl.innerHTML = '<div style="color:#555;padding:20px;text-align:center;grid-column:1/-1">No drivers found</div>';
+        return;
+    }
+
+    gridEl.innerHTML = runs.map(run => {
+        const isActive = run.kart_number === currentKart;
+        const posClass = run.pos <= 3 ? ` p${run.pos}` : '';
+        return `<button class="driver-pick-btn${isActive ? ' active' : ''}"
+                        onclick="window.kartingApp.selectDriverAndSwitchToHUD('${run.kart_number}')">
+            <div class="driver-pick-pos${posClass}">P${run.pos || '-'}</div>
+            <div class="driver-pick-kart">Kart ${run.kart_number}</div>
+            <div class="driver-pick-name">${run.name || ''}</div>
+        </button>`;
+    }).join('');
+}
+
+// ============================================================
 // window.kartingApp — exposes functions called by inline onclick handlers in HTML
 // ============================================================
 
@@ -914,9 +950,23 @@ window.kartingApp = {
     selectDriverAndSwitchToHUD(kartNumber) {
         state.settings.mainDriver = kartNumber;
         if (elements.mainDriverSelect) elements.mainDriverSelect.value = kartNumber;
-        saveSettings();
+        // Save state directly — avoids getSettingsFromUI() wiping mainDriver via empty select
+        StorageService.saveSettings(state.settings);
+        this.closeDriverPicker();
         switchTab('hud');
         updateAllViews();
+    },
+    openDriverPicker() {
+        const overlay = document.getElementById('driver-picker-overlay');
+        const grid = document.getElementById('driver-picker-grid');
+        if (!overlay || !grid) return;
+        const data = state.replayData || state.sessionData;
+        populateDriverGrid(grid, data, state.settings.mainDriver);
+        overlay.classList.remove('hidden');
+    },
+    closeDriverPicker() {
+        const overlay = document.getElementById('driver-picker-overlay');
+        if (overlay) overlay.classList.add('hidden');
     },
     updateAllViews() {
         updateAllViews();

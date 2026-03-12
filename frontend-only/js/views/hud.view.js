@@ -46,6 +46,7 @@ export function updateHUDView(elements, sessionData, state) {
         console.warn('⚠️ No main driver selected');
         elements.hudNoDriver.style.display = 'flex';
         elements.hudContent.classList.add('hidden');
+        populateHUDDriverGrid(sessionData);
         return;
     }
     
@@ -402,6 +403,40 @@ function calculateConsistencyScore(kartNumber, lapHistory) {
     
     const lapTimes = history.map(lap => lap.timeRaw);
     return calculateConsistency(lapTimes);
+}
+
+/**
+ * Populate the hud-driver-grid with glove-friendly driver buttons from session data.
+ * Called whenever the HUD "no driver" placeholder is shown.
+ * @param {Object} sessionData - Current session data
+ */
+function populateHUDDriverGrid(sessionData) {
+    const grid = document.getElementById('hud-driver-grid');
+    if (!grid) return;
+
+    if (!sessionData || !sessionData.runs) {
+        grid.innerHTML = '<div class="hud-driver-grid-empty">Waiting for race data…</div>';
+        return;
+    }
+
+    const runs = sessionData.runs
+        .filter(r => r.kart_number)
+        .sort((a, b) => (a.pos || 99) - (b.pos || 99));
+
+    if (runs.length === 0) {
+        grid.innerHTML = '<div class="hud-driver-grid-empty">No drivers in session</div>';
+        return;
+    }
+
+    grid.innerHTML = runs.map(run => {
+        const posClass = run.pos <= 3 ? ` p${run.pos}` : '';
+        return `<button class="driver-pick-btn"
+                        onclick="window.kartingApp.selectDriverAndSwitchToHUD('${run.kart_number}')">
+            <div class="driver-pick-pos${posClass}">P${run.pos || '-'}</div>
+            <div class="driver-pick-kart">Kart ${run.kart_number}</div>
+            <div class="driver-pick-name">${run.name || ''}</div>
+        </button>`;
+    }).join('');
 }
 
 /**

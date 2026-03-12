@@ -87,13 +87,10 @@
         <!-- HUD Tab - Single Driver Focus -->
         <div id="hud-screen" class="screen tab-content">
             <div id="hud-no-driver" class="hud-placeholder">
-                <h2>Select Your Driver</h2>
-                <p style="color: #888; margin-bottom: 20px;">Choose a kart number to view your personal HUD</p>
-                <div class="hud-driver-selector">
-                    <label for="hud-driver-select" style="color: #00ff88; font-size: 1.1rem; margin-bottom: 8px; display: block;">Kart Number:</label>
-                    <select id="hud-driver-select" class="hud-driver-select">
-                        <option value="">-- Select Kart --</option>
-                    </select>
+                <h2>TAP YOUR KART</h2>
+                <p style="color: #666; margin-bottom: 24px; font-size: 1rem;">Select a driver to start your HUD</p>
+                <div id="hud-driver-grid" class="hud-driver-grid">
+                    <div class="hud-driver-grid-empty">Waiting for race data…</div>
                 </div>
             </div>
             
@@ -103,10 +100,7 @@
                         <div id="hud-event-name" class="hud-event-name"></div>
                         <div id="hud-lap-info" class="hud-lap-info"></div>
                         <div class="hud-quick-selector">
-                            <label for="hud-quick-driver-select" style="font-size: 0.85rem; color: #888; margin-right: 8px;">Switch Driver:</label>
-                            <select id="hud-quick-driver-select" class="hud-quick-driver-select">
-                                <option value="">-- Select Kart --</option>
-                            </select>
+                            <button class="hud-change-driver-btn" onclick="window.kartingApp.openDriverPicker()">⇄ DRIVER</button>
                         </div>
                     </div>
                     <div class="hud-header-right">
@@ -226,8 +220,19 @@
                     <div id="proximity-alert" class="proximity-alert"></div>
                 </div>
             </div>
+
+            <!-- Driver Picker Overlay (fullscreen, glove-friendly) -->
+            <div id="driver-picker-overlay" class="driver-picker-overlay hidden">
+                <div class="driver-picker-inner">
+                    <div class="driver-picker-header">
+                        <h2>TAP YOUR KART</h2>
+                        <button class="driver-picker-close" onclick="window.kartingApp.closeDriverPicker()">✕</button>
+                    </div>
+                    <div id="driver-picker-grid" class="driver-picker-grid"></div>
+                </div>
+            </div>
         </div>
-        
+
         <!-- Results Tab - Complete Redesign -->
         <div id="results-screen" class="screen tab-content">
             <!-- Header with Controls -->
