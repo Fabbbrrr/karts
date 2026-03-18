@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaceFacer Android — Interactive Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0a0a;
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 64px;
+}
+
+h1.page-title {
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 32px;
+}
+
+/* ── Phone Frame ── */
+.phone-wrap {
+  position: relative;
+  width: 390px;
+  background: #1c1c1e;
+  border-radius: 52px;
+  box-shadow:
+    0 0 0 2px #3a3a3c,
+    0 0 0 6px #1c1c1e,
+    0 30px 80px rgba(0,0,0,.8),
+    inset 0 0 0 1px rgba(255,255,255,.06);
+  overflow: hidden;
+}
+/* side buttons */
+.phone-wrap::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 100px;
+  width: 4px;
+  height: 36px;
+  background: #3a3a3c;
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 52px 0 #3a3a3c;
+}
+.phone-wrap::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 130px;
+  width: 4px;
+  height: 68px;
+  background: #3a3a3c;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Dynamic island */
+.dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 844px;
+  background: #000;
+  border-radius: 52px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* ── Status Bar ── */
+.status-bar {
+  height: 54px;
+  padding: 14px 28px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.status-right { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.conn-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00ff88;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+@keyframes pulse-green {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(0,255,136,0); }
+}
+
+/* ── Screen Content Area ── */
+.screen-area {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: #000;
+}
+.screen.active { display: flex; }
+
+/* ── Top App Bar ── */
+.top-bar {
+  height: 56px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #000;
+  flex-shrink: 0;
+  border-bottom: 1px solid #111;
+}
+.top-bar-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.5px;
+  flex: 1;
+}
+.top-bar-accent { color: #00ff88; }
+.top-bar-actions { display: flex; gap: 8px; align-items: center; }
+.icon-btn {
+  width: 40px; height: 40px;
+  border-radius: 20px;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: background .15s;
+}
+.icon-btn:hover { background: #1a1a1a; }
+
+/* Scrollable content inside screens */
+.scroll-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 4px;
+}
+.scroll-content::-webkit-scrollbar { width: 3px; }
+.scroll-content::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+/* ── Filter Chips ── */
+.chip-row {
+  padding: 8px 16px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  background: #000;
+}
+.chip-row::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #333;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.chip.active {
+  border-color: #00ff88;
+  background: rgba(0,255,136,.12);
+  color: #00ff88;
+}
+
+/* ── Track Group Header ── */
+.track-header {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0d0d0d;
+  border-left: 4px solid #888;
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.track-header.rimo  { border-color: #ff7700; }
+.track-header.lakeside { border-color: #e0e0e0; }
+.track-label { font-size: 13px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; flex: 1; }
+.track-count { font-size: 12px; color: #555; }
+.chevron { font-size: 12px; color: #555; transition: transform .2s; }
+.track-header.collapsed .chevron { transform: rotate(-90deg); }
+
+/* ── Driver Row ── */
+.driver-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  min-height: 72px;
+  border-bottom: 1px solid #0f0f0f;
+  cursor: pointer;
+  transition: background .1s;
+  position: relative;
+}
+.driver-row:active { background: #111; }
+.driver-row.main-driver {
+  border-left: 4px solid #00ff88;
+  background: rgba(0,255,136,.04);
+  padding-left: 12px;
+}
+
+.pos-badge {
+  width: 44px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+.pos-badge.p1 { color: #ffd700; }
+.pos-badge.p2 { color: #c0c0c0; }
+.pos-badge.p3 { color: #cd7f32; }
+.pos-badge.other { color: #666; font-size: 20px; }
+
+.driver-info { flex: 1; min-width: 0; }
+.driver-name {
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.driver-name.main { color: #00ff88; }
+.driver-kart { font-size: 12px; color: #555; margin-top: 1px; }
+.driver-chips {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.data-chip {
+  font-size: 11px;
+  color: #888;
+  background: #111;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.data-chip.incident { color: #ffaa00; background: rgba(255,170,0,.1); }
+
+.timing-col { text-align: right; flex-shrink: 0; }
+.best-time {
+  font-size: 18px;
+  font-weight: 700;
+  color: #00ff88;
+  font-family: 'JetBrains Mono', monospace;
+}
+.gap-time { font-size: 12px; color: #555; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+/* ── HUD Screen ── */
+.hud-topbar {
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #000;
+  border-bottom: 1px solid #111;
+  flex-shrink: 0;
+}
+.hud-event { font-size: 11px; color: #555; flex: 1; }
+.hud-timer {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+}
+.pos-change-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #1a1a1a;
+  color: #888;
+}
+
+.hud-hero {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.hud-pos {
+  font-size: 80px;
+  font-weight: 800;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+  color: #c0c0c0;
+}
+.hud-kart-col { text-align: right; }
+.hud-kart {
+  font-size: 28px;
+  font-weight: 700;
+  color: #00ff88;
+  font-family: 'JetBrains Mono', monospace;
+}
+.hud-name { font-size: 14px; color: #555; margin-top: 4px; }
+
+/* HUD cards grid */
+.hud-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+.hud-card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid #222;
+  cursor: grab;
+}
+.hud-card-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #555;
+  font-weight: 600;
+}
+.hud-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+  line-height: 1.1;
+}
+.hud-card-value.green { color: #00ff88; }
+.hud-card-value.silver { color: #c0c0c0; }
+.hud-card-value.amber { color: #ffaa00; }
+.hud-card-sub {
+  font-size: 10px;
+  color: #555;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 2px;
+}
+.hud-card-sub.green { color: #00ff88; }
+.hud-card-sub.amber { color: #ffaa00; }
+
+/* Lap History */
+.lap-history-header {
+  padding: 12px 16px 6px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #555;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.lap-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid #0a0a0a;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+.lap-num { width: 36px; color: #444; font-size: 11px; }
+.lap-time { flex: 1; font-weight: 700; }
+.lap-delta { width: 64px; text-align: right; font-size: 12px; }
+.lap-pb { font-size: 10px; width: 32px; text-align: right; color: #555; }
+
+.lap-row.lap-best { background: rgba(0,255,136,.06); }
+.lap-row.lap-best .lap-time { color: #00ff88; }
+.lap-row.lap-best .lap-delta { color: #00ff88; }
+
+.lap-row.lap-pb-row { background: rgba(155,89,182,.08); }
+.lap-row.lap-pb-row .lap-time { color: #b06bd6; }
+.lap-row.lap-pb-row .lap-delta { color: #888; }
+
+.lap-row.lap-normal .lap-delta { color: #ffaa00; }
+
+/* ── Results Screen ── */
+.stat-strip {
+  display: flex;
+  padding: 12px 16px;
+  gap: 0;
+  background: #0a0a0a;
+  border-bottom: 1px solid #111;
+  flex-shrink: 0;
+}
+.stat-item {
+  flex: 1;
+  text-align: center;
+  border-right: 1px solid #1a1a1a;
+}
+.stat-item:last-child { border-right: none; }
+.stat-val { font-size: 17px; font-weight: 700; color: #fff; font-family: 'JetBrains Mono', monospace; }
+.stat-lbl { font-size: 10px; color: #555; margin-top: 2px; letter-spacing: .5px; }
+
+.podium-wrap {
+  padding: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.podium-slot {
+  flex: 1;
+  border-radius: 12px 12px 0 0;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  position: relative;
+}
+.podium-slot.p1 { background: rgba(255,215,0,.1); height: 120px; border: 1px solid rgba(255,215,0,.2); }
+.podium-slot.p2 { background: rgba(192,192,192,.08); height: 96px; border: 1px solid rgba(192,192,192,.15); }
+.podium-slot.p3 { background: rgba(205,127,50,.08); height: 80px; border: 1px solid rgba(205,127,50,.15); }
+.podium-medal { font-size: 22px; }
+.podium-name { font-size: 11px; font-weight: 700; color: #fff; }
+.podium-kart { font-size: 10px; color: #555; }
+.podium-time { font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.podium-slot.p1 .podium-time { color: #ffd700; }
+.podium-slot.p2 .podium-time { color: #c0c0c0; }
+.podium-slot.p3 .podium-time { color: #cd7f32; }
+
+.search-bar {
+  margin: 8px 16px;
+  padding: 10px 16px;
+  background: #1a1a1a;
+  border-radius: 28px;
+  border: 1px solid #2a2a2a;
+  color: #888;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.results-table { padding: 0 16px; }
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  background: #0d0d0d;
+  border-left: 3px solid transparent;
+}
+.result-row.p1 { border-color: #ffd700; background: rgba(255,215,0,.05); }
+.result-row.p2 { border-color: #c0c0c0; background: rgba(192,192,192,.04); }
+.result-row.p3 { border-color: #cd7f32; background: rgba(205,127,50,.04); }
+.result-pos { width: 24px; font-size: 14px; font-weight: 700; }
+.result-pos.p1 { color: #ffd700; }
+.result-pos.p2 { color: #c0c0c0; }
+.result-pos.p3 { color: #cd7f32; }
+.result-name { flex: 1; font-size: 13px; }
+.result-name-small { font-size: 11px; color: #555; }
+.result-val { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: #888; text-align: right; }
+.result-val.best { color: #00ff88; font-weight: 700; }
+
+/* Awards pager */
+.awards-header {
+  padding: 14px 16px 6px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #555;
+  font-weight: 600;
+}
+.awards-pager {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 16px;
+  overflow-x: auto;
+}
+.awards-pager::-webkit-scrollbar { display: none; }
+.award-card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 140px;
+  flex-shrink: 0;
+  border: 1px solid #222;
+}
+.award-icon { font-size: 24px; }
+.award-title { font-size: 11px; color: #555; margin-top: 6px; letter-spacing: .5px; }
+.award-name { font-size: 13px; font-weight: 700; margin-top: 2px; }
+.award-stat { font-size: 12px; color: #00ff88; font-family: 'JetBrains Mono', monospace; margin-top: 2px; }
+
+/* ── Compare Screen ── */
+.compare-selectors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+.driver-select {
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.vs-label { font-size: 14px; font-weight: 700; color: #444; flex-shrink: 0; }
+
+.compare-table { padding: 8px 16px; }
+.compare-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #111;
+}
+.compare-val {
+  flex: 1;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.compare-val.winner { background: rgba(0,255,136,.12); color: #00ff88; }
+.compare-val.loser  { background: rgba(255,68,68,.08);  color: #ff4444; }
+.compare-metric {
+  width: 80px;
+  text-align: center;
+  font-size: 10px;
+  color: #555;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.compare-chart-wrap {
+  padding: 16px;
+}
+.compare-chart-title {
+  font-size: 11px;
+  color: #555;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+#compareChart { width: 100%; border-radius: 8px; background: #0d0d0d; }
+
+/* ── Summary Screen ── */
+.summary-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+.summary-card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #222;
+}
+.summary-card-label { font-size: 10px; color: #555; letter-spacing: .5px; text-transform: uppercase; }
+.summary-card-value { font-size: 22px; font-weight: 700; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+.summary-card-value.green { color: #00ff88; }
+.summary-card-value.silver { color: #c0c0c0; }
+
+.chart-wrap { padding: 0 16px 16px; }
+.chart-label { font-size: 11px; color: #555; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+#summaryChart { width: 100%; border-radius: 8px; background: #0d0d0d; }
+
+/* ── Settings Screen ── */
+.settings-group-label {
+  padding: 16px 16px 6px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #00ff88;
+  font-weight: 700;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #0d0d0d;
+}
+.settings-row-label { flex: 1; font-size: 14px; }
+.settings-row-sub { font-size: 12px; color: #555; margin-top: 2px; }
+.toggle {
+  width: 44px; height: 24px;
+  border-radius: 12px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+.toggle.on { background: rgba(0,255,136,.3); border-color: #00ff88; }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #555;
+  top: 2px; left: 2px;
+  transition: transform .2s, background .2s;
+}
+.toggle.on::after { transform: translateX(20px); background: #00ff88; }
+.settings-value { font-size: 13px; color: #555; font-family: 'JetBrains Mono', monospace; }
+.settings-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #333;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-btn:hover { border-color: #00ff88; color: #00ff88; }
+
+/* ── Bottom Navigation ── */
+.bottom-nav {
+  height: 80px;
+  background: #0a0a0a;
+  border-top: 1px solid #111;
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 11px;
+  font-weight: 500;
+  transition: color .15s;
+  position: relative;
+}
+.nav-item.active { color: #00ff88; }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: #00ff88;
+  border-radius: 0 0 2px 2px;
+}
+.nav-icon { font-size: 22px; }
+
+/* ── Bottom Sheet (More) ── */
+.sheet-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: none;
+  z-index: 50;
+  cursor: pointer;
+}
+.sheet-overlay.open { display: block; }
+
+.bottom-sheet {
+  position: absolute;
+  bottom: 80px;
+  left: 0; right: 0;
+  background: #111;
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid #222;
+  padding: 12px 20px 20px;
+  transform: translateY(100%);
+  transition: transform .3s cubic-bezier(.32,.72,0,1);
+  z-index: 51;
+}
+.bottom-sheet.open { transform: translateY(0); }
+.sheet-handle {
+  width: 40px; height: 4px;
+  background: #333;
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #888; }
+.sheet-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sheet-tile {
+  background: #1a1a1a;
+  border-radius: 16px;
+  padding: 18px 16px;
+  cursor: pointer;
+  border: 1px solid #222;
+  transition: border-color .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sheet-tile:hover { border-color: #00ff88; }
+.sheet-tile-icon { font-size: 28px; }
+.sheet-tile-name { font-size: 15px; font-weight: 700; }
+.sheet-tile-desc { font-size: 11px; color: #555; }
+
+/* Full screen sub-pages (Summary, Settings) */
+.subpage {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 60;
+  display: none;
+  flex-direction: column;
+}
+.subpage.open { display: flex; }
+.subpage-bar {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 4px;
+  gap: 4px;
+  border-bottom: 1px solid #111;
+  flex-shrink: 0;
+}
+.back-btn {
+  width: 44px; height: 44px;
+  border-radius: 22px;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.subpage-title { font-size: 20px; font-weight: 700; }
+.subpage-content { flex: 1; overflow-y: auto; }
+.subpage-content::-webkit-scrollbar { width: 3px; }
+.subpage-content::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+/* Driver picker grid */
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 16px;
+}
+.picker-btn {
+  background: #1a1a1a;
+  border: 1px solid #222;
+  border-radius: 12px;
+  padding: 12px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 80px;
+  transition: border-color .15s;
+  color: #fff;
+}
+.picker-btn:hover, .picker-btn:active { border-color: #00ff88; }
+.picker-pos { font-size: 13px; font-weight: 700; }
+.picker-pos.p1 { color: #ffd700; }
+.picker-pos.p2 { color: #c0c0c0; }
+.picker-pos.p3 { color: #cd7f32; }
+.picker-kart { font-size: 13px; color: #00ff88; font-family: 'JetBrains Mono', monospace; }
+.picker-name { font-size: 11px; color: #888; text-align: center; line-height: 1.2; }
+
+/* Section divider */
+.section-div {
+  height: 8px;
+  background: #060606;
+  border-top: 1px solid #111;
+  border-bottom: 1px solid #111;
+}
+
+/* HUD picker prompt */
+.hud-prompt {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 32px;
+}
+.hud-prompt-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+}
+.hud-prompt-sub { font-size: 13px; color: #555; margin-top: 6px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">RaceFacer · Android Mockup · Interactive</h1>
+
+<!-- ─────────────────────────────────────── PHONE FRAME ─── -->
+<div class="phone-wrap">
+  <div class="dynamic-island"></div>
+
+  <div class="phone-screen">
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <span>9:41</span>
+      <div class="status-right">
+        <div class="conn-dot"></div>
+        <span>▲ ■ 100%</span>
+      </div>
+    </div>
+
+    <!-- Screens -->
+    <div class="screen-area">
+
+      <!-- ═══ SCREEN: RACE ═══ -->
+      <div class="screen active" id="screen-race">
+        <div class="top-bar">
+          <span class="top-bar-title">Race<span class="top-bar-accent">Facer</span></span>
+          <div class="top-bar-actions">
+            <div class="conn-dot"></div>
+          </div>
+        </div>
+        <div class="chip-row">
+          <div class="chip active" onclick="filterTrack('All', this)">All</div>
+          <div class="chip" onclick="filterTrack('Rimo', this)">Rimo</div>
+          <div class="chip" onclick="filterTrack('Lakeside', this)">Lakeside</div>
+        </div>
+        <div class="scroll-content" id="race-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN: HUD ═══ -->
+      <div class="screen" id="screen-hud">
+        <!-- Driver picker shown when no driver selected -->
+        <div id="hud-picker" style="display:flex; flex-direction:column; background:#000; flex:1;">
+          <div class="top-bar">
+            <span class="top-bar-title">HUD</span>
+          </div>
+          <div class="hud-prompt">
+            <div class="hud-prompt-title">TAP YOUR KART</div>
+            <div class="hud-prompt-sub">Select a driver to start your HUD</div>
+            <div class="picker-grid" id="hud-picker-grid"></div>
+          </div>
+        </div>
+
+        <!-- Full HUD shown when driver is selected -->
+        <div id="hud-active" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+          <div class="hud-topbar">
+            <div class="hud-event">Le Mans Entertainment Cup · Race 1</div>
+            <div class="hud-timer" id="hud-timer">06:43</div>
+            <div class="pos-change-badge">↕ ±0</div>
+          </div>
+          <div class="hud-hero">
+            <div class="hud-pos" id="hud-pos">P 2</div>
+            <div class="hud-kart-col">
+              <div class="hud-kart" id="hud-kart">KART E12</div>
+              <div class="hud-name" id="hud-name">Arnav Singh</div>
+            </div>
+          </div>
+          <div class="hud-grid">
+            <div class="hud-card">
+              <div class="hud-card-label">Last Lap</div>
+              <div class="hud-card-value green" id="hud-last">26.916</div>
+              <div class="hud-card-sub amber">−0.388 to best</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Best Lap</div>
+              <div class="hud-card-value" id="hud-best">27.304</div>
+              <div class="hud-card-sub green">PB ★</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Average</div>
+              <div class="hud-card-value amber" id="hud-avg">28.1</div>
+              <div class="hud-card-sub">14 laps</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Gap P1</div>
+              <div class="hud-card-value amber">+4.195</div>
+              <div class="hud-card-sub green">▽ closing</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Interval</div>
+              <div class="hud-card-value amber">+4.195</div>
+              <div class="hud-card-sub">to P1</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Consistency</div>
+              <div class="hud-card-value green">91%</div>
+              <div class="hud-card-sub">σ 0.41s</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Gap to PB</div>
+              <div class="hud-card-value green">−0.388</div>
+              <div class="hud-card-sub green">new PB!</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Lap</div>
+              <div class="hud-card-value silver">14</div>
+              <div class="hud-card-sub">of 22</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-card-label">Pers. Best</div>
+              <div class="hud-card-value" style="color:#ffd700; font-size:20px;">27.304</div>
+              <div class="hud-card-sub">this session</div>
+            </div>
+          </div>
+
+          <div class="lap-history-header">Lap History</div>
+          <div style="flex:1; overflow-y:auto;">
+            <div class="lap-row lap-best">
+              <div class="lap-num">L14</div>
+              <div class="lap-time" style="color:#00ff88;">26.916</div>
+              <div class="lap-delta" style="color:#00ff88;">−0.388</div>
+              <div class="lap-pb" style="color:#00ff88;">⚡</div>
+            </div>
+            <div class="lap-row lap-normal">
+              <div class="lap-num">L13</div>
+              <div class="lap-time">27.552</div>
+              <div class="lap-delta" style="color:#ffaa00;">+0.248</div>
+              <div class="lap-pb"></div>
+            </div>
+            <div class="lap-row lap-normal">
+              <div class="lap-num">L12</div>
+              <div class="lap-time">28.010</div>
+              <div class="lap-delta" style="color:#ffaa00;">+0.706</div>
+              <div class="lap-pb"></div>
+            </div>
+            <div class="lap-row lap-normal">
+              <div class="lap-num">L11</div>
+              <div class="lap-time">27.890</div>
+              <div class="lap-delta" style="color:#ffaa00;">+0.586</div>
+              <div class="lap-pb"></div>
+            </div>
+            <div class="lap-row lap-pb-row">
+              <div class="lap-num">L10</div>
+              <div class="lap-time" style="color:#b06bd6;">27.304</div>
+              <div class="lap-delta" style="color:#888;">±0.000</div>
+              <div class="lap-pb" style="color:#b06bd6;">PB</div>
+            </div>
+            <div class="lap-row lap-normal">
+              <div class="lap-num">L9</div>
+              <div class="lap-time">27.680</div>
+              <div class="lap-delta" style="color:#ffaa00;">+0.376</div>
+              <div class="lap-pb"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN: RESULTS ═══ -->
+      <div class="screen" id="screen-results">
+        <div class="top-bar">
+          <span class="top-bar-title">Results</span>
+          <div class="top-bar-actions">
+            <span style="font-size:12px; color:#00ff88; background:rgba(0,255,136,.1); padding:4px 10px; border-radius:12px;">⬤ Live</span>
+          </div>
+        </div>
+        <div class="scroll-content">
+          <div class="stat-strip">
+            <div class="stat-item"><div class="stat-val">8</div><div class="stat-lbl">Drivers</div></div>
+            <div class="stat-item"><div class="stat-val">108</div><div class="stat-lbl">Total Laps</div></div>
+            <div class="stat-item"><div class="stat-val">26.521</div><div class="stat-lbl">Fastest</div></div>
+            <div class="stat-item"><div class="stat-val">30.2s</div><div class="stat-lbl">Avg Lap</div></div>
+          </div>
+          <div class="chip-row">
+            <div class="chip active">⚡ Fastest</div>
+            <div class="chip">🏃 Total</div>
+            <div class="chip">📊 Average</div>
+            <div class="chip">🎯 Best 3</div>
+            <div class="chip">🎚 Consistency</div>
+          </div>
+          <div class="podium-wrap">
+            <div class="podium-slot p2">
+              <div class="podium-medal">🥈</div>
+              <div class="podium-name">Arnav Singh</div>
+              <div class="podium-kart">E12</div>
+              <div class="podium-time">27.304</div>
+            </div>
+            <div class="podium-slot p1">
+              <div class="podium-medal">🥇</div>
+              <div class="podium-name">Marco Andreetti</div>
+              <div class="podium-kart">E05</div>
+              <div class="podium-time">26.521</div>
+            </div>
+            <div class="podium-slot p3">
+              <div class="podium-medal">🥉</div>
+              <div class="podium-name">Sofia Reinholt</div>
+              <div class="podium-kart">E08</div>
+              <div class="podium-time">27.891</div>
+            </div>
+          </div>
+          <div class="search-bar">🔍 <span>Search driver or kart…</span></div>
+          <div class="results-table">
+            <div class="result-row p1">
+              <div class="result-pos p1">🥇</div>
+              <div class="result-name">Marco Andreetti<div class="result-name-small">E05 · 14 laps</div></div>
+              <div class="result-val best">26.521</div>
+            </div>
+            <div class="result-row p2">
+              <div class="result-pos p2">🥈</div>
+              <div class="result-name" style="color:#00ff88;">Arnav Singh<div class="result-name-small" style="color:#555;">E12 · 14 laps</div></div>
+              <div class="result-val">27.304</div>
+            </div>
+            <div class="result-row p3">
+              <div class="result-pos p3">🥉</div>
+              <div class="result-name">Sofia Reinholt<div class="result-name-small">E08 · 13 laps · 🟡1</div></div>
+              <div class="result-val">27.891</div>
+            </div>
+            <div class="result-row">
+              <div class="result-pos">4</div>
+              <div class="result-name">James Whitfield<div class="result-name-small">E03 · 13 laps</div></div>
+              <div class="result-val">28.110</div>
+            </div>
+            <div class="result-row">
+              <div class="result-pos">5</div>
+              <div class="result-name">Yuki Tanaka<div class="result-name-small">14 · 14 laps</div></div>
+              <div class="result-val">30.201</div>
+            </div>
+            <div class="result-row">
+              <div class="result-pos">6</div>
+              <div class="result-name">Priya Sharma<div class="result-name-small">07 · 14 laps · 🟡2</div></div>
+              <div class="result-val">30.510</div>
+            </div>
+            <div class="result-row">
+              <div class="result-pos">7</div>
+              <div class="result-name">Daniel Osei<div class="result-name-small">22 · 13 laps · 🟡1</div></div>
+              <div class="result-val">31.005</div>
+            </div>
+            <div class="result-row">
+              <div class="result-pos">8</div>
+              <div class="result-name">Lena Brandt<div class="result-name-small">09 · 12 laps · 🔴3</div></div>
+              <div class="result-val">32.110</div>
+            </div>
+          </div>
+          <div class="awards-header">Session Awards</div>
+          <div class="awards-pager">
+            <div class="award-card">
+              <div class="award-icon">⚡</div>
+              <div class="award-title">Fastest Lap</div>
+              <div class="award-name">Marco Andreetti</div>
+              <div class="award-stat">26.521</div>
+            </div>
+            <div class="award-card">
+              <div class="award-icon">🎯</div>
+              <div class="award-title">Most Consistent</div>
+              <div class="award-name">Marco Andreetti</div>
+              <div class="award-stat">94% · σ 0.31</div>
+            </div>
+            <div class="award-card">
+              <div class="award-icon">🔥</div>
+              <div class="award-title">Hot Start</div>
+              <div class="award-name">Arnav Singh</div>
+              <div class="award-stat">L2-5 avg 27.1</div>
+            </div>
+            <div class="award-card">
+              <div class="award-icon">🧊</div>
+              <div class="award-title">Ice in Veins</div>
+              <div class="award-name">Marco Andreetti</div>
+              <div class="award-stat">best/avg Δ 1.3s</div>
+            </div>
+            <div class="award-card">
+              <div class="award-icon">💥</div>
+              <div class="award-title">Crasher of the Day</div>
+              <div class="award-name">Lena Brandt</div>
+              <div class="award-stat">3 incidents</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SCREEN: COMPARE ═══ -->
+      <div class="screen" id="screen-compare">
+        <div class="top-bar">
+          <span class="top-bar-title">Head to Head</span>
+        </div>
+        <div class="scroll-content">
+          <div class="compare-selectors">
+            <div class="driver-select" style="border-color:#00ff88; color:#00ff88;">Arnav Singh<br><span style="font-size:10px; color:#555;">E12</span></div>
+            <div class="vs-label">VS</div>
+            <div class="driver-select">Marco Andreetti<br><span style="font-size:10px; color:#555;">E05</span></div>
+          </div>
+          <div class="section-div"></div>
+          <div class="compare-table">
+            <div class="compare-row">
+              <div class="compare-val loser">27.304</div>
+              <div class="compare-metric">Best Lap</div>
+              <div class="compare-val winner">26.521</div>
+            </div>
+            <div class="compare-row">
+              <div class="compare-val winner">26.916</div>
+              <div class="compare-metric">Last Lap</div>
+              <div class="compare-val loser">27.103</div>
+            </div>
+            <div class="compare-row">
+              <div class="compare-val loser">28.1</div>
+              <div class="compare-metric">Average</div>
+              <div class="compare-val winner">27.8</div>
+            </div>
+            <div class="compare-row">
+              <div class="compare-val loser">91%</div>
+              <div class="compare-metric">Consistency</div>
+              <div class="compare-val winner">94%</div>
+            </div>
+            <div class="compare-row">
+              <div class="compare-val winner">14</div>
+              <div class="compare-metric">Total Laps</div>
+              <div class="compare-val winner">14</div>
+            </div>
+            <div class="compare-row">
+              <div class="compare-val loser">+4.195</div>
+              <div class="compare-metric">Gap Leader</div>
+              <div class="compare-val winner">Leader</div>
+            </div>
+            <div class="compare-row">
+              <div class="compare-val winner">0</div>
+              <div class="compare-metric">Incidents</div>
+              <div class="compare-val winner">0</div>
+            </div>
+          </div>
+          <div class="section-div"></div>
+          <div class="compare-chart-wrap">
+            <div class="compare-chart-title">Lap Time Comparison</div>
+            <canvas id="compareChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /screen-area -->
+
+    <!-- Bottom Sheet Overlay -->
+    <div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+
+    <!-- More Bottom Sheet -->
+    <div class="bottom-sheet" id="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">More</div>
+      <div class="sheet-tiles">
+        <div class="sheet-tile" onclick="openSubpage('summary')">
+          <div class="sheet-tile-icon">📊</div>
+          <div class="sheet-tile-name">Summary</div>
+          <div class="sheet-tile-desc">Session overview & position chart</div>
+        </div>
+        <div class="sheet-tile" onclick="openSubpage('settings')">
+          <div class="sheet-tile-icon">⚙️</div>
+          <div class="sheet-tile-name">Settings</div>
+          <div class="sheet-tile-desc">Channel, driver, display options</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-page: SUMMARY -->
+    <div class="subpage" id="subpage-summary">
+      <div class="subpage-bar">
+        <button class="back-btn" onclick="closeSubpage('summary')">←</button>
+        <div class="subpage-title">Session Summary</div>
+      </div>
+      <div class="subpage-content">
+        <div class="chip-row" style="padding:12px 16px 4px;">
+          <div class="chip active">⬤ Live</div>
+          <div class="chip">All Tracks</div>
+        </div>
+        <div class="summary-stats-grid">
+          <div class="summary-card">
+            <div class="summary-card-label">Your Position</div>
+            <div class="summary-card-value silver">P 2</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">Best Lap</div>
+            <div class="summary-card-value green">27.304</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">Laps Completed</div>
+            <div class="summary-card-value">14</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">Consistency</div>
+            <div class="summary-card-value green">91%</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-label">Position Battle — All Drivers</div>
+          <canvas id="summaryChart" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-page: SETTINGS -->
+    <div class="subpage" id="subpage-settings">
+      <div class="subpage-bar">
+        <button class="back-btn" onclick="closeSubpage('settings')">←</button>
+        <div class="subpage-title">Settings</div>
+      </div>
+      <div class="subpage-content">
+        <div class="settings-group-label">Connection</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Channel</div><div class="settings-row-sub">Socket.IO channel name</div></div>
+          <div class="settings-value">lemansentertainment</div>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Status</div></div>
+          <div style="font-size:13px; color:#00ff88;">🟢 Connected</div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label">Reconnect</div>
+          <button class="settings-btn">Reconnect</button>
+        </div>
+
+        <div class="settings-group-label">Your Driver</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Main Driver</div><div class="settings-row-sub">Arnav Singh · E12</div></div>
+          <div class="settings-value">E12 ▾</div>
+        </div>
+
+        <div class="settings-group-label">Race View Display</div>
+        <div class="settings-row"><div class="settings-row-label">Show Intervals</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Show Gaps</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Show Consistency</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Show Average Lap</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Show Last Lap</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+        <div class="settings-group-label">HUD Cards</div>
+        <div class="settings-row"><div class="settings-row-label">Last Lap</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Best Lap</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Average Lap</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Gap to P1</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Interval</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Consistency</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Lap History</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Personal Best</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+        <div class="settings-group-label">Voice Announcements</div>
+        <div class="settings-row"><div class="settings-row-label">Enable TTS</div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Announce Gap to P1</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div class="settings-row-label">Announce Gap to PB</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div><div class="settings-row-label">TTS Speed</div></div><input type="range" min="5" max="20" value="9" style="width:80px; accent-color:#00ff88;"></div>
+        <div class="settings-row"><div><div class="settings-row-label">Pause Between (s)</div></div><input type="range" min="1" max="10" value="2" style="width:80px; accent-color:#00ff88;"></div>
+
+        <div class="settings-group-label">Alerts</div>
+        <div class="settings-row"><div class="settings-row-label">Proximity Alert</div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row"><div><div class="settings-row-label">Threshold (seconds)</div></div><input type="range" min="1" max="10" value="2" style="width:80px; accent-color:#00ff88;"></div>
+
+        <div class="settings-group-label">Display</div>
+        <div class="settings-row"><div class="settings-row-label">Keep Screen On</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="settings-row">
+          <div class="settings-row-label">Theme</div>
+          <div style="display:flex; gap:4px;">
+            <div style="padding:6px 14px; border-radius:16px; background:#00ff88; color:#000; font-size:12px; font-weight:700;">Classic</div>
+            <div style="padding:6px 14px; border-radius:16px; border:1px solid #333; color:#555; font-size:12px;">Glass</div>
+          </div>
+        </div>
+
+        <div class="settings-group-label">Wear OS</div>
+        <div class="settings-row">
+          <div><div class="settings-row-label">Watch</div><div class="settings-row-sub">Pixel Watch 3</div></div>
+          <div style="font-size:13px; color:#00ff88;">🟢 Connected</div>
+        </div>
+        <div class="settings-row"><div class="settings-row-label">Open on Watch</div><button class="settings-btn">Open</button></div>
+
+        <div class="settings-group-label">Data</div>
+        <div class="settings-row"><div><div class="settings-row-label">Session History</div><div class="settings-row-sub">20 sessions stored</div></div></div>
+        <div class="settings-row"><div class="settings-row-label">Clear All History</div><button class="settings-btn" style="color:#ff4444; border-color:#ff4444;">Clear</button></div>
+
+        <div style="height:32px;"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="showScreen('race', this)">
+        <span class="nav-icon">🏎</span><span>Race</span>
+      </button>
+      <button class="nav-item" onclick="showScreen('hud', this)">
+        <span class="nav-icon">📡</span><span>HUD</span>
+      </button>
+      <button class="nav-item" onclick="showScreen('results', this)">
+        <span class="nav-icon">🏆</span><span>Results</span>
+      </button>
+      <button class="nav-item" onclick="showScreen('compare', this)">
+        <span class="nav-icon">⚖️</span><span>Compare</span>
+      </button>
+      <button class="nav-item" onclick="openSheet()">
+        <span class="nav-icon">···</span><span>More</span>
+      </button>
+    </nav>
+  </div><!-- /phone-screen -->
+</div><!-- /phone-wrap -->
+
+<script>
+// ── Mock Data ──────────────────────────────────────────────
+const DRIVERS = [
+  { pos:1, kart:'E05', name:'Marco Andreetti',  best:'26.521', last:'27.103', avg:'27.8', consistency:'94%', gap:'—',     int:'—',     laps:14, incidents:0, track:'Rimo'     },
+  { pos:2, kart:'E12', name:'Arnav Singh',       best:'27.304', last:'26.916', avg:'28.1', consistency:'91%', gap:'+4.2',  int:'+4.2',  laps:14, incidents:0, track:'Rimo'     },
+  { pos:3, kart:'E08', name:'Sofia Reinholt',    best:'27.891', last:'28.444', avg:'28.6', consistency:'88%', gap:'+9.7',  int:'+5.5',  laps:13, incidents:1, track:'Rimo'     },
+  { pos:4, kart:'E03', name:'James Whitfield',   best:'28.110', last:'28.330', avg:'28.9', consistency:'85%', gap:'+14.1', int:'+4.4',  laps:13, incidents:0, track:'Rimo'     },
+  { pos:5, kart:'14',  name:'Yuki Tanaka',        best:'30.201', last:'30.488', avg:'31.0', consistency:'89%', gap:'+0.3',  int:'+0.3',  laps:14, incidents:0, track:'Lakeside' },
+  { pos:6, kart:'07',  name:'Priya Sharma',       best:'30.510', last:'31.120', avg:'31.5', consistency:'82%', gap:'+8.2',  int:'+7.9',  laps:14, incidents:2, track:'Lakeside' },
+  { pos:7, kart:'22',  name:'Daniel Osei',        best:'31.005', last:'30.887', avg:'31.8', consistency:'79%', gap:'+18.4', int:'+10.2', laps:13, incidents:1, track:'Lakeside' },
+  { pos:8, kart:'09',  name:'Lena Brandt',        best:'32.110', last:'33.654', avg:'33.2', consistency:'71%', gap:'+35.9', int:'+17.5', laps:12, incidents:3, track:'Lakeside' },
+];
+const MAIN_KART = 'E12';
+let currentFilter = 'All';
+let selectedHudDriver = MAIN_KART;
+
+// ── Screen Navigation ──────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  if (name === 'compare') drawCompareChart();
+  if (name === 'hud') renderHUD(selectedHudDriver);
+}
+
+// ── Sheet ──────────────────────────────────────────────────
+function openSheet() {
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('bottom-sheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('bottom-sheet').classList.remove('open');
+}
+
+// ── Subpages ───────────────────────────────────────────────
+function openSubpage(name) {
+  closeSheet();
+  document.getElementById('subpage-' + name).classList.add('open');
+  if (name === 'summary') setTimeout(drawSummaryChart, 100);
+}
+function closeSubpage(name) {
+  document.getElementById('subpage-' + name).classList.remove('open');
+}
+
+// ── Race List ──────────────────────────────────────────────
+function filterTrack(track, chip) {
+  currentFilter = track;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  renderRaceList();
+}
+
+function renderRaceList() {
+  const filtered = currentFilter === 'All' ? DRIVERS : DRIVERS.filter(d => d.track === currentFilter);
+  const byTrack = {};
+  filtered.forEach(d => { (byTrack[d.track] = byTrack[d.track] || []).push(d); });
+
+  const trackColors = { Rimo: 'rimo', Lakeside: 'lakeside' };
+
+  let html = '';
+  for (const [track, drivers] of Object.entries(byTrack)) {
+    const colorClass = trackColors[track] || '';
+    html += `<div class="track-header ${colorClass}" onclick="toggleTrack(this)">
+      <span class="track-label">${track}</span>
+      <span class="track-count">${drivers.length} karts</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="track-group">`;
+    for (const d of drivers) {
+      const posClass = d.pos === 1 ? 'p1' : d.pos === 2 ? 'p2' : d.pos === 3 ? 'p3' : 'other';
+      const isMain = d.kart === MAIN_KART;
+      const incChip = d.incidents > 0 ? `<span class="data-chip incident">${d.incidents >= 3 ? '🔴' : '🟡'}${d.incidents}</span>` : '';
+      html += `<div class="driver-row ${isMain ? 'main-driver' : ''}" onclick="selectDriver('${d.kart}')">
+        <div class="pos-badge ${posClass}">P${d.pos}</div>
+        <div class="driver-info">
+          <div class="driver-name ${isMain ? 'main' : ''}">${d.name}</div>
+          <div class="driver-kart">Kart ${d.kart}</div>
+          <div class="driver-chips">
+            <span class="data-chip">L ${d.last}</span>
+            <span class="data-chip">Avg ${d.avg}</span>
+            <span class="data-chip">Int ${d.int}</span>
+            ${incChip}
+          </div>
+        </div>
+        <div class="timing-col">
+          <div class="best-time">${d.best}</div>
+          <div class="gap-time">${d.gap}</div>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById('race-list').innerHTML = html;
+}
+
+function toggleTrack(header) {
+  const group = header.nextElementSibling;
+  header.classList.toggle('collapsed');
+  group.style.display = header.classList.contains('collapsed') ? 'none' : 'block';
+}
+
+// ── HUD ───────────────────────────────────────────────────
+function selectDriver(kart) {
+  selectedHudDriver = kart;
+  showScreen('hud', document.querySelectorAll('.nav-item')[1]);
+  renderHUD(kart);
+}
+
+function renderHUD(kart) {
+  const d = DRIVERS.find(x => x.kart === kart);
+  if (!d) {
+    document.getElementById('hud-picker').style.display = 'flex';
+    document.getElementById('hud-active').style.display = 'none';
+    renderHUDPicker();
+    return;
+  }
+  document.getElementById('hud-picker').style.display = 'none';
+  document.getElementById('hud-active').style.display = 'flex';
+
+  const posClass = d.pos === 1 ? 'gold' : d.pos === 2 ? 'silver' : d.pos === 3 ? 'bronze' : 'white';
+  const posColors = { gold:'#ffd700', silver:'#c0c0c0', bronze:'#cd7f32', white:'#fff' };
+  document.getElementById('hud-pos').style.color = posColors[posClass];
+  document.getElementById('hud-pos').textContent = 'P ' + d.pos;
+  document.getElementById('hud-kart').textContent = 'KART ' + d.kart;
+  document.getElementById('hud-name').textContent = d.name;
+  document.getElementById('hud-last').textContent = d.last;
+  document.getElementById('hud-best').textContent = d.best;
+  document.getElementById('hud-avg').textContent = d.avg;
+}
+
+function renderHUDPicker() {
+  const posColors = ['#ffd700','#c0c0c0','#cd7f32'];
+  let html = '';
+  DRIVERS.forEach(d => {
+    const c = d.pos <= 3 ? posColors[d.pos-1] : '#666';
+    html += `<div class="picker-btn" onclick="selectDriver('${d.kart}')">
+      <div class="picker-pos" style="color:${c}">P${d.pos}</div>
+      <div class="picker-kart">${d.kart}</div>
+      <div class="picker-name">${d.name}</div>
+    </div>`;
+  });
+  document.getElementById('hud-picker-grid').innerHTML = html;
+}
+
+// ── Compare Chart ──────────────────────────────────────────
+function drawCompareChart() {
+  const canvas = document.getElementById('compareChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 32;
+  canvas.width = W;
+  canvas.height = 160;
+
+  // Mock lap times for 14 laps
+  const arnavLaps = [28.8, 27.6, 27.4, 27.2, 28.0, 27.9, 27.7, 27.8, 27.5, 27.304, 27.6, 28.01, 27.55, 26.916];
+  const marcoLaps = [28.2, 27.1, 26.9, 27.0, 27.5, 27.2, 26.8, 27.1, 26.9, 26.7, 26.9, 27.1, 27.103, 27.0];
+
+  const allTimes = [...arnavLaps, ...marcoLaps];
+  const minT = Math.min(...allTimes) - 0.5;
+  const maxT = Math.max(...allTimes) + 0.5;
+  const laps = arnavLaps.length;
+
+  const padL = 8, padR = 8, padT = 12, padB = 24;
+  const chartW = W - padL - padR;
+  const chartH = 160 - padT - padB;
+
+  ctx.clearRect(0, 0, W, 160);
+
+  // Grid
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + (i / 4) * chartH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+  }
+
+  // Draw line helper
+  function drawLine(data, color, lineWidth = 2) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    data.forEach((t, i) => {
+      const x = padL + (i / (laps - 1)) * chartW;
+      const y = padT + ((t - minT) / (maxT - minT)) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // dots
+    data.forEach((t, i) => {
+      const x = padL + (i / (laps - 1)) * chartW;
+      const y = padT + ((t - minT) / (maxT - minT)) * chartH;
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    });
+  }
+
+  drawLine(marcoLaps, '#ffaa00', 2);
+  drawLine(arnavLaps, '#00ff88', 2.5);
+
+  // Labels
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.fillStyle = '#555';
+  ctx.fillText('1', padL, 160 - 8);
+  ctx.fillText(String(laps), padL + chartW - 8, 160 - 8);
+
+  // Legend
+  ctx.fillStyle = '#00ff88'; ctx.fillRect(W - 120, 4, 12, 4);
+  ctx.fillStyle = '#aaa'; ctx.font = '10px sans-serif'; ctx.fillText('Arnav', W - 104, 10);
+  ctx.fillStyle = '#ffaa00'; ctx.fillRect(W - 60, 4, 12, 4);
+  ctx.fillStyle = '#aaa'; ctx.fillText('Marco', W - 44, 10);
+}
+
+// ── Summary Chart ──────────────────────────────────────────
+function drawSummaryChart() {
+  const canvas = document.getElementById('summaryChart');
+  if (!canvas) return;
+  const W = canvas.parentElement.clientWidth - 32;
+  canvas.width = W;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+
+  // Mock position data per lap for 6 drivers over 14 laps
+  const driverPositions = [
+    { name: 'Arnav', color: '#00ff88', width: 3,   pos: [3,2,2,2,2,2,2,2,2,2,2,2,2,2] },
+    { name: 'Marco', color: '#ffaa00', width: 1.5, pos: [1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+    { name: 'Sofia', color: '#ff6b6b', width: 1.5, pos: [2,3,3,3,3,3,3,3,3,3,3,3,3,3] },
+    { name: 'James', color: '#6b9fff', width: 1.5, pos: [4,4,4,4,4,4,4,4,4,4,4,4,4,4] },
+    { name: 'Yuki',  color: '#ff9fff', width: 1,   pos: [5,5,5,5,5,5,5,5,5,5,5,5,5,5] },
+    { name: 'Priya', color: '#fffb6b', width: 1,   pos: [6,6,6,6,6,6,6,6,6,6,6,6,6,6] },
+  ];
+
+  const laps = 14;
+  const maxPos = 6;
+  const padL = 28, padR = 12, padT = 12, padB = 24;
+  const chartW = W - padL - padR;
+  const chartH = 200 - padT - padB;
+
+  ctx.clearRect(0, 0, W, 200);
+
+  // Grid
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1;
+  for (let p = 1; p <= maxPos; p++) {
+    const y = padT + ((p - 1) / (maxPos - 1)) * chartH;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.font = '10px monospace'; ctx.fillStyle = '#333';
+    ctx.fillText('P' + p, 4, y + 4);
+  }
+
+  driverPositions.forEach(d => {
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = d.width;
+    ctx.globalAlpha = d.name === 'Arnav' ? 1.0 : 0.45;
+    ctx.beginPath();
+    d.pos.forEach((p, i) => {
+      const x = padL + (i / (laps - 1)) * chartW;
+      const y = padT + ((p - 1) / (maxPos - 1)) * chartH;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // dot at last lap
+    const lastX = padL + chartW;
+    const lastY = padT + ((d.pos[laps-1] - 1) / (maxPos - 1)) * chartH;
+    ctx.beginPath(); ctx.arc(lastX, lastY, d.name === 'Arnav' ? 5 : 3, 0, Math.PI*2);
+    ctx.fillStyle = d.color; ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+
+  // X-axis labels
+  ctx.font = '10px monospace'; ctx.fillStyle = '#555';
+  ctx.fillText('L1', padL - 4, 200 - 8);
+  ctx.fillText('L14', padL + chartW - 12, 200 - 8);
+}
+
+// ── Timer ─────────────────────────────────────────────────
+let timerSeconds = 403; // 6:43
+setInterval(() => {
+  if (timerSeconds > 0) timerSeconds--;
+  const m = Math.floor(timerSeconds / 60);
+  const s = String(timerSeconds % 60).padStart(2, '0');
+  const el = document.getElementById('hud-timer');
+  if (el) el.textContent = m + ':' + s;
+}, 1000);
+
+// ── Init ──────────────────────────────────────────────────
+renderRaceList();
+renderHUDPicker();
+</script>
+</body>
+</html>

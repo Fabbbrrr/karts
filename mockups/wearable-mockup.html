@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaceFacer Wear OS — Interactive Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent: #00ff88;
+  --amber:  #ffaa00;
+  --gold:   #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+  --red:    #ff4444;
+  --purple: #b06bd6;
+  --bg:     #000;
+  --surf:   #1a1a1a;
+  --muted:  #555;
+  --text:   #fff;
+}
+
+body {
+  background: #070707;
+  font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 80px;
+}
+
+h1.page-title {
+  font-size: 12px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #444;
+  margin-bottom: 40px;
+}
+
+/* ── Watch Frame ─────────────────────────────── */
+.watch-scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.watch-outer {
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: #1c1c1e;
+  box-shadow:
+    0 0 0 3px #2a2a2c,
+    0 0 0 8px #141414,
+    0 0 0 10px #2a2a2c,
+    0 30px 80px rgba(0,0,0,.9),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Crown */
+.watch-outer::after {
+  content: '';
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 36px;
+  background: #2a2a2c;
+  border-radius: 0 6px 6px 0;
+  box-shadow: 2px 0 4px rgba(0,0,0,.5);
+}
+
+/* Band lugs */
+.watch-outer::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  top: -30px;
+  height: 34px;
+  background: #111;
+  border-radius: 6px 6px 0 0;
+  box-shadow:
+    0 -30px 0 #111,
+    -40px 362px 0 #111,
+    40px 362px 0 #111;
+}
+
+.watch-screen {
+  width: 310px;
+  height: 310px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ambient mode overlay */
+.watch-screen.ambient {
+  filter: grayscale(1) brightness(0.6);
+}
+.watch-screen.ambient .accent-text { color: #aaa !important; }
+.watch-screen.ambient .amber-text  { color: #aaa !important; }
+.watch-screen.ambient .gold-text   { color: #ccc !important; }
+.watch-screen.ambient .silver-text { color: #aaa !important; }
+
+/* ── Watch Screens ──────────────────────────── */
+.wscreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  padding: 24px 20px 20px;
+  text-align: center;
+}
+.wscreen.active { display: flex; }
+
+/* Ambient mode: hide non-essential elements */
+.watch-screen.ambient .ambient-hide { display: none !important; }
+.watch-screen.ambient .ambient-only { display: block !important; }
+.ambient-only { display: none; }
+
+/* ── Common Watch Typography ─────────────────── */
+.w-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.w-conn { display: flex; align-items: center; gap: 4px; }
+.w-conn-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse-g 2s ease-in-out infinite;
+}
+@keyframes pulse-g {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,.6); }
+  50%      { box-shadow: 0 0 0 4px rgba(0,255,136,0); }
+}
+.w-time { font-family: 'JetBrains Mono', monospace; }
+
+.w-pos {
+  font-size: 64px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+  margin: 2px 0;
+}
+.w-kart {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.w-section-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+.w-big-val {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.1;
+}
+.w-sub-val {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+}
+.w-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 6px;
+}
+.w-col { text-align: center; }
+.w-col-label {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.w-col-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+.w-footer {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: auto;
+  padding-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.accent-text { color: var(--accent); }
+.amber-text  { color: var(--amber); }
+.gold-text   { color: var(--gold); }
+.silver-text { color: var(--silver); }
+.red-text    { color: var(--red); }
+.purple-text { color: var(--purple); }
+
+/* ── ScalingLazyColumn simulation ─────────────── */
+.scaling-list {
+  width: 100%;
+  overflow-y: auto;
+  max-height: 220px;
+  padding: 0 8px;
+}
+.scaling-list::-webkit-scrollbar { display: none; }
+
+.lap-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 6px 10px;
+  border-radius: 20px;
+  margin-bottom: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #111;
+  transition: transform .15s, opacity .15s;
+}
+.lap-item.lap-best-s { background: rgba(0,255,136,.08); }
+.lap-item.lap-pb-s   { background: rgba(176,107,214,.1); }
+.lap-item.lap-incident { background: rgba(255,68,68,.07); }
+
+.lap-n   { width: 28px; color: var(--muted); font-size: 10px; }
+.lap-t   { flex: 1; font-weight: 700; }
+.lap-d   { font-size: 11px; }
+
+/* scaling effect items at top/bottom */
+.scaling-list .lap-item:first-child,
+.scaling-list .lap-item:last-child {
+  transform: scale(0.88);
+  opacity: 0.55;
+}
+.scaling-list .lap-item:nth-child(2),
+.scaling-list .lap-item:nth-last-child(2) {
+  transform: scale(0.94);
+  opacity: 0.75;
+}
+
+/* ── Position Chart (canvas) ───────────────── */
+#posChart {
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* ── Session screen ────────────────────────── */
+.w-event-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ccc;
+  text-align: center;
+  line-height: 1.3;
+}
+.w-countdown {
+  font-size: 48px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  margin: 4px 0;
+  line-height: 1;
+}
+
+/* ── Splash screen ─────────────────────────── */
+.spinner {
+  width: 48px; height: 48px;
+  border: 3px solid #1a1a1a;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 8px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Navigation dots ───────────────────────── */
+.watch-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.nav-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #333;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+.nav-dot.active { background: var(--accent); transform: scale(1.3); }
+
+.nav-arrow {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #888;
+  font-size: 16px;
+  transition: all .15s;
+  user-select: none;
+}
+.nav-arrow:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ── Controls below watch ──────────────────── */
+.watch-controls {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.ctrl-btn {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid #2a2a2a;
+  background: #111;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .5px;
+}
+.ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ctrl-btn.ambient-on { border-color: #ffaa00; color: #ffaa00; background: rgba(255,170,0,.08); }
+
+/* ── Screen Labels ─────────────────────────── */
+.screen-label {
+  font-size: 11px;
+  color: #333;
+  text-align: center;
+  margin-top: 10px;
+  letter-spacing: 1px;
+}
+
+/* ── Tile Previews ─────────────────────────── */
+.tiles-section {
+  margin-top: 48px;
+  width: 380px;
+}
+.tiles-title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #333;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.tiles-row {
+  display: flex;
+  gap: 12px;
+}
+.tile-card {
+  flex: 1;
+  background: #111;
+  border-radius: 16px;
+  border: 1px solid #1a1a1a;
+  padding: 16px;
+  overflow: hidden;
+}
+.tile-app-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #333;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tile-app-icon { width: 16px; height: 16px; border-radius: 4px; background: var(--accent); display: inline-block; }
+.tile-heading {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.tile-primary {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+  line-height: 1.1;
+  margin: 4px 0;
+}
+.tile-secondary {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+}
+.tile-tertiary {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.tile-divider {
+  height: 1px;
+  background: #1a1a1a;
+  margin: 10px 0;
+}
+.tile-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.tile-row span:first-child { color: var(--muted); }
+
+/* ── Complication previews ─────────────────── */
+.complications-section {
+  margin-top: 36px;
+  width: 380px;
+}
+.complications-title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #333;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.complications-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.complication {
+  background: #111;
+  border: 1px solid #1a1a1a;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+}
+.comp-label { font-size: 9px; color: #333; letter-spacing: 1px; text-transform: uppercase; }
+.comp-value { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.comp-value.green { color: var(--accent); }
+.comp-arc {
+  width: 56px; height: 56px;
+  position: relative;
+}
+.comp-arc svg { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">RaceFacer · Wear OS Mockup · Interactive</h1>
+
+<!-- ─── WATCH SCENE ─── -->
+<div class="watch-scene">
+  <div class="watch-outer">
+    <div class="watch-screen" id="watchScreen">
+
+      <!-- W1: HUD (Primary) — LAST LAP is the hero -->
+      <div class="wscreen active" id="ws-hud">
+        <!-- Status bar: conn dot + position badge + timer -->
+        <div class="w-status-bar ambient-hide" style="margin-bottom:2px;">
+          <div class="w-conn"><div class="w-conn-dot"></div>
+            <span style="background:rgba(192,192,192,.15);color:#c0c0c0;padding:1px 6px;border-radius:8px;font-weight:700;font-size:11px;">P2</span>
+            <span style="color:#555;font-size:10px;">E12</span>
+          </div>
+          <span class="w-time" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#555;">06:<span id="watch-sec">43</span></span>
+        </div>
+
+        <!-- LAST LAP — hero element -->
+        <div class="w-section-label ambient-hide" style="margin-top:4px;">LAST LAP</div>
+        <div style="font-size:52px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#00ff88;line-height:1;letter-spacing:-1px;" class="ambient-hide">26.916</div>
+        <div style="font-size:16px;font-family:'JetBrains Mono',monospace;color:#00ff88;margin-bottom:6px;" class="ambient-hide">−0.388 to best</div>
+
+        <!-- ambient: stripped last lap -->
+        <div class="ambient-only" style="font-size:36px;font-family:'JetBrains Mono',monospace;color:#aaa;font-weight:800;line-height:1;">26.916</div>
+        <div class="ambient-only" style="font-size:11px;color:#555;font-family:'JetBrains Mono',monospace;">P2 · L14/22</div>
+
+        <!-- Mini cards row: best + gap -->
+        <div class="w-row ambient-hide" style="gap:12px;margin-top:2px;">
+          <div class="w-col" style="background:#111;border-radius:10px;padding:6px 10px;min-width:90px;">
+            <div class="w-col-label">BEST LAP</div>
+            <div class="w-col-val" style="font-size:16px;color:#fff;">27.304</div>
+          </div>
+          <div class="w-col" style="background:#111;border-radius:10px;padding:6px 10px;min-width:90px;">
+            <div class="w-col-label">GAP P1</div>
+            <div class="w-col-val amber-text" style="font-size:15px;">+4.195 <span style="font-size:10px;color:#00ff88;">▽</span></div>
+          </div>
+        </div>
+
+        <!-- Mate comparison strip -->
+        <div class="ambient-hide" style="margin-top:8px;background:#0d0d0d;border-radius:10px;padding:6px 12px;width:100%;border:1px solid #1a1a1a;">
+          <div style="font-size:9px;letter-spacing:1.5px;color:#555;text-transform:uppercase;margin-bottom:3px;">MATE · E05</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#ffaa00;">27.103</span>
+            <span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:#ff4444;">+0.187 behind</span>
+          </div>
+        </div>
+
+        <div class="w-footer ambient-hide" style="font-size:9px;">Lap 14/22 · 91% consistency</div>
+      </div>
+
+      <!-- W2: Lap History -->
+      <div class="wscreen" id="ws-laps">
+        <div class="w-status-bar">
+          <span style="font-size:10px;font-weight:700;letter-spacing:1px;">LAP HISTORY</span>
+          <span class="w-time accent-text">E12</span>
+        </div>
+        <div class="scaling-list" id="lapList">
+          <div class="lap-item lap-best-s">
+            <div class="lap-n">L14</div>
+            <div class="lap-t accent-text">26.916</div>
+            <div class="lap-d accent-text">−0.388</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L13</div>
+            <div class="lap-t">27.552</div>
+            <div class="lap-d amber-text">+0.248</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L12</div>
+            <div class="lap-t">28.010</div>
+            <div class="lap-d amber-text">+0.706</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L11</div>
+            <div class="lap-t">27.890</div>
+            <div class="lap-d amber-text">+0.586</div>
+          </div>
+          <div class="lap-item lap-pb-s">
+            <div class="lap-n">L10</div>
+            <div class="lap-t purple-text">27.304</div>
+            <div class="lap-d" style="color:#888;">±0.000</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L9</div>
+            <div class="lap-t">27.680</div>
+            <div class="lap-d amber-text">+0.376</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L8</div>
+            <div class="lap-t">27.992</div>
+            <div class="lap-d amber-text">+0.688</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L7</div>
+            <div class="lap-t">28.244</div>
+            <div class="lap-d amber-text">+0.940</div>
+          </div>
+          <div class="lap-item lap-incident">
+            <div class="lap-n">L6</div>
+            <div class="lap-t red-text">33.501</div>
+            <div class="lap-d red-text">+6.197</div>
+          </div>
+          <div class="lap-item">
+            <div class="lap-n">L5</div>
+            <div class="lap-t">28.112</div>
+            <div class="lap-d amber-text">+0.808</div>
+          </div>
+        </div>
+        <div class="w-footer" style="margin-top:auto;">▲▼ scroll · PB = L10</div>
+      </div>
+
+      <!-- W3: Position Chart -->
+      <div class="wscreen" id="ws-chart">
+        <div class="w-status-bar">
+          <span style="font-size:10px;font-weight:700;letter-spacing:1px;">POSITION</span>
+          <span class="w-time amber-text">Race 1</span>
+        </div>
+        <canvas id="posChart" width="260" height="200"></canvas>
+        <div style="display:flex;gap:12px;margin-top:4px;">
+          <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#888;">
+            <div style="width:12px;height:3px;background:var(--accent);border-radius:2px;"></div>Arnav
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;font-size:9px;color:#555;">
+            <div style="width:12px;height:3px;background:#333;border-radius:2px;"></div>Others
+          </div>
+        </div>
+      </div>
+
+      <!-- W4: Session Info -->
+      <div class="wscreen" id="ws-session">
+        <div class="w-status-bar">
+          <div class="w-conn"><div class="w-conn-dot"></div><span>Live</span></div>
+          <span class="w-time">9:41</span>
+        </div>
+        <div class="w-event-name">Le Mans Entertainment Cup</div>
+        <div style="font-size:11px;color:var(--muted);margin:2px 0;">Race 1</div>
+        <div class="w-countdown" id="watch-countdown">06:43</div>
+        <div style="font-size:11px;color:var(--muted);">Lap 14 of 22</div>
+        <div style="font-size:10px;color:#333;margin-top:4px;">8 drivers · 108 total laps</div>
+        <div class="w-footer" style="margin-top:auto;">
+          Leader: <span class="amber-text">Marco E05</span>
+        </div>
+      </div>
+
+      <!-- W5: Splash / Connecting -->
+      <div class="wscreen" id="ws-splash">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+          <div class="spinner"></div>
+          <div style="font-size:14px;font-weight:700;color:#888;">Waiting for phone…</div>
+          <div style="font-size:11px;color:#444;text-align:center;padding:0 16px;">Open RaceFacer on your phone to start</div>
+        </div>
+        <div class="w-footer" style="font-size:10px;">Pixel Watch 3 · BT Connected</div>
+      </div>
+
+    </div><!-- /watch-screen -->
+  </div><!-- /watch-outer -->
+
+  <!-- Navigation -->
+  <div class="watch-nav">
+    <div class="nav-arrow" onclick="prevScreen()">‹</div>
+    <div class="nav-dot active" data-screen="hud"     onclick="goScreen(0, this)"></div>
+    <div class="nav-dot"        data-screen="laps"    onclick="goScreen(1, this)"></div>
+    <div class="nav-dot"        data-screen="chart"   onclick="goScreen(2, this)"></div>
+    <div class="nav-dot"        data-screen="session" onclick="goScreen(3, this)"></div>
+    <div class="nav-dot"        data-screen="splash"  onclick="goScreen(4, this)"></div>
+    <div class="nav-arrow" onclick="nextScreen()">›</div>
+  </div>
+
+  <!-- Screen label -->
+  <div class="screen-label" id="screenLabel">HUD · Primary View</div>
+
+  <!-- Controls -->
+  <div class="watch-controls">
+    <div class="ctrl-btn" id="ambientBtn" onclick="toggleAmbient()">Toggle Ambient Mode</div>
+  </div>
+</div>
+
+<!-- ─── TILE PREVIEWS ─── -->
+<div class="tiles-section">
+  <div class="tiles-title">Wear OS Tiles</div>
+  <div class="tiles-row">
+    <!-- HUD Tile -->
+    <div class="tile-card">
+      <div class="tile-app-label">
+        <span class="tile-app-icon"></span> RaceFacer
+      </div>
+      <div class="tile-heading">Your Driver</div>
+      <div class="tile-primary"><span style="color:var(--silver);">P2</span> <span style="font-size:18px;color:var(--accent);">E12</span></div>
+      <div class="tile-secondary">26.916</div>
+      <div class="tile-tertiary">Last lap</div>
+      <div class="tile-divider"></div>
+      <div class="tile-row">
+        <span>Gap P1</span>
+        <span style="color:var(--amber);">+4.195</span>
+      </div>
+      <div class="tile-row">
+        <span>Interval</span>
+        <span style="color:var(--amber);">+4.195</span>
+      </div>
+      <div class="tile-row">
+        <span>Best</span>
+        <span style="color:var(--accent);">27.304</span>
+      </div>
+      <div class="tile-divider"></div>
+      <div style="font-size:9px;color:#333;letter-spacing:.5px;">Updated 2s ago</div>
+    </div>
+
+    <!-- Session Tile -->
+    <div class="tile-card">
+      <div class="tile-app-label">
+        <span class="tile-app-icon"></span> RaceFacer
+      </div>
+      <div class="tile-heading">Session</div>
+      <div class="tile-primary" style="font-size:22px;line-height:1.2;">Le Mans<br>Cup</div>
+      <div class="tile-secondary" id="tile-timer">06:43</div>
+      <div class="tile-tertiary">Remaining</div>
+      <div class="tile-divider"></div>
+      <div class="tile-row">
+        <span>Lap</span>
+        <span>14 / 22</span>
+      </div>
+      <div class="tile-row">
+        <span>Drivers</span>
+        <span>8</span>
+      </div>
+      <div class="tile-row">
+        <span>Leader</span>
+        <span style="color:var(--gold);">Marco E05</span>
+      </div>
+      <div class="tile-divider"></div>
+      <div style="font-size:9px;color:#333;letter-spacing:.5px;">Updated 2s ago</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── COMPLICATIONS ─── -->
+<div class="complications-section">
+  <div class="complications-title">Watch Face Complications</div>
+  <div class="complications-row">
+    <div class="complication">
+      <div class="comp-label">Position</div>
+      <div class="comp-value silver-text">P2</div>
+    </div>
+    <div class="complication">
+      <div class="comp-label">Last Lap</div>
+      <div class="comp-value accent-text">26.9</div>
+    </div>
+    <div class="complication">
+      <div class="comp-label">Consistency</div>
+      <div class="comp-arc">
+        <svg viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="22" fill="none" stroke="#1a1a1a" stroke-width="5"/>
+          <circle cx="28" cy="28" r="22" fill="none" stroke="#00ff88" stroke-width="5"
+            stroke-dasharray="138.23" stroke-dashoffset="12.44"
+            stroke-linecap="round"
+            transform="rotate(-90 28 28)"/>
+          <text x="28" y="32" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="monospace">91%</text>
+        </svg>
+      </div>
+    </div>
+    <div class="complication">
+      <div class="comp-label">Gap P1</div>
+      <div class="comp-value amber-text">+4.2</div>
+    </div>
+    <div class="complication">
+      <div class="comp-label">Long Text</div>
+      <div class="comp-value" style="font-size:10px;color:#888;font-family:'JetBrains Mono',monospace;text-align:center;line-height:1.4;">P2 · 26.916<br>+4.2 P1</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Screen definitions ─────────────────────────────────────
+const SCREENS = [
+  { id: 'hud',     label: 'HUD · Primary View'       },
+  { id: 'laps',    label: 'Lap History · Scroll with Crown' },
+  { id: 'chart',   label: 'Position Battle Chart'    },
+  { id: 'session', label: 'Session Info · Live Timer' },
+  { id: 'splash',  label: 'Splash · Connecting State' },
+];
+let currentScreen = 0;
+let ambientMode = false;
+
+function goScreen(idx, dotEl) {
+  // Hide all
+  SCREENS.forEach(s => {
+    const el = document.getElementById('ws-' + s.id);
+    if (el) el.classList.remove('active');
+  });
+  document.querySelectorAll('.nav-dot').forEach(d => d.classList.remove('active'));
+
+  currentScreen = idx;
+  const s = SCREENS[idx];
+  const el = document.getElementById('ws-' + s.id);
+  if (el) el.classList.add('active');
+
+  const dots = document.querySelectorAll('.nav-dot');
+  if (dots[idx]) dots[idx].classList.add('active');
+  document.getElementById('screenLabel').textContent = s.label;
+
+  if (s.id === 'chart') setTimeout(drawPosChart, 80);
+}
+
+function nextScreen() { goScreen((currentScreen + 1) % SCREENS.length); }
+function prevScreen() { goScreen((currentScreen - 1 + SCREENS.length) % SCREENS.length); }
+
+// Swipe support
+let touchStartX = 0;
+const ws = document.querySelector('.watch-screen');
+ws.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX, { passive: true });
+ws.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 40) dx < 0 ? nextScreen() : prevScreen();
+}, { passive: true });
+
+// ── Ambient mode ───────────────────────────────────────────
+function toggleAmbient() {
+  ambientMode = !ambientMode;
+  ws.classList.toggle('ambient', ambientMode);
+  const btn = document.getElementById('ambientBtn');
+  btn.classList.toggle('ambient-on', ambientMode);
+  btn.textContent = ambientMode ? 'Exit Ambient Mode' : 'Toggle Ambient Mode';
+}
+
+// ── Position Chart ─────────────────────────────────────────
+function drawPosChart() {
+  const canvas = document.getElementById('posChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 260, H = 200;
+  canvas.width = W; canvas.height = H;
+
+  const drivers = [
+    { name:'Arnav',  color:'#00ff88', width:3,   pos:[3,2,2,2,2,2,2,2,2,2,2,2,2,2] },
+    { name:'Marco',  color:'#333',    width:1.5, pos:[1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+    { name:'Sofia',  color:'#2a2a2a', width:1,   pos:[2,3,3,3,3,3,3,3,3,3,3,3,3,3] },
+    { name:'James',  color:'#222',    width:1,   pos:[4,4,4,4,4,4,4,4,4,4,4,4,4,4] },
+    { name:'Others', color:'#1a1a1a', width:1,   pos:[5,5,5,5,5,5,5,5,5,5,5,5,5,5] },
+  ];
+
+  const laps = 14, maxPos = 5;
+  const padL = 24, padR = 8, padT = 10, padB = 20;
+  const cW = W - padL - padR, cH = H - padT - padB;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  for (let p = 1; p <= maxPos; p++) {
+    const y = padT + ((p-1)/(maxPos-1)) * cH;
+    ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.font = '9px monospace'; ctx.fillStyle = '#2a2a2a';
+    ctx.fillText('P'+p, 2, y + 4);
+  }
+
+  // X axis ticks
+  [1, 5, 10, 14].forEach(l => {
+    const x = padL + ((l-1)/(laps-1)) * cW;
+    ctx.font = '8px monospace'; ctx.fillStyle = '#2a2a2a';
+    ctx.fillText(l, x - 4, H - 4);
+  });
+
+  // Draw drivers (others first, Arnav last so it's on top)
+  [...drivers].reverse().forEach(d => {
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = d.width;
+    ctx.globalAlpha = d.name === 'Arnav' ? 1 : 0.7;
+    ctx.beginPath();
+    d.pos.forEach((p, i) => {
+      const x = padL + (i/(laps-1)) * cW;
+      const y = padT + ((p-1)/(maxPos-1)) * cH;
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    if (d.name === 'Arnav') {
+      // dots
+      d.pos.forEach((p, i) => {
+        const x = padL + (i/(laps-1)) * cW;
+        const y = padT + ((p-1)/(maxPos-1)) * cH;
+        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2);
+        ctx.fillStyle = d.color; ctx.fill();
+      });
+      // current position dot (larger)
+      const lx = padL + cW, ly = padT + ((d.pos[laps-1]-1)/(maxPos-1)) * cH;
+      ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI*2);
+      ctx.fillStyle = d.color; ctx.fill();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ── Timers ────────────────────────────────────────────────
+let seconds = 403;
+setInterval(() => {
+  if (seconds > 0) seconds--;
+  const m = Math.floor(seconds / 60);
+  const s = String(seconds % 60).padStart(2,'0');
+  const str = m + ':' + s;
+  const ws = document.getElementById('watch-sec');
+  const wd = document.getElementById('watch-countdown');
+  const td = document.getElementById('tile-timer');
+  if (ws) ws.textContent = String(seconds % 60).padStart(2,'0');
+  if (wd) wd.textContent = str;
+  if (td) td.textContent = str;
+}, 1000);
+
+// ── Crown/scroll simulation on lap list ───────────────────
+document.addEventListener('wheel', e => {
+  if (currentScreen === 1) {
+    const list = document.getElementById('lapList');
+    if (list) list.scrollTop += e.deltaY * 0.5;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// ── Init ─────────────────────────────────────────────────
+goScreen(0);
+</script>
+</body>
+</html>
