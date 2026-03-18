@@ -1,0 +1,1572 @@
+/* ============================================================
+   APEX THEME — RaceFacer Mobile UI v2
+   All rules scoped under body.apex to coexist with Classic.
+   Toggle via UITheme.applyApexTheme(true/false)
+   ============================================================ */
+
+/* Flash prevention — applied before body class loads */
+html.apex-pending body {
+    background: #0a0a0f !important;
+}
+
+/* ── Custom Properties ─────────────────────────────────── */
+.apex {
+    --bg:           #0a0a0f;
+    --surface:      #12121a;
+    --surface-2:    #1e1e2e;
+    --border:       rgba(0, 212, 255, 0.18);
+    --accent:       #00d4ff;
+    --text:         #ffffff;
+    --text-muted:   #7878a0;
+    --radius-card:  14px;
+    --blur:         none;
+    --nav-bg:       #0d0d18;
+    --nav-border:   rgba(0, 212, 255, 0.3);
+
+    /* Apex-only tokens */
+    --ax-cyan:      #00d4ff;
+    --ax-fast:      #00ff88;
+    --ax-danger:    #ff4757;
+    --ax-warning:   #ffa502;
+    --ax-p1:        #ffd700;
+    --ax-p2:        #c0c0c0;
+    --ax-p3:        #cd7f32;
+    --ax-purple:    #a855f7;
+    --ax-nav-h:     64px;
+    --ax-ui-font:   system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ── Base ──────────────────────────────────────────────── */
+.apex,
+.apex body {
+    background: var(--bg);
+    font-family: var(--ax-ui-font);
+}
+
+/* Keep monospace for all timing values */
+.apex .hud-value,
+.apex .hud-session-timer,
+.apex .race-best-time,
+.apex .race-detail-value,
+.apex .compare-value,
+.apex .compare-gap,
+.apex .hud-lap-time,
+.apex .hud-lap-delta,
+.apex .hud-lap-pb-gap,
+.apex .overview-stat .stat-value,
+.apex .podium-time,
+.apex .summary-stat-value {
+    font-family: 'Courier New', monospace;
+}
+
+/* ── Connection Indicator ──────────────────────────────── */
+.apex #connection-indicator {
+    top: 8px;
+    right: 8px;
+    width: auto;
+    height: auto;
+    border-radius: 20px;
+    padding: 5px 12px 5px 8px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    font-family: var(--ax-ui-font);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 71, 87, 0.12);
+    border: 1px solid var(--ax-danger);
+    color: var(--ax-danger);
+    box-shadow: none;
+}
+
+.apex #connection-indicator::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: apexConnPulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+.apex #connection-indicator::after {
+    content: 'OFFLINE';
+}
+
+.apex #connection-indicator.connected {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--ax-cyan);
+    color: var(--ax-cyan);
+    box-shadow: 0 0 14px rgba(0, 212, 255, 0.2);
+}
+
+.apex #connection-indicator.connected::before {
+    animation: none;
+}
+
+.apex #connection-indicator.connected::after {
+    content: 'LIVE';
+}
+
+.apex #connection-indicator.replay-mode::after {
+    content: 'REPLAY';
+}
+
+.apex #connection-indicator.replay-mode {
+    background: rgba(255, 165, 2, 0.12);
+    border-color: var(--ax-warning);
+    color: var(--ax-warning);
+}
+
+@keyframes apexConnPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+}
+
+/* ── Tab Navigation ────────────────────────────────────── */
+.apex .tab-nav {
+    height: var(--ax-nav-h);
+    padding: 6px 6px;
+    gap: 4px;
+    align-items: center;
+    justify-content: stretch;
+    overflow: visible;
+    background: var(--nav-bg);
+    border-top: 1px solid var(--nav-border);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    /* Remove scrollbar from nav */
+    overflow-x: hidden;
+    white-space: normal;
+}
+
+.apex .tab-nav::-webkit-scrollbar { display: none; }
+
+.apex .tab-btn {
+    flex: 1;
+    min-width: 0;
+    min-height: 52px;
+    height: 52px;
+    padding: 4px 2px;
+    border-radius: 12px;
+    border-bottom: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    position: relative;
+    /* Hide text label by default */
+    font-size: 0;
+    color: rgba(255, 255, 255, 0.35);
+    font-family: var(--ax-ui-font);
+}
+
+/* Emoji icon via ::before */
+.apex .tab-btn::before {
+    font-size: 18px;
+    line-height: 1;
+    display: block;
+    opacity: 0.5;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.apex .tab-btn[data-tab="race"]::before    { content: '🏁'; }
+.apex .tab-btn[data-tab="hud"]::before     { content: '⏱'; }
+.apex .tab-btn[data-tab="results"]::before { content: '🏆'; }
+.apex .tab-btn[data-tab="compare"]::before { content: '⚖'; }
+.apex .tab-btn[data-tab="summary"]::before { content: '📈'; }
+.apex .tab-btn[data-tab="settings"]::before{ content: '⚙'; }
+
+/* Active tab — filled cyan pill */
+.apex .tab-btn.active {
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: 0 0 18px rgba(0, 212, 255, 0.35);
+}
+
+.apex .tab-btn.active::before {
+    opacity: 1;
+    font-size: 16px;
+    transform: translateY(-1px);
+}
+
+/* Label text via ::after — only visible when active (font-size > 0) */
+.apex .tab-btn.active::after {
+    content: attr(data-tab);
+    font-size: 0.52rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0a0a0f;
+    line-height: 1;
+    display: block;
+}
+
+.apex .tab-btn:hover:not(.active) {
+    background: rgba(0, 212, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.apex .tab-btn:hover:not(.active)::before {
+    opacity: 0.8;
+}
+
+.apex .tab-btn:active {
+    transform: scale(0.93);
+    transition: transform 0.06s;
+}
+
+/* ── Loading Screen ────────────────────────────────────── */
+.apex .loading-content h1 {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.apex .spinner {
+    border-color: var(--surface-2);
+    border-top-color: var(--ax-cyan);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+.apex .skip-loading-btn {
+    background: linear-gradient(135deg, var(--ax-cyan), #009fbb);
+    color: #0a0a0f;
+    font-family: var(--ax-ui-font);
+    font-weight: 800;
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
+}
+
+.apex .skip-loading-btn:hover {
+    box-shadow: 0 6px 24px rgba(0, 212, 255, 0.5);
+}
+
+/* ── Screens ───────────────────────────────────────────── */
+.apex .screen {
+    background: var(--bg);
+    padding-bottom: calc(var(--ax-nav-h) + 8px);
+}
+
+/* ── Header ────────────────────────────────────────────── */
+.apex .header h1 {
+    font-family: var(--ax-ui-font);
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: 800;
+    color: var(--ax-cyan);
+    letter-spacing: 0.02em;
+}
+
+/* ── Race Screen ───────────────────────────────────────── */
+.apex .race-list {
+    gap: 10px;
+}
+
+.apex .race-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid rgba(0, 212, 255, 0.25);
+    border-radius: var(--radius-card);
+    padding: 14px 14px 14px 12px;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    transition: border-left-color 0.3s ease, transform 0.12s ease, box-shadow 0.12s ease;
+    grid-template-columns: 52px 1fr auto;
+}
+
+.apex .race-item:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+    border-left-color: var(--ax-cyan);
+    transform: translateX(0);
+    box-shadow: 0 4px 16px rgba(0, 212, 255, 0.1);
+}
+
+.apex .race-item:active {
+    transform: scale(0.975);
+    box-shadow: 0 2px 12px rgba(0, 212, 255, 0.2);
+}
+
+/* Trend left border via data-trend attribute (set by ui-theme.js observer) */
+.apex .race-item[data-trend="improving"] { border-left-color: var(--ax-fast); }
+.apex .race-item[data-trend="declining"] { border-left-color: var(--ax-danger); }
+.apex .race-item[data-trend="neutral"]   { border-left-color: var(--ax-warning); }
+
+/* Main driver highlight */
+.apex .race-item.main-driver {
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.07) 0%, var(--surface) 60%);
+    border-left-color: var(--ax-cyan);
+    border-color: rgba(0, 212, 255, 0.22);
+}
+
+/* Position badge — square rounded, not plain number */
+.apex .race-position {
+    width: 46px;
+    height: 46px;
+    font-size: 1.25rem;
+    font-weight: 900;
+    font-family: var(--ax-ui-font);
+    background: var(--surface-2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.apex .race-position.p1 {
+    background: rgba(255, 215, 0, 0.12);
+    color: var(--ax-p1);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+}
+
+.apex .race-position.p2 {
+    background: rgba(192, 192, 192, 0.08);
+    color: var(--ax-p2);
+}
+
+.apex .race-position.p3 {
+    background: rgba(205, 127, 50, 0.1);
+    color: var(--ax-p3);
+}
+
+/* Driver name — system font, white */
+.apex .race-driver-name {
+    font-family: var(--ax-ui-font);
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.apex .race-driver-kart {
+    font-size: 0.8rem;
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-weight: 600;
+}
+
+.apex .race-detail-label {
+    color: var(--text-muted);
+}
+
+.apex .race-detail-value.best { color: var(--ax-fast); }
+.apex .race-detail-value.last { color: var(--ax-warning); }
+.apex .race-detail-value.pb   { color: var(--ax-p1); }
+
+.apex .race-best-time {
+    color: var(--ax-fast);
+    font-size: 1.2rem;
+}
+
+/* Track group headers */
+.apex .track-group-header {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    margin-top: 6px;
+}
+
+/* Race filter / session header */
+.apex .race-filter-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+}
+
+/* ── HUD Screen — Portrait ─────────────────────────────── */
+
+/* HUD no-driver placeholder */
+.apex .hud-placeholder {
+    background: var(--bg);
+}
+
+.apex .hud-placeholder h2 {
+    font-family: var(--ax-ui-font);
+    color: var(--ax-cyan);
+    font-size: clamp(1.6rem, 6vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+/* Driver pick buttons — enhanced */
+.apex .driver-pick-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: background 0.12s, border-color 0.12s, transform 0.08s;
+}
+
+.apex .driver-pick-btn:active {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--ax-cyan);
+    transform: scale(0.95);
+}
+
+.apex .driver-pick-btn.active {
+    border-color: var(--ax-cyan);
+    background: rgba(0, 212, 255, 0.08);
+}
+
+.apex .driver-pick-kart {
+    color: var(--ax-cyan);
+}
+
+.apex .driver-pick-pos.p1 { color: var(--ax-p1); }
+.apex .driver-pick-pos.p2 { color: var(--ax-p2); }
+.apex .driver-pick-pos.p3 { color: var(--ax-p3); }
+
+/* Driver picker overlay */
+.apex .driver-picker-overlay {
+    background: rgba(10, 10, 15, 0.98);
+}
+
+.apex .driver-picker-header {
+    border-bottom: 1px solid var(--border);
+}
+
+.apex .driver-picker-header h2 {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-weight: 800;
+}
+
+.apex .driver-picker-close {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+}
+
+.apex .driver-picker-close:active {
+    background: var(--surface);
+    border-color: var(--ax-cyan);
+}
+
+/* HUD Change Driver button */
+.apex .hud-change-driver-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.apex .hud-change-driver-btn:active {
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    border-color: var(--ax-cyan);
+}
+
+/* HUD Header */
+.apex .hud-event-name {
+    font-family: var(--ax-ui-font);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ax-cyan);
+}
+
+.apex .hud-lap-info {
+    font-family: var(--ax-ui-font);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Session timer */
+.apex .hud-session-timer {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    color: var(--ax-cyan);
+    background: rgba(0, 212, 255, 0.08);
+    border: 1px solid rgba(0, 212, 255, 0.35);
+    border-radius: 10px;
+    padding: 6px 14px;
+}
+
+.apex .hud-session-timer.warning {
+    color: var(--ax-warning);
+    background: rgba(255, 165, 2, 0.08);
+    border-color: var(--ax-warning);
+}
+
+.apex .hud-session-timer.critical {
+    color: var(--ax-danger);
+    background: rgba(255, 71, 87, 0.08);
+    border-color: var(--ax-danger);
+}
+
+/* TTS toggle */
+.apex .hud-tts-toggle {
+    background: rgba(255, 71, 87, 0.08);
+    border: 1px solid var(--ax-danger);
+    border-radius: 10px;
+    color: var(--ax-danger);
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+}
+
+.apex .hud-tts-toggle.active {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: var(--ax-cyan);
+    color: var(--ax-cyan);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+/* Stat badges (pace/position trend) */
+.apex .hud-stat-badge {
+    background: var(--surface-2);
+    border-radius: 20px;
+    font-family: var(--ax-ui-font);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 5px 12px;
+}
+
+.apex .hud-stat-badge.improving,
+.apex .hud-stat-badge.position-up,
+.apex .hud-stat-badge.gap-closing {
+    background: rgba(0, 255, 136, 0.15);
+    color: var(--ax-fast);
+}
+
+.apex .hud-stat-badge.declining,
+.apex .hud-stat-badge.position-down,
+.apex .hud-stat-badge.gap-opening {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--ax-danger);
+}
+
+/* Position row */
+.apex .hud-position {
+    font-size: clamp(44px, 13vw, 62px);
+    font-weight: 900;
+    font-family: var(--ax-ui-font);
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.apex .hud-position.p1 {
+    color: var(--ax-p1);
+    text-shadow: 0 0 24px rgba(255, 215, 0, 0.4);
+}
+
+.apex .hud-position.p2 { color: var(--ax-p2); }
+.apex .hud-position.p3 { color: var(--ax-p3); }
+
+.apex .hud-kart {
+    font-size: clamp(2rem, 9vw, 3.5rem);
+    color: var(--ax-cyan);
+    font-weight: 900;
+}
+
+/* ── HUD Cards ─────────────────────────────────────────── */
+.apex .hud-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: box-shadow 0.2s ease;
+}
+
+.apex .hud-card.primary {
+    border-color: rgba(0, 212, 255, 0.25);
+}
+
+/* Dominant last-lap card — spans full width, large value */
+.apex #hud-card-last-lap {
+    grid-column: 1 / -1;
+    background: linear-gradient(145deg, #14141f, #1a1a2e);
+    border: 2px solid rgba(0, 212, 255, 0.35);
+    box-shadow: 0 0 32px rgba(0, 212, 255, 0.08),
+                inset 0 1px 0 rgba(0, 212, 255, 0.08);
+    padding: 24px 20px;
+}
+
+.apex #hud-card-last-lap .hud-value {
+    font-size: clamp(48px, 14vw, 76px);
+    color: var(--ax-warning);
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.apex #hud-card-last-lap .hud-label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--ax-cyan);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+/* Best lap card — green accent */
+.apex #hud-card-best-lap .hud-value {
+    color: var(--ax-fast);
+    font-size: clamp(26px, 7vw, 36px);
+}
+
+.apex #hud-card-best-lap {
+    border-color: rgba(0, 255, 136, 0.2);
+}
+
+/* Secondary card labels */
+.apex .hud-label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+/* Secondary card values — tighter sizing */
+.apex .hud-card:not(#hud-card-last-lap):not(#hud-card-best-lap) .hud-value {
+    font-size: clamp(20px, 5.5vw, 28px);
+}
+
+.apex .hud-sub-value {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: 'Courier New', monospace;
+}
+
+.apex .hud-sub-value.improving { color: var(--ax-fast); }
+.apex .hud-sub-value.declining { color: var(--ax-danger); }
+
+/* Card toggle button */
+.apex .hud-toggle-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.apex .hud-toggle-btn:hover {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: var(--ax-cyan);
+    color: var(--ax-cyan);
+}
+
+/* HUD footer info */
+.apex .hud-info-label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.apex .hud-info-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+}
+
+/* ── Lap History ───────────────────────────────────────── */
+.apex .hud-lap-history {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.apex .hud-history-title {
+    font-family: var(--ax-ui-font);
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ax-cyan);
+    font-weight: 700;
+}
+
+.apex .hud-lap-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+}
+
+.apex .hud-lap-item.best {
+    border: 1px solid rgba(0, 255, 136, 0.5);
+    background: rgba(0, 255, 136, 0.04);
+}
+
+.apex .hud-lap-item.personal-best {
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.04);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+.apex .hud-lap-number { color: var(--text-muted); }
+
+.apex .hud-lap-item.lap-purple .hud-lap-time { color: var(--ax-purple); }
+.apex .hud-lap-item.lap-green  .hud-lap-time { color: var(--ax-fast); }
+.apex .hud-lap-item.lap-yellow .hud-lap-time { color: var(--ax-warning); }
+.apex .hud-lap-item.lap-red    .hud-lap-time { color: var(--ax-danger); }
+
+.apex .hud-lap-delta.positive { color: var(--ax-danger); }
+.apex .hud-lap-delta.negative { color: var(--ax-fast); }
+.apex .hud-lap-delta.neutral  { color: var(--text-muted); }
+
+.apex .hud-lap-pb-gap.positive { color: var(--ax-danger); }
+.apex .hud-lap-pb-gap.negative { color: var(--ax-fast); }
+
+/* ── Notes Card ────────────────────────────────────────── */
+.apex .hud-notes-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.apex .hud-note-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--ax-ui-font);
+}
+
+.apex .hud-note-input:focus {
+    border-color: var(--ax-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+    outline: none;
+}
+
+.apex .hud-add-note-btn {
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    border-radius: 10px;
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+}
+
+.apex .hud-add-note-btn:hover {
+    background: #00b8e0;
+}
+
+.apex .hud-note-item {
+    background: var(--surface-2);
+    border-radius: 10px;
+    border-left: 3px solid var(--ax-cyan);
+}
+
+.apex .hud-note-header {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+}
+
+.apex .hud-note-delete {
+    background: var(--ax-danger);
+    border-radius: 6px;
+}
+
+/* ── Celebrations & Animations ─────────────────────────── */
+.apex #hud-screen.lap-flash {
+    animation: apexLapFlash 0.55s ease-out;
+}
+
+@keyframes apexLapFlash {
+    0%   { box-shadow: inset 0 0 0 0 rgba(0, 212, 255, 0); }
+    20%  { box-shadow: inset 0 0 70px 20px rgba(0, 212, 255, 0.4); }
+    100% { box-shadow: inset 0 0 0 0 rgba(0, 212, 255, 0); }
+}
+
+.apex #hud-screen.best-lap-celebration {
+    animation: apexCelebrate 2s ease-in-out;
+}
+
+@keyframes apexCelebrate {
+    0%, 100% { box-shadow: none; }
+    12%       { box-shadow: inset 0 0 60px 10px rgba(0, 255, 136, 0.5); }
+    24%       { box-shadow: inset 0 0 60px 10px rgba(168, 85, 247, 0.5); }
+    36%       { box-shadow: inset 0 0 60px 10px rgba(0, 255, 136, 0.5); }
+    48%       { box-shadow: inset 0 0 40px 8px rgba(168, 85, 247, 0.3); }
+}
+
+/* ── HUD Landscape Layout ──────────────────────────────── */
+@media (orientation: landscape) {
+
+    /* Full 3-column layout for steering-wheel use */
+    .apex #hud-screen .hud-main {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr 1fr;
+        grid-template-rows: auto 1fr auto;
+        gap: 8px;
+        align-items: start;
+        flex: 1;
+    }
+
+    /* Position row — left column */
+    .apex #hud-screen .hud-position-row {
+        grid-column: 1;
+        grid-row: 1;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 4px;
+    }
+
+    .apex #hud-screen .hud-position {
+        font-size: clamp(36px, 8vw, 52px);
+    }
+
+    .apex #hud-screen .hud-kart {
+        font-size: clamp(1.6rem, 5vw, 2.4rem);
+    }
+
+    /* Last-lap card — centre dominant column */
+    .apex #hud-screen #hud-card-last-lap {
+        grid-column: 2;
+        grid-row: 1 / 3;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100px;
+        padding: 16px 12px;
+    }
+
+    .apex #hud-screen #hud-card-last-lap .hud-value {
+        font-size: clamp(38px, 9vw, 56px);
+    }
+
+    /* Timing grid becomes display:contents so cards join parent grid */
+    .apex #hud-screen .hud-timing-grid {
+        display: contents;
+    }
+
+    /* Right column cards */
+    .apex #hud-screen #hud-card-gap,
+    .apex #hud-screen #hud-card-pb-gap {
+        grid-column: 3;
+    }
+
+    .apex #hud-screen #hud-card-gap      { grid-row: 1; }
+    .apex #hud-screen #hud-card-pb-gap   { grid-row: 2; }
+
+    /* Left column secondary cards */
+    .apex #hud-screen #hud-card-best-lap { grid-column: 1; grid-row: 2; }
+
+    /* Remaining cards flow into row 3 naturally */
+    .apex #hud-screen #hud-card-avg-lap,
+    .apex #hud-screen #hud-card-interval,
+    .apex #hud-screen #hud-card-consistency {
+        grid-row: 3;
+    }
+
+    /* Footer goes full width below grid */
+    .apex #hud-screen .hud-footer {
+        grid-column: 1 / -1;
+        grid-row: 4;
+        padding: 4px 0;
+    }
+
+    .apex #hud-screen .hud-info-value {
+        font-size: 1.1rem;
+    }
+
+    /* Lap history collapses to horizontal strip */
+    .apex #hud-screen .hud-lap-history {
+        grid-column: 1 / -1;
+        max-height: 56px;
+        overflow: hidden;
+        padding: 8px 10px;
+    }
+
+    .apex #hud-screen .hud-section-header {
+        display: none;
+    }
+
+    .apex #hud-screen .hud-lap-list {
+        flex-direction: row;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .apex #hud-screen .hud-lap-item {
+        min-width: 100px;
+        flex-shrink: 0;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        text-align: center;
+        padding: 6px 8px;
+        gap: 2px;
+    }
+
+    .apex #hud-screen .hud-lap-item .hud-lap-number,
+    .apex #hud-screen .hud-lap-item .hud-lap-pb-gap {
+        display: none;
+    }
+
+    .apex #hud-screen .hud-lap-time {
+        font-size: 0.9rem;
+    }
+
+    /* Smaller session timer */
+    .apex .hud-session-timer {
+        font-size: 1.1rem;
+        padding: 4px 10px;
+    }
+
+    /* Compact header */
+    .apex .hud-header {
+        margin-bottom: 8px;
+    }
+
+    /* Notes card hidden in landscape for screen real-estate */
+    .apex #hud-screen .hud-notes-card {
+        display: none;
+    }
+
+    /* Secondary card values — tighter for landscape */
+    .apex #hud-screen .hud-card:not(#hud-card-last-lap):not(#hud-card-best-lap) .hud-value {
+        font-size: clamp(16px, 4vw, 22px);
+    }
+
+    .apex #hud-screen #hud-card-best-lap .hud-value {
+        font-size: clamp(20px, 5vw, 28px);
+    }
+
+    .apex #hud-screen .hud-card {
+        padding: 10px 12px;
+    }
+
+    .apex #hud-screen #hud-card-last-lap {
+        padding: 14px 10px;
+    }
+}
+
+/* ── Results Screen ────────────────────────────────────── */
+.apex .results-content-modern {
+    padding: 12px;
+    gap: 12px;
+}
+
+/* Overview card */
+.apex .overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.04), rgba(0, 255, 136, 0.04));
+}
+
+.apex .overview-stat .stat-value {
+    color: var(--ax-cyan);
+}
+
+.apex .overview-stat .stat-label {
+    font-family: var(--ax-ui-font);
+    letter-spacing: 0.06em;
+}
+
+/* Scoring method — segmented pill control */
+.apex .method-selector-modern {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 5px;
+    gap: 4px;
+    border: 1px solid var(--border);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.apex .method-btn-modern {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-family: var(--ax-ui-font);
+    font-weight: 600;
+    transition: background 0.18s ease, color 0.18s ease;
+    padding: 8px 10px;
+    min-width: 80px;
+}
+
+.apex .method-btn-modern:hover {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: transparent;
+    transform: none;
+}
+
+.apex .method-btn-modern.active {
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+    border-color: transparent;
+}
+
+.apex .method-btn-modern .method-name {
+    font-weight: 700;
+}
+
+/* Podium — gradient backgrounds */
+.apex .podium-modern {
+    background: var(--surface);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: var(--radius-card);
+    padding: 16px;
+}
+
+.apex .section-title {
+    font-family: var(--ax-ui-font);
+    color: var(--ax-cyan);
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.apex .podium-card {
+    border-radius: 14px;
+    padding: 1.2rem 0.8rem;
+}
+
+.apex .podium-card.gold {
+    background: linear-gradient(160deg, rgba(255, 215, 0, 0.12), rgba(255, 165, 0, 0.05), #12121a);
+    border-color: rgba(255, 215, 0, 0.45);
+    box-shadow: 0 0 28px rgba(255, 215, 0, 0.12);
+}
+
+.apex .podium-card.silver {
+    background: linear-gradient(160deg, rgba(192, 192, 192, 0.08), #12121a);
+    border-color: rgba(192, 192, 192, 0.3);
+}
+
+.apex .podium-card.bronze {
+    background: linear-gradient(160deg, rgba(205, 127, 50, 0.1), #12121a);
+    border-color: rgba(205, 127, 50, 0.3);
+}
+
+/* Insight cards */
+.apex .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.apex .insight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.25);
+}
+
+/* Results table */
+.apex .results-table-modern {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+}
+
+.apex .table-modern thead {
+    background: var(--surface-2);
+}
+
+.apex .table-modern th {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.apex .table-modern td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 12px 10px;
+}
+
+.apex .table-modern tbody tr:hover {
+    background: rgba(0, 212, 255, 0.04);
+}
+
+/* ── Compare Screen ────────────────────────────────────── */
+.apex .compare-container h1 {
+    font-family: var(--ax-ui-font);
+    color: var(--ax-cyan);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.apex .compare-selectors {
+    gap: 10px;
+}
+
+.apex .compare-selector {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.apex .compare-selector label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ax-cyan);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.apex .compare-vs {
+    font-family: var(--ax-ui-font);
+    font-size: 0.95rem;
+    font-weight: 900;
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.4);
+}
+
+.apex .compare-table {
+    background: transparent;
+    border-collapse: separate;
+    border-spacing: 0 5px;
+}
+
+.apex .compare-table thead {
+    background: transparent;
+}
+
+.apex .compare-header-row th {
+    background: var(--surface-2);
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-bottom: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.apex .compare-row td {
+    background: var(--surface);
+    border-bottom: none;
+    padding: 12px 14px;
+}
+
+.apex .compare-row td:first-child { border-radius: 10px 0 0 10px; }
+.apex .compare-row td:last-child  { border-radius: 0 10px 10px 0; }
+
+.apex .compare-row:hover td {
+    background: var(--surface-2);
+}
+
+.apex .compare-stat-label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.apex .compare-value {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.apex .compare-value.better {
+    color: var(--ax-fast);
+    font-weight: 800;
+}
+
+.apex .compare-gap.gap-positive { color: var(--ax-fast); }
+.apex .compare-gap.gap-negative { color: var(--ax-danger); }
+
+/* ── Summary Screen ────────────────────────────────────── */
+.apex .summary-container h1 {
+    font-family: var(--ax-ui-font);
+    color: var(--ax-cyan);
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.apex .summary-stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.apex .summary-stat-label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.apex .summary-stat-value {
+    color: var(--ax-cyan);
+}
+
+.apex .summary-lap-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.apex .summary-lap-table h3 {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.apex .summary-lap-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+}
+
+.apex .summary-lap-item.best {
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    background: rgba(0, 255, 136, 0.04);
+}
+
+.apex .summary-records {
+    background: var(--surface);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+}
+
+.apex .summary-records h3 {
+    color: var(--ax-p1);
+    font-family: var(--ax-ui-font);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.apex .summary-record-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border-left-color: var(--ax-p1);
+}
+
+/* ── Settings Screen ───────────────────────────────────── */
+.apex .settings-container h1 {
+    font-family: var(--ax-ui-font);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--ax-cyan);
+    margin-bottom: 1.2rem;
+}
+
+.apex .settings-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 10px;
+}
+
+.apex .settings-section h2 {
+    font-family: var(--ax-ui-font);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ax-cyan);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+}
+
+.apex .settings-section label {
+    font-family: var(--ax-ui-font);
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.apex .settings-section p {
+    font-family: var(--ax-ui-font);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Inputs & Selects */
+.apex .settings-select,
+.apex .settings-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--ax-ui-font);
+    font-size: 1rem;
+    padding: 12px 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    margin-top: 6px;
+}
+
+.apex .settings-select:focus,
+.apex .settings-input:focus {
+    border-color: var(--ax-cyan);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.14);
+    outline: none;
+}
+
+/* Checkbox rows */
+.apex .settings-checkbox {
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s ease;
+}
+
+.apex .settings-checkbox:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+}
+
+.apex .settings-checkbox span {
+    font-family: var(--ax-ui-font);
+    font-size: 0.95rem;
+}
+
+/* iOS-style pill toggles */
+.apex .settings-checkbox input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    background: #2a2a3e;
+    border: 2px solid #3a3a4e;
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.22s ease, border-color 0.22s ease;
+    vertical-align: middle;
+}
+
+.apex .settings-checkbox input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #5a5a7a;
+    transition: transform 0.22s ease, background 0.22s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.apex .settings-checkbox input[type="checkbox"]:checked {
+    background: var(--ax-cyan);
+    border-color: var(--ax-cyan);
+}
+
+.apex .settings-checkbox input[type="checkbox"]:checked::before {
+    transform: translateX(18px);
+    background: #0a0a0f;
+}
+
+/* TTS config sections */
+.apex .tts-config-section {
+    background: var(--surface-2);
+    border-left: 3px solid var(--ax-cyan);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.apex .tts-config-title {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.apex .tts-test-section {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.apex .tts-test-title {
+    color: var(--ax-cyan);
+    font-family: var(--ax-ui-font);
+}
+
+.apex .tts-test-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--ax-ui-font);
+}
+
+.apex .tts-test-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--ax-cyan);
+    color: var(--ax-cyan);
+    transform: none;
+    box-shadow: none;
+}
+
+.apex .tts-stop-btn {
+    background: var(--ax-danger);
+    border-radius: 10px;
+    color: #fff;
+    font-family: var(--ax-ui-font);
+}
+
+.apex .settings-btn-secondary {
+    background: var(--surface-2);
+    border: 1px solid var(--ax-danger);
+    color: var(--ax-danger);
+    border-radius: 10px;
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+}
+
+.apex .settings-btn-secondary:hover {
+    background: var(--ax-danger);
+    color: #fff;
+}
+
+/* Range sliders */
+.apex .tts-slider-row input[type="range"] {
+    accent-color: var(--ax-cyan);
+}
+
+/* Go Live button */
+.apex #go-live-btn {
+    background: linear-gradient(135deg, var(--ax-danger), #cc0033);
+    border-radius: 10px;
+    font-family: var(--ax-ui-font);
+    font-weight: 800;
+}
+
+/* ── Apex Theme Control (injected by ui-theme.js) ──────── */
+.apex-theme-control {
+    display: flex;
+    gap: 4px;
+    background: #0a0a0f;
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
+.apex-theme-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+}
+
+.apex-theme-btn.active {
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+}
+
+/* Classic mode theme control (shown regardless of .apex) */
+.apex-theme-control:not(.apex *) {
+    background: #111;
+}
+
+/* ── Proximity Alert ───────────────────────────────────── */
+.apex .proximity-alert {
+    background: linear-gradient(135deg, var(--ax-danger), #cc2244);
+    border-color: rgba(255, 255, 255, 0.3);
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(255, 71, 87, 0.5);
+}
+
+/* ── Misc UI ───────────────────────────────────────────── */
+.apex .install-prompt {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+}
+
+.apex .install-btn {
+    background: var(--ax-cyan);
+    color: #0a0a0f;
+    border-radius: 8px;
+    font-family: var(--ax-ui-font);
+    font-weight: 700;
+}
+
+/* Race filter section */
+.apex .race-filter-section select {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--ax-ui-font);
+}
+
+/* ── Dark scrollbars ───────────────────────────────────── */
+.apex ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+}
+
+.apex ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.apex ::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 255, 0.3);
+    border-radius: 2px;
+}
+
+.apex ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 212, 255, 0.5);
+}
