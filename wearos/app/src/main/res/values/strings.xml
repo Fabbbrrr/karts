@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RaceFacer</string>
+    <string name="notif_channel_id">raceface_live</string>
+    <string name="notif_channel_name">Live Race Connection</string>
+    <string name="notif_title">RaceFacer Live</string>
+    <string name="notif_text_connecting">Connecting…</string>
+    <string name="notif_text_connected">Connected · Receiving data</string>
+    <string name="notif_text_disconnected">Disconnected — retrying…</string>
+</resources>
