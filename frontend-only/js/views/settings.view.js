@@ -48,6 +48,13 @@ export function applySettings(elements, settings) {
     }
     applyTheme(settings.theme);
 
+    // Apply Apex UI theme
+    document.body.classList.toggle('apex', !!settings.useApexUI);
+
+    // Apply Wake Lock setting
+    const wlToggle = document.getElementById('wake-lock-toggle');
+    if (wlToggle) wlToggle.checked = settings.useWakeLock !== false;
+
     // Apply TTS settings
     updateCheckbox(elements.enableTTSCheckbox, settings.enableTTS ?? false);
     updateCheckbox(elements.ttsAnnounceGapP1Checkbox, settings.ttsAnnounceGapP1 ?? true);
@@ -110,6 +117,8 @@ export function getSettingsFromUI(elements) {
         enableProximityAlert: elements.enableProximityCheckbox?.checked ?? true,
         proximityThreshold: parseFloat(elements.proximityThresholdInput?.value) || 1.0,
         theme: elements.themeGlassToggle?.checked ? 'glass' : 'classic',
+        useApexUI: document.body.classList.contains('apex'),
+        useWakeLock: document.getElementById('wake-lock-toggle')?.checked ?? true,
         enableTTS: elements.enableTTSCheckbox?.checked ?? false,
         ttsAnnounceGapP1: elements.ttsAnnounceGapP1Checkbox?.checked ?? true,
         ttsAnnounceGapPB: elements.ttsAnnounceGapPBCheckbox?.checked ?? true,

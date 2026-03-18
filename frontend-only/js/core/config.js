@@ -96,7 +96,13 @@ export const DEFAULT_SETTINGS = {
     proximityThreshold: 2,
 
     // UI theme: 'classic' (solid dark) | 'glass' (translucent + blur)
-    theme: 'classic'
+    theme: 'classic',
+
+    // Apex UI theme (mobile-first redesign)
+    useApexUI: false,
+
+    // Keep screen on during live sessions (Wake Lock API)
+    useWakeLock: true
 };
 
 // App metadata

@@ -3,6 +3,7 @@
 // No server required — connects directly to RaceFacer via Socket.IO
 
 import { CONFIG, DEFAULT_SETTINGS } from './core/config.js';
+import * as UITheme from './core/ui-theme.js';
 import { AppState as state } from './core/state.js';
 import * as WebSocketService from './services/websocket.service.js';
 import * as StorageService from './services/storage.service.js';
@@ -29,6 +30,7 @@ function init() {
 
     cacheDOMElements();
     loadPersistedData();
+    UITheme.init();
     state.audioContext = AudioService.initializeAudio();
     setupEventListeners();
     setupPWA();
