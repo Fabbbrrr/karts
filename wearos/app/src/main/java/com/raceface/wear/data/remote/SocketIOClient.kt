@@ -11,9 +11,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import okhttp3.OkHttpClient
 import java.net.URI
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,20 +35,13 @@ class SocketIOClient @Inject constructor() {
         disconnect()
 
         try {
-            val okHttpClient = OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(0, TimeUnit.MINUTES)   // no read timeout (persistent connection)
-                .build()
-
-            val options = IO.Options.builder()
-                .setTransports(arrayOf(WebSocket.NAME))
-                .setReconnection(true)
-                .setReconnectionAttempts(Int.MAX_VALUE)
-                .setReconnectionDelay(2000)
-                .setReconnectionDelayMax(30_000)
-                .setWebSocketFactory(okHttpClient)
-                .setCallFactory(okHttpClient)
-                .build()
+            val options = IO.Options().apply {
+                transports = arrayOf(WebSocket.NAME)
+                reconnection = true
+                reconnectionAttempts = Int.MAX_VALUE
+                reconnectionDelay = 2000
+                reconnectionDelayMax = 30_000
+            }
 
             socket = IO.socket(URI.create(SOCKET_URL), options).also { s ->
                 s.on(Socket.EVENT_CONNECT) {

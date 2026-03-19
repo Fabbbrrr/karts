@@ -88,11 +88,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     // Socket.IO — connect directly to live.racefacer.com:3123
-    implementation(libs.socketio.client) {
-        // exclude okhttp pulled by socket.io to use our version
-        exclude(group = "com.squareup.okhttp3")
-    }
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.socketio.client)
 
     // Activity
     implementation(libs.activity.compose)
