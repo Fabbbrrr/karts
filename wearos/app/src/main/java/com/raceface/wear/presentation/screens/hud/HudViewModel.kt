@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -48,8 +49,8 @@ class HudViewModel @Inject constructor(
 
         viewModelScope.launch {
             repository.sessionDataFlow.collect { session ->
-                val myKart   = repository.dataStore.myKart.value
-                val mateKart = repository.dataStore.mateKart.value
+                val myKart   = repository.dataStore.myKart.first()
+                val mateKart = repository.dataStore.mateKart.first()
                 updateFromSession(session, myKart, mateKart)
             }
         }
