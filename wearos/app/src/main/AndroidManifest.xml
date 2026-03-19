@@ -8,10 +8,18 @@
     <!-- Keep screen on -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Haptic feedback -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Foreground service for Socket.IO connection -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- GPS for track map -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <!-- Wear OS feature declaration -->
     <uses-feature android:name="android.hardware.type.watch" />
@@ -43,11 +51,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Background Socket.IO connection service -->
+        <!-- Background Socket.IO + GPS service -->
         <service
             android:name=".service.RaceConnectionService"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync|location" />
 
     </application>
 </manifest>

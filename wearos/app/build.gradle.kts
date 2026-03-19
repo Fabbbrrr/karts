@@ -92,4 +92,10 @@ dependencies {
 
     // Activity
     implementation(libs.activity.compose)
+
+    // Wear Ambient (AmbientLifecycleObserver for AOD)
+    implementation(libs.wear.ambient)
+
+    // Location (GPS for track map)
+    implementation(libs.play.services.location)
 }

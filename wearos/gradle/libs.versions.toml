@@ -5,6 +5,8 @@ composeBom          = "2024.09.03"
 wearCompose         = "1.3.1"
 wearComposeNav      = "1.3.0"
 horologist          = "0.6.17"
+wearAmbient         = "1.3.0"
+playServicesLocation = "21.3.0"
 hilt                = "2.51.1"
 hiltNavCompose      = "1.2.0"
 datastore           = "1.1.1"
@@ -49,6 +51,12 @@ socketio-client                 = { group = "io.socket",                     nam
 
 # Activity
 activity-compose                = { group = "androidx.activity",             name = "activity-compose",          version.ref = "activity" }
+
+# Wear Ambient (AmbientLifecycleObserver)
+wear-ambient                    = { group = "androidx.wear",                  name = "wear",                      version.ref = "wearAmbient" }
+
+# Location (GPS)
+play-services-location          = { group = "com.google.android.gms",        name = "play-services-location",    version.ref = "playServicesLocation" }
 
 [plugins]
 android-application             = { id = "com.android.application",          version.ref = "agp" }

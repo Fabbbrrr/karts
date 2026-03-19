@@ -5,10 +5,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,10 +27,21 @@ import com.raceface.wear.presentation.theme.*
 fun HudScreen(
     state: HudUiState,
     onPickerClick: () -> Unit,
+    onPickMate: () -> Unit = {},
     onLapHistory: () -> Unit,
     onCompare: () -> Unit,
     onSettings: () -> Unit,
+    onTrackMap: () -> Unit = {},
 ) {
+    // Keep the display at full brightness for the entire session — no ambient
+    // dimming, no OS timeout. The driver needs to glance at the watch without
+    // lifting their wrist, so the screen must always be on and readable.
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        view.keepScreenOn = true
+        onDispose { view.keepScreenOn = false }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -36,53 +49,25 @@ fun HudScreen(
         contentAlignment = Alignment.Center,
     ) {
         if (state.myRun == null) {
-            NoDriverContent(onPickerClick)
+            // Kart was picked but session data hasn't arrived yet.
+            // Should only flash for a fraction of a second.
+            Text(
+                text      = "Waiting for data\u2026",
+                color     = TextMuted,
+                fontSize  = 14.sp,
+                textAlign = TextAlign.Center,
+            )
         } else {
             HudContent(
                 state        = state,
                 myRun        = state.myRun,
                 onLapHistory = onLapHistory,
+                onPickMate   = onPickMate,
                 onCompare    = onCompare,
                 onSettings   = onSettings,
                 onRepick     = onPickerClick,
+                onTrackMap   = onTrackMap,
             )
-        }
-    }
-}
-
-@Composable
-private fun NoDriverContent(onPickerClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { onPickerClick() }
-            .padding(16.dp),
-    ) {
-        Text(
-            text      = "TAP TO SELECT",
-            color     = Color.White,
-            fontSize  = 16.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text     = "your kart",
-            color    = TextMuted2,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(16.dp))
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(RaceFacerGreen.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("→", color = RaceFacerGreen, fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -92,9 +77,11 @@ private fun HudContent(
     state: HudUiState,
     myRun: DriverRun,
     onLapHistory: () -> Unit,
+    onPickMate: () -> Unit,
     onCompare: () -> Unit,
     onSettings: () -> Unit,
     onRepick: () -> Unit,
+    onTrackMap: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -108,10 +95,8 @@ private fun HudContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Position badge (small — secondary to last lap)
             PositionBadge(position = myRun.position)
 
-            // Kart number
             Text(
                 text      = myRun.kartNumber,
                 color     = RaceFacerGreen,
@@ -119,7 +104,6 @@ private fun HudContent(
                 fontWeight = FontWeight.Bold,
             )
 
-            // Connection indicator
             ConnectionDot(state.connection)
         }
 
@@ -138,14 +122,13 @@ private fun HudContent(
         Text(
             text       = myRun.lastTimeFormatted.ifBlank { "---.---" },
             color      = lastLapColor,
-            fontSize   = 48.sp,      // hero — the most important number on screen
+            fontSize   = 48.sp,
             fontWeight = FontWeight.ExtraBold,
             fontFamily = Mono,
             letterSpacing = (-1).sp,
             lineHeight = 48.sp,
         )
 
-        // Delta vs best
         if (myRun.lapTimes.isNotEmpty() && myRun.lastTimeRaw > 0 && myRun.bestTimeRaw > 0) {
             val delta = myRun.lastTimeRaw - myRun.bestTimeRaw
             val deltaColor = if (delta <= 0) RaceFacerGreen else TextMuted2
@@ -194,7 +177,12 @@ private fun HudContent(
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             NavPill(label = "Laps", onClick = onLapHistory)
-            if (state.mateRun != null) NavPill(label = "VS", onClick = onCompare)
+            NavPill(
+                label   = if (state.mateRun != null) "VS" else "+ VS",
+                onClick = if (state.mateRun != null) onCompare else onPickMate,
+            )
+            NavPill(label = "MAP", onClick = onTrackMap)
+            NavPill(label = "KART", onClick = onRepick)
             NavPill(label = "⚙", onClick = onSettings)
         }
     }
@@ -285,7 +273,7 @@ private fun MateStrip(
     myLastMs: Long,
     onClick: () -> Unit,
 ) {
-    val delta     = myLastMs - mateRun.lastTimeRaw  // negative = I'm faster
+    val delta     = myLastMs - mateRun.lastTimeRaw
     val deltaText = if (delta < 0) "${RaceMath.formatDelta(delta)} faster"
                     else "${RaceMath.formatDelta(delta)} behind"
     val deltaColor = if (delta <= 0) RaceFacerGreen else RaceFacerRed

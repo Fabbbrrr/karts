@@ -30,6 +30,12 @@ class SocketIOClient @Inject constructor() {
     private var socket: Socket? = null
     private var currentChannel: String = "lemansentertainment"
 
+    // Accumulated lap times per kart — the server does NOT send a lap_times array;
+    // we build it ourselves by detecting when total_laps increases, same as the web frontend.
+    private val accumulatedLapTimes = mutableMapOf<String, MutableList<Long>>()
+    private val lastKnownLapCount  = mutableMapOf<String, Int>()
+    private var lastSessionKey = ""
+
     fun connect(channel: String = currentChannel) {
         currentChannel = channel
         disconnect()
@@ -62,10 +68,8 @@ class SocketIOClient @Inject constructor() {
 
                 s.on(currentChannel) { args ->
                     val raw = args.firstOrNull() ?: return@on
-                    val parsed = RaceDataMapper.parse(raw)
-                    if (parsed != null) {
-                        _sessionData.tryEmit(parsed)
-                    }
+                    val parsed = RaceDataMapper.parse(raw) ?: return@on
+                    _sessionData.tryEmit(accumulate(parsed))
                 }
 
                 s.connect()
@@ -75,9 +79,45 @@ class SocketIOClient @Inject constructor() {
         }
     }
 
+    /**
+     * Accumulate per-kart lap times in memory.
+     *
+     * The live.racefacer.com server does not include a `lap_times` array in its
+     * payload (the web frontend builds lap history the same way by tracking
+     * `total_laps` changes). Each time `run.laps` increases we record `lastTimeRaw`
+     * as the completed lap time — exactly matching the JS lap-tracker.service.js logic.
+     */
+    private fun accumulate(session: SessionData): SessionData {
+        // Detect session change and reset accumulated state
+        val sessionKey = "${session.eventName}_${session.sessionName}"
+        if (sessionKey != lastSessionKey && lastSessionKey.isNotEmpty()) {
+            Log.d(TAG, "New session detected — resetting lap history")
+            accumulatedLapTimes.clear()
+            lastKnownLapCount.clear()
+        }
+        lastSessionKey = sessionKey
+
+        val updatedRuns = session.runs.map { run ->
+            val kart    = run.kartNumber
+            val history = accumulatedLapTimes.getOrPut(kart) { mutableListOf() }
+            val prev    = lastKnownLapCount[kart] ?: 0
+
+            if (run.laps > prev && run.lastTimeRaw > 0) {
+                history.add(run.lastTimeRaw)
+                // Mirror the web frontend cap of 20 laps (keep last 20)
+                if (history.size > 20) history.removeAt(0)
+                lastKnownLapCount[kart] = run.laps
+            }
+
+            run.copy(lapTimes = history.toList())
+        }
+
+        return session.copy(runs = updatedRuns)
+    }
+
     fun disconnect() {
         socket?.let { s ->
-            s.off()       // remove all listeners
+            s.off()
             s.disconnect()
             s.close()
         }

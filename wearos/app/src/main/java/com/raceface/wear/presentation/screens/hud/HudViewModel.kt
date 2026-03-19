@@ -7,6 +7,8 @@ import com.raceface.wear.domain.model.ConnectionState
 import com.raceface.wear.domain.model.HudUiState
 import com.raceface.wear.domain.model.LapColor
 import com.raceface.wear.domain.model.SessionData
+import com.raceface.wear.domain.usecase.HapticEvent
+import com.raceface.wear.domain.usecase.HapticManager
 import com.raceface.wear.domain.usecase.RaceMath
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HudViewModel @Inject constructor(
     private val repository: RaceRepository,
+    private val haptic: HapticManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HudUiState())
@@ -30,6 +33,10 @@ class HudViewModel @Inject constructor(
     private var sessionBestMs: Long = Long.MAX_VALUE
     private var personalBestMs: Long = Long.MAX_VALUE
 
+    // For haptic detection — tracks the last lap time we fired a haptic for
+    private var lastHapticLapMs: Long = -1L
+    private var prevConnectionState: ConnectionState? = null
+
     init {
         viewModelScope.launch {
             combine(
@@ -38,10 +45,18 @@ class HudViewModel @Inject constructor(
                 repository.connectionState,
             ) { my, mate, conn -> Triple(my, mate, conn) }
                 .collect { (myKart, mateKart, conn) ->
-                    _uiState.update {
-                        it.copy(connection = conn)
+                    // Fire haptic on connection state changes
+                    val prev = prevConnectionState
+                    if (prev != null && prev != conn) {
+                        when (conn) {
+                            ConnectionState.CONNECTED    -> haptic.fire(HapticEvent.CONNECTED)
+                            ConnectionState.DISCONNECTED -> haptic.fire(HapticEvent.DISCONNECTED)
+                            else -> Unit
+                        }
                     }
-                    // Trigger a state update with current session if available
+                    prevConnectionState = conn
+
+                    _uiState.update { it.copy(connection = conn) }
                     val current = _uiState.value.sessionData
                     if (current != null) updateFromSession(current, myKart, mateKart)
                 }
@@ -85,16 +100,26 @@ class HudViewModel @Inject constructor(
             else -> LapColor.NORMAL
         }
 
+        // Fire haptic when a new lap completes (lastTimeRaw changes to a new valid value)
+        if (myRun != null && myRun.lastTimeRaw > 0 && myRun.lastTimeRaw != lastHapticLapMs) {
+            lastHapticLapMs = myRun.lastTimeRaw
+            val hapticEvent = when (lastLapColor) {
+                LapColor.BEST_SESSION  -> HapticEvent.SESSION_BEST
+                LapColor.PERSONAL_BEST -> HapticEvent.PERSONAL_BEST
+                LapColor.INCIDENT      -> HapticEvent.INCIDENT
+                LapColor.NORMAL        -> HapticEvent.LAP_COMPLETED
+            }
+            haptic.fire(hapticEvent)
+        }
+
         _uiState.update {
             it.copy(
                 myRun        = myRun,
                 mateRun      = mateRun,
                 sessionData  = session,
-                // connection state is updated separately via the combine() collector above
                 lastLapColor = lastLapColor,
                 lapHistory   = lapHistory,
             )
         }
     }
-
 }

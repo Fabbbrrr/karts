@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.raceface.wear.MainActivity
@@ -36,7 +37,12 @@ class RaceConnectionService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startForeground(NOTIF_ID, buildNotification("Connecting…"))
+        // minSdk = 30 (Android 11) — must specify service types when calling startForeground
+        startForeground(
+            NOTIF_ID,
+            buildNotification("Connecting…"),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
+        )
         startConnection()
     }
 

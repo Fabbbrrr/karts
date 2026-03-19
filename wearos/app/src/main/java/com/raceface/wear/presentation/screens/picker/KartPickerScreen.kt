@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -24,18 +23,19 @@ import androidx.wear.compose.material.Text
 import com.raceface.wear.domain.model.DriverRun
 import com.raceface.wear.presentation.theme.*
 
+/**
+ * Pure display composable — shows a scrollable list of karts.
+ * Zero navigation logic, zero DataStore awareness.
+ */
 @Composable
 fun KartPickerScreen(
-    phase: String,
-    state: KartPickerUiState,
-    onMyKartPicked: (String) -> Unit,
-    onMateKartPicked: (String) -> Unit,
-    onSkipMate: () -> Unit,
+    title: String,
+    drivers: List<DriverRun>,
+    isConnected: Boolean,
+    selectedKart: String? = null,
+    onKartPicked: (String) -> Unit,
+    onSkip: (() -> Unit)? = null,
 ) {
-    val isMatePhase = phase == "mate"
-    val headerText = if (isMatePhase) "COMPARE WITH" else "MY KART"
-    val headerSub  = if (isMatePhase) "Pick your mate's kart" else "Select your kart to start"
-
     val listState = rememberScalingLazyListState()
 
     Box(
@@ -50,80 +50,47 @@ fun KartPickerScreen(
             contentPadding    = PaddingValues(horizontal = 12.dp, vertical = 28.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // Header
+            // Title
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
-                ) {
-                    if (isMatePhase && state.myKart != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text  = "← ${state.myKart}",
-                                color = RaceFacerGreen,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                            )
-                        }
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    Text(
-                        text      = headerText,
-                        color     = TextMuted2,
-                        fontSize  = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.5.sp,
-                    )
-                    Text(
-                        text     = headerSub,
-                        color    = TextMuted,
-                        fontSize = 9.sp,
-                    )
-                }
+                Text(
+                    text          = title,
+                    color         = TextMuted2,
+                    fontSize      = 10.sp,
+                    fontWeight    = FontWeight.Bold,
+                    letterSpacing = 1.5.sp,
+                    modifier      = Modifier.fillMaxWidth(),
+                    textAlign     = TextAlign.Center,
+                )
             }
 
-            // Driver chips
-            val driversToShow = if (isMatePhase) {
-                state.drivers.filter { it.kartNumber != state.myKart }
-            } else {
-                state.drivers
-            }
-
-            if (driversToShow.isEmpty()) {
+            // Empty state
+            if (drivers.isEmpty()) {
                 item {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                     ) {
                         Text(
-                            text  = if (state.isConnected) "No drivers yet…" else "Connecting…",
-                            color = TextMuted,
-                            fontSize = 12.sp,
+                            text      = if (isConnected) "No drivers yet\u2026" else "Connecting\u2026",
+                            color     = TextMuted,
+                            fontSize  = 12.sp,
                             textAlign = TextAlign.Center,
                         )
                     }
                 }
             }
 
-            items(driversToShow) { driver ->
+            // Kart chips
+            items(drivers) { driver ->
                 KartChip(
-                    driver      = driver,
-                    isSelected  = when {
-                        !isMatePhase -> driver.kartNumber == state.myKart
-                        else         -> driver.kartNumber == state.mateKart
-                    },
-                    onClick     = {
-                        if (isMatePhase) onMateKartPicked(driver.kartNumber)
-                        else             onMyKartPicked(driver.kartNumber)
-                    }
+                    driver     = driver,
+                    isSelected = driver.kartNumber == selectedKart,
+                    onClick    = { onKartPicked(driver.kartNumber) },
                 )
             }
 
-            // Skip / No compare option for mate phase
-            if (isMatePhase) {
+            // Optional skip button (mate picker only)
+            if (onSkip != null) {
                 item {
                     Spacer(Modifier.height(4.dp))
                     Box(
@@ -133,7 +100,7 @@ fun KartPickerScreen(
                             .clip(RoundedCornerShape(20.dp))
                             .background(SurfaceDark)
                             .border(1.dp, TextMuted.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
-                            .clickable { onSkipMate() }
+                            .clickable { onSkip() }
                             .padding(vertical = 10.dp),
                     ) {
                         Text("No compare", color = TextMuted, fontSize = 12.sp)
@@ -151,9 +118,9 @@ private fun KartChip(
     onClick: () -> Unit,
 ) {
     val posColor = when (driver.position) {
-        1 -> GoldP1
-        2 -> SilverP2
-        3 -> BronzeP3
+        1    -> GoldP1
+        2    -> SilverP2
+        3    -> BronzeP3
         else -> TextMuted2
     }
     val borderColor = if (isSelected) RaceFacerGreen else Color.Transparent
@@ -170,7 +137,6 @@ private fun KartChip(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // Position badge
         Text(
             text       = "P${driver.position}",
             color      = posColor,
@@ -178,7 +144,6 @@ private fun KartChip(
             fontWeight = FontWeight.Bold,
             modifier   = Modifier.width(28.dp),
         )
-        // Kart number
         Text(
             text       = driver.kartNumber,
             color      = RaceFacerGreen,
@@ -186,7 +151,6 @@ private fun KartChip(
             fontWeight = FontWeight.ExtraBold,
             modifier   = Modifier.width(36.dp),
         )
-        // Driver name
         Text(
             text     = driver.driverName,
             color    = Color.White,
@@ -195,7 +159,6 @@ private fun KartChip(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        // Best lap
         Text(
             text     = driver.bestTimeFormatted,
             color    = TextMuted2,

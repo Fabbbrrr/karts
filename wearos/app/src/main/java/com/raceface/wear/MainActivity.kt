@@ -5,20 +5,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
-import com.raceface.wear.data.local.DataStoreManager
 import com.raceface.wear.presentation.navigation.RaceFacerNavGraph
 import com.raceface.wear.presentation.navigation.Screen
 import com.raceface.wear.presentation.theme.RaceFacerTheme
 import com.raceface.wear.service.RaceConnectionService
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    @Inject lateinit var dataStore: DataStoreManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,17 +22,12 @@ class MainActivity : ComponentActivity() {
         startForegroundService(Intent(this, RaceConnectionService::class.java))
 
         lifecycleScope.launch {
-            // Check if a kart has been previously selected
-            val myKart = dataStore.myKart.first()
-            val startDest = if (myKart.isNullOrBlank()) {
-                Screen.KartPicker.myKart()
-            } else {
-                Screen.Hud.route
-            }
-
+            // Always start at the kart picker so stale DataStore selections
+            // (kart from a previous session that no longer exists) can never
+            // strand the user in an empty HUD loop.
             setContent {
                 RaceFacerTheme {
-                    RaceFacerNavGraph(startDestination = startDest)
+                    RaceFacerNavGraph(startDestination = Screen.KartPicker.route)
                 }
             }
         }
