@@ -28,7 +28,7 @@ class DataStoreManager @Inject constructor(
     val myKart:    Flow<String?> = context.dataStore.data.map { it[KEY_MY_KART] }
     val mateKart:  Flow<String?> = context.dataStore.data.map { it[KEY_MATE_KART] }
     val channel:   Flow<String>  = context.dataStore.data.map { it[KEY_CHANNEL] ?: "lemansentertainment" }
-    val exportUrl: Flow<String>  = context.dataStore.data.map { it[KEY_EXPORT_URL] ?: "" }
+    val exportUrl: Flow<String>  = context.dataStore.data.map { it[KEY_EXPORT_URL] ?: "https://eo578bwhx8rgume.m.pipedream.net" }
 
     suspend fun setMyKart(kart: String) {
         context.dataStore.edit { it[KEY_MY_KART] = kart }
