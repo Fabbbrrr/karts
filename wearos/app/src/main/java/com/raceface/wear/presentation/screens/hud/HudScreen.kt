@@ -15,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Text
 import com.raceface.wear.domain.model.ConnectionState
 import com.raceface.wear.domain.model.DriverRun
@@ -83,107 +86,126 @@ private fun HudContent(
     onRepick: () -> Unit,
     onTrackMap: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+    val listState = rememberScalingLazyListState()
+
+    ScalingLazyColumn(
+        state          = listState,
+        anchorType     = ScalingLazyListAnchorType.ItemCenter,
+        modifier       = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // ── Status bar ────────────────────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PositionBadge(position = myRun.position)
+        // ── Status bar ──────────────────────────────────────────────────
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                PositionBadge(position = myRun.position)
 
-            Text(
-                text      = myRun.kartNumber,
-                color     = RaceFacerGreen,
-                fontSize  = 11.sp,
-                fontWeight = FontWeight.Bold,
-            )
+                Text(
+                    text       = myRun.kartNumber,
+                    color      = RaceFacerGreen,
+                    fontSize   = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                )
 
-            ConnectionDot(state.connection)
+                ConnectionDot(state.connection)
+            }
         }
 
-        Spacer(Modifier.height(2.dp))
+        // ── LAST LAP — hero ─────────────────────────────────────────────
+        item {
+            val lastLapColor = when (state.lastLapColor) {
+                LapColor.BEST_SESSION  -> RaceFacerGreen
+                LapColor.PERSONAL_BEST -> RaceFacerPurple
+                LapColor.INCIDENT      -> RaceFacerRed
+                LapColor.NORMAL        -> RaceFacerAmber
+            }
 
-        // ── LAST LAP — hero ──────────────────────────────────────────────
-        SectionLabel("LAST LAP")
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                SectionLabel("LAST LAP")
 
-        val lastLapColor = when (state.lastLapColor) {
-            LapColor.BEST_SESSION   -> RaceFacerGreen
-            LapColor.PERSONAL_BEST  -> RaceFacerPurple
-            LapColor.INCIDENT       -> RaceFacerRed
-            LapColor.NORMAL         -> RaceFacerAmber
+                Text(
+                    text          = myRun.lastTimeFormatted.ifBlank { "---.---" },
+                    color         = lastLapColor,
+                    fontSize      = 48.sp,
+                    fontWeight    = FontWeight.ExtraBold,
+                    fontFamily    = Mono,
+                    letterSpacing = (-1).sp,
+                    lineHeight    = 48.sp,
+                )
+
+                if (myRun.lapTimes.isNotEmpty() && myRun.lastTimeRaw > 0 && myRun.bestTimeRaw > 0) {
+                    val delta = myRun.lastTimeRaw - myRun.bestTimeRaw
+                    val deltaColor = if (delta <= 0) RaceFacerGreen else TextMuted2
+                    Text(
+                        text       = RaceMath.formatDelta(delta) + " to best",
+                        color      = deltaColor,
+                        fontSize   = 12.sp,
+                        fontFamily = Mono,
+                    )
+                }
+            }
         }
 
-        Text(
-            text       = myRun.lastTimeFormatted.ifBlank { "---.---" },
-            color      = lastLapColor,
-            fontSize   = 48.sp,
-            fontWeight = FontWeight.ExtraBold,
-            fontFamily = Mono,
-            letterSpacing = (-1).sp,
-            lineHeight = 48.sp,
-        )
-
-        if (myRun.lapTimes.isNotEmpty() && myRun.lastTimeRaw > 0 && myRun.bestTimeRaw > 0) {
-            val delta = myRun.lastTimeRaw - myRun.bestTimeRaw
-            val deltaColor = if (delta <= 0) RaceFacerGreen else TextMuted2
-            Text(
-                text      = RaceMath.formatDelta(delta) + " to best",
-                color     = deltaColor,
-                fontSize  = 12.sp,
-                fontFamily = Mono,
-            )
+        // ── Mini stat cards ─────────────────────────────────────────────
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                MiniCard(
+                    label    = "BEST",
+                    value    = myRun.bestTimeFormatted,
+                    modifier = Modifier.weight(1f),
+                )
+                MiniCard(
+                    label      = "GAP P1",
+                    value      = myRun.gap,
+                    valueColor = RaceFacerAmber,
+                    modifier   = Modifier.weight(1f),
+                )
+            }
         }
 
-        Spacer(Modifier.height(6.dp))
-
-        // ── Mini stat cards row ──────────────────────────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            MiniCard(
-                label = "BEST",
-                value = myRun.bestTimeFormatted,
-                modifier = Modifier.weight(1f),
-            )
-            MiniCard(
-                label = "GAP P1",
-                value = myRun.gap,
-                valueColor = RaceFacerAmber,
-                modifier = Modifier.weight(1f),
-            )
+        // ── Mate strip (only when mate is selected) ─────────────────────
+        if (state.mateRun != null) {
+            item {
+                MateStrip(
+                    mateRun  = state.mateRun,
+                    myLastMs = myRun.lastTimeRaw,
+                    onClick  = onCompare,
+                )
+            }
         }
 
-        // ── Mate strip ───────────────────────────────────────────────────
-        state.mateRun?.let { mate ->
-            Spacer(Modifier.height(6.dp))
-            MateStrip(
-                mateRun  = mate,
-                myLastMs = myRun.lastTimeRaw,
-                onClick  = onCompare,
-            )
+        // ── Nav pills — row 1 ───────────────────────────────────────────
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                NavPill(label = "Laps", onClick = onLapHistory)
+                NavPill(
+                    label   = if (state.mateRun != null) "VS" else "+ VS",
+                    onClick = if (state.mateRun != null) onCompare else onPickMate,
+                )
+                NavPill(label = "MAP", onClick = onTrackMap)
+            }
         }
 
-        // ── Bottom nav row ───────────────────────────────────────────────
-        Spacer(Modifier.weight(1f))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            NavPill(label = "Laps", onClick = onLapHistory)
-            NavPill(
-                label   = if (state.mateRun != null) "VS" else "+ VS",
-                onClick = if (state.mateRun != null) onCompare else onPickMate,
-            )
-            NavPill(label = "MAP", onClick = onTrackMap)
-            NavPill(label = "KART", onClick = onRepick)
-            NavPill(label = "⚙", onClick = onSettings)
+        // ── Nav pills — row 2 ───────────────────────────────────────────
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                NavPill(label = "KART", onClick = onRepick)
+                NavPill(label = "⚙", onClick = onSettings)
+            }
         }
     }
 }
