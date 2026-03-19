@@ -122,35 +122,43 @@ private fun HudContent(
 
         // ── LAST LAP — hero ─────────────────────────────────────────────
         item {
-            val lastLapColor = when (state.lastLapColor) {
-                LapColor.BEST_SESSION  -> RaceFacerGreen
-                LapColor.PERSONAL_BEST -> RaceFacerPurple
-                LapColor.INCIDENT      -> RaceFacerRed
-                LapColor.NORMAL        -> RaceFacerAmber
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SectionLabel("LAST LAP")
-
-                Text(
-                    text          = myRun.lastTimeFormatted.ifBlank { "---.---" },
-                    color         = lastLapColor,
-                    fontSize      = 48.sp,
-                    fontWeight    = FontWeight.ExtraBold,
-                    fontFamily    = Mono,
-                    letterSpacing = (-1).sp,
-                    lineHeight    = 48.sp,
+            if (state.mateRun != null) {
+                VsHeroBlock(
+                    myRun        = myRun,
+                    mateRun      = state.mateRun,
+                    lastLapColor = state.lastLapColor,
                 )
+            } else {
+                val lastLapColor = when (state.lastLapColor) {
+                    LapColor.BEST_SESSION  -> RaceFacerGreen
+                    LapColor.PERSONAL_BEST -> RaceFacerPurple
+                    LapColor.INCIDENT      -> RaceFacerRed
+                    LapColor.NORMAL        -> RaceFacerAmber
+                }
 
-                if (myRun.lapTimes.isNotEmpty() && myRun.lastTimeRaw > 0 && myRun.bestTimeRaw > 0) {
-                    val delta = myRun.lastTimeRaw - myRun.bestTimeRaw
-                    val deltaColor = if (delta <= 0) RaceFacerGreen else TextMuted2
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    SectionLabel("LAST LAP")
+
                     Text(
-                        text       = RaceMath.formatDelta(delta) + " to best",
-                        color      = deltaColor,
-                        fontSize   = 12.sp,
-                        fontFamily = Mono,
+                        text          = myRun.lastTimeFormatted.ifBlank { "---.---" },
+                        color         = lastLapColor,
+                        fontSize      = 48.sp,
+                        fontWeight    = FontWeight.ExtraBold,
+                        fontFamily    = Mono,
+                        letterSpacing = (-1).sp,
+                        lineHeight    = 48.sp,
                     )
+
+                    if (myRun.lapTimes.isNotEmpty() && myRun.lastTimeRaw > 0 && myRun.bestTimeRaw > 0) {
+                        val delta = myRun.lastTimeRaw - myRun.bestTimeRaw
+                        val deltaColor = if (delta <= 0) RaceFacerGreen else TextMuted2
+                        Text(
+                            text       = RaceMath.formatDelta(delta) + " to best",
+                            color      = deltaColor,
+                            fontSize   = 12.sp,
+                            fontFamily = Mono,
+                        )
+                    }
                 }
             }
         }
@@ -171,17 +179,6 @@ private fun HudContent(
                     value      = myRun.gap,
                     valueColor = RaceFacerAmber,
                     modifier   = Modifier.weight(1f),
-                )
-            }
-        }
-
-        // ── Mate strip (only when mate is selected) ─────────────────────
-        if (state.mateRun != null) {
-            item {
-                MateStrip(
-                    mateRun  = state.mateRun,
-                    myLastMs = myRun.lastTimeRaw,
-                    onClick  = onCompare,
                 )
             }
         }
@@ -291,6 +288,75 @@ private fun MiniCard(
             fontWeight = FontWeight.Bold,
             fontFamily = Mono,
         )
+    }
+}
+
+@Composable
+private fun VsHeroBlock(
+    myRun: DriverRun,
+    mateRun: DriverRun,
+    lastLapColor: LapColor,
+) {
+    val myColor = when (lastLapColor) {
+        LapColor.BEST_SESSION  -> RaceFacerGreen
+        LapColor.PERSONAL_BEST -> RaceFacerPurple
+        LapColor.INCIDENT      -> RaceFacerRed
+        LapColor.NORMAL        -> RaceFacerAmber
+    }
+    val delta = myRun.lastTimeRaw - mateRun.lastTimeRaw
+    val deltaColor = if (delta <= 0) RaceFacerGreen else RaceFacerRed
+    val deltaLabel = when {
+        myRun.lastTimeRaw <= 0 || mateRun.lastTimeRaw <= 0 -> null
+        delta < 0L  -> "${RaceMath.formatDelta(delta)} faster"
+        delta == 0L -> "dead heat"
+        else        -> "${RaceMath.formatDelta(delta)} behind"
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        SectionLabel("LAST LAP")
+
+        // Row 1 — my time (primary, large)
+        Text(
+            text          = myRun.lastTimeFormatted.ifBlank { "---.---" },
+            color         = myColor,
+            fontSize      = 40.sp,
+            fontWeight    = FontWeight.ExtraBold,
+            fontFamily    = Mono,
+            letterSpacing = (-1).sp,
+            lineHeight    = 40.sp,
+        )
+
+        // Row 2 — mate time (slightly smaller, amber, kart number prefix)
+        Row(
+            verticalAlignment   = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text          = mateRun.kartNumber,
+                color         = TextMuted,
+                fontSize      = 9.sp,
+                letterSpacing = 1.sp,
+            )
+            Text(
+                text          = mateRun.lastTimeFormatted.ifBlank { "---.---" },
+                color         = RaceFacerAmber,
+                fontSize      = 28.sp,
+                fontWeight    = FontWeight.Bold,
+                fontFamily    = Mono,
+                letterSpacing = (-0.5).sp,
+                lineHeight    = 28.sp,
+            )
+        }
+
+        // Delta row — only when both have real times
+        if (deltaLabel != null) {
+            Text(
+                text       = deltaLabel,
+                color      = deltaColor,
+                fontSize   = 13.sp,
+                fontFamily = Mono,
+            )
+        }
     }
 }
 
