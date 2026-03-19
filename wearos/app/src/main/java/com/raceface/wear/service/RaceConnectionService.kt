@@ -37,11 +37,14 @@ class RaceConnectionService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        // minSdk = 30 (Android 11) — must specify service types when calling startForeground
+        // minSdk = 30 (Android 11) — must specify service types when calling startForeground.
+        // Only DATA_SYNC here; location tracking runs from the Activity (TrackMapScreen)
+        // after the user grants ACCESS_FINE_LOCATION — starting with LOCATION type before
+        // permission is granted crashes with SecurityException on fresh installs.
         startForeground(
             NOTIF_ID,
             buildNotification("Connecting…"),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
         )
         startConnection()
     }

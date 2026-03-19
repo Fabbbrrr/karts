@@ -51,11 +51,11 @@
             </intent-filter>
         </activity>
 
-        <!-- Background Socket.IO + GPS service -->
+        <!-- Background Socket.IO service (dataSync only — GPS runs from Activity) -->
         <service
             android:name=".service.RaceConnectionService"
             android:exported="false"
-            android:foregroundServiceType="dataSync|location" />
+            android:foregroundServiceType="dataSync" />
 
     </application>
 </manifest>
