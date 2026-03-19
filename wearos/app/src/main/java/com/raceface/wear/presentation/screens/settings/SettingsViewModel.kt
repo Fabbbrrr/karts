@@ -17,6 +17,7 @@ data class SettingsUiState(
     val myKart: String? = null,
     val mateKart: String? = null,
     val channel: String = "lemansentertainment",
+    val exportUrl: String = "",
     val connection: ConnectionState = ConnectionState.CONNECTING,
 )
 
@@ -34,15 +35,17 @@ class SettingsViewModel @Inject constructor(
                 repository.dataStore.myKart,
                 repository.dataStore.mateKart,
                 repository.dataStore.channel,
+                repository.dataStore.exportUrl,
                 repository.connectionState,
-            ) { my, mate, ch, conn -> listOf(my, mate, ch, conn) }
-                .collect { (my, mate, ch, conn) ->
+            ) { values -> values }
+                .collect { values ->
                     _uiState.update {
                         it.copy(
-                            myKart     = my as String?,
-                            mateKart   = mate as String?,
-                            channel    = ch as String,
-                            connection = conn as ConnectionState,
+                            myKart     = values[0] as String?,
+                            mateKart   = values[1] as String?,
+                            channel    = values[2] as String,
+                            exportUrl  = values[3] as String,
+                            connection = values[4] as ConnectionState,
                         )
                     }
                 }
@@ -65,6 +68,12 @@ class SettingsViewModel @Inject constructor(
     fun clearMate() {
         viewModelScope.launch {
             repository.dataStore.setMateKart(null)
+        }
+    }
+
+    fun saveExportUrl(url: String) {
+        viewModelScope.launch {
+            repository.dataStore.setExportUrl(url.trim())
         }
     }
 }

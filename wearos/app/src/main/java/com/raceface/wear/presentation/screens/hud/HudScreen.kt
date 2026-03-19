@@ -21,6 +21,7 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Text
 import com.raceface.wear.domain.model.ConnectionState
 import com.raceface.wear.domain.model.DriverRun
+import com.raceface.wear.domain.model.ExportState
 import com.raceface.wear.domain.model.HudUiState
 import com.raceface.wear.domain.model.LapColor
 import com.raceface.wear.domain.usecase.RaceMath
@@ -35,6 +36,7 @@ fun HudScreen(
     onCompare: () -> Unit,
     onSettings: () -> Unit,
     onTrackMap: () -> Unit = {},
+    onSaveRace: () -> Unit = {},
 ) {
     // Keep the display at full brightness for the entire session — no ambient
     // dimming, no OS timeout. The driver needs to glance at the watch without
@@ -70,6 +72,7 @@ fun HudScreen(
                 onSettings   = onSettings,
                 onRepick     = onPickerClick,
                 onTrackMap   = onTrackMap,
+                onSaveRace   = onSaveRace,
             )
         }
     }
@@ -85,6 +88,7 @@ private fun HudContent(
     onSettings: () -> Unit,
     onRepick: () -> Unit,
     onTrackMap: () -> Unit,
+    onSaveRace: () -> Unit,
 ) {
     val listState = rememberScalingLazyListState()
 
@@ -205,6 +209,7 @@ private fun HudContent(
             ) {
                 NavPill(label = "KART", onClick = onRepick)
                 NavPill(label = "⚙", onClick = onSettings)
+                SavePill(state = state.exportState, onClick = onSaveRace)
             }
         }
     }
@@ -331,6 +336,32 @@ private fun MateStrip(
             fontSize = 11.sp,
             fontFamily = Mono,
         )
+    }
+}
+
+@Composable
+private fun SavePill(state: ExportState, onClick: () -> Unit) {
+    val (label, tint) = when (state) {
+        ExportState.IDLE    -> "SAVE" to TextMuted2
+        ExportState.SENDING -> "…"   to RaceFacerAmber
+        ExportState.SUCCESS -> "✓"   to RaceFacerGreen
+        ExportState.ERROR   -> "✗"   to RaceFacerRed
+    }
+    val bg = when (state) {
+        ExportState.IDLE    -> SurfaceDark
+        ExportState.SENDING -> RaceFacerAmber.copy(alpha = 0.15f)
+        ExportState.SUCCESS -> RaceFacerGreen.copy(alpha = 0.15f)
+        ExportState.ERROR   -> RaceFacerRed.copy(alpha = 0.15f)
+    }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(bg)
+            .clickable(enabled = state == ExportState.IDLE, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = label, color = tint, fontSize = 11.sp, fontWeight = FontWeight.Bold)
     }
 }
 

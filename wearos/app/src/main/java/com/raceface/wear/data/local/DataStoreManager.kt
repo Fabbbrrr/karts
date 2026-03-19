@@ -19,14 +19,16 @@ class DataStoreManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        val KEY_MY_KART   = stringPreferencesKey("my_kart")
-        val KEY_MATE_KART = stringPreferencesKey("mate_kart")
-        val KEY_CHANNEL   = stringPreferencesKey("channel")
+        val KEY_MY_KART    = stringPreferencesKey("my_kart")
+        val KEY_MATE_KART  = stringPreferencesKey("mate_kart")
+        val KEY_CHANNEL    = stringPreferencesKey("channel")
+        val KEY_EXPORT_URL = stringPreferencesKey("export_url")
     }
 
-    val myKart: Flow<String?>   = context.dataStore.data.map { it[KEY_MY_KART] }
-    val mateKart: Flow<String?> = context.dataStore.data.map { it[KEY_MATE_KART] }
-    val channel: Flow<String>   = context.dataStore.data.map { it[KEY_CHANNEL] ?: "lemansentertainment" }
+    val myKart:    Flow<String?> = context.dataStore.data.map { it[KEY_MY_KART] }
+    val mateKart:  Flow<String?> = context.dataStore.data.map { it[KEY_MATE_KART] }
+    val channel:   Flow<String>  = context.dataStore.data.map { it[KEY_CHANNEL] ?: "lemansentertainment" }
+    val exportUrl: Flow<String>  = context.dataStore.data.map { it[KEY_EXPORT_URL] ?: "" }
 
     suspend fun setMyKart(kart: String) {
         context.dataStore.edit { it[KEY_MY_KART] = kart }
@@ -40,6 +42,10 @@ class DataStoreManager @Inject constructor(
 
     suspend fun setChannel(channel: String) {
         context.dataStore.edit { it[KEY_CHANNEL] = channel }
+    }
+
+    suspend fun setExportUrl(url: String) {
+        context.dataStore.edit { it[KEY_EXPORT_URL] = url.trim() }
     }
 
     suspend fun clearKarts() {

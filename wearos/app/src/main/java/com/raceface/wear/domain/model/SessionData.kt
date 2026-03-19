@@ -44,6 +44,7 @@ data class HudUiState(
     val connection: ConnectionState = ConnectionState.CONNECTING,
     val lastLapColor: LapColor = LapColor.NORMAL,
     val lapHistory: List<LapEntry> = emptyList(),
+    val exportState: ExportState = ExportState.IDLE,
 )
 
 data class LapEntry(
@@ -56,3 +57,6 @@ data class LapEntry(
 )
 
 enum class LapColor { BEST_SESSION, PERSONAL_BEST, INCIDENT, NORMAL }
+
+/** Tracks the state of a race export POST to Google Sheets. */
+enum class ExportState { IDLE, SENDING, SUCCESS, ERROR }

@@ -29,9 +29,11 @@ fun SettingsScreen(
     onChannelSave: (String) -> Unit,
     onRepickKarts: () -> Unit,
     onClearMate: () -> Unit,
+    onExportUrlSave: (String) -> Unit,
 ) {
     val listState = rememberScalingLazyListState()
-    var channelInput by remember(state.channel) { mutableStateOf(state.channel) }
+    var channelInput   by remember(state.channel)    { mutableStateOf(state.channel) }
+    var exportUrlInput by remember(state.exportUrl)  { mutableStateOf(state.exportUrl) }
 
     Box(
         modifier = Modifier
@@ -128,6 +130,41 @@ fun SettingsScreen(
             if (state.mateKart != null) {
                 item {
                     ActionChip(label = "Clear Compare", color = RaceFacerRed, onClick = onClearMate)
+                }
+            }
+
+            // ── Export ─────────────────────────────────────────────────
+            item { GroupLabel("EXPORT TO SHEETS") }
+
+            item {
+                SettingsRow(
+                    label    = "Apps Script URL",
+                    subLabel = if (exportUrlInput.isBlank()) "Not set" else "Configured ✓",
+                ) {}
+            }
+
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceDark)
+                        .padding(10.dp),
+                ) {
+                    BasicTextField(
+                        value         = exportUrlInput,
+                        onValueChange = { exportUrlInput = it },
+                        textStyle     = TextStyle(color = Color.White, fontSize = 11.sp, fontFamily = Mono),
+                        cursorBrush   = SolidColor(RaceFacerGreen),
+                        singleLine    = true,
+                        modifier      = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+
+            item {
+                ActionChip(label = "Save URL") {
+                    onExportUrlSave(exportUrlInput)
                 }
             }
 

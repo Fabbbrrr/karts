@@ -59,6 +59,7 @@ fun RaceFacerNavGraph(startDestination: String) {
                 onCompare     = { navController.navigate(Screen.Compare.route) },
                 onSettings    = { navController.navigate(Screen.Settings.route) },
                 onTrackMap    = { navController.navigate(Screen.TrackMap.route) },
+                onSaveRace    = vm::saveRace,
             )
         }
 
@@ -104,11 +105,12 @@ fun RaceFacerNavGraph(startDestination: String) {
             val vm: SettingsViewModel = hiltViewModel()
             val state by vm.uiState.collectAsStateWithLifecycle()
             SettingsScreen(
-                state         = state,
-                onReconnect   = vm::reconnect,
-                onChannelSave = vm::saveChannel,
-                onRepickKarts = { navController.navigate(Screen.KartPicker.route) },
-                onClearMate   = vm::clearMate,
+                state            = state,
+                onReconnect      = vm::reconnect,
+                onChannelSave    = vm::saveChannel,
+                onRepickKarts    = { navController.navigate(Screen.KartPicker.route) },
+                onClearMate      = vm::clearMate,
+                onExportUrlSave  = vm::saveExportUrl,
             )
         }
 

@@ -4,13 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.raceface.wear.data.repository.RaceRepository
 import com.raceface.wear.domain.model.ConnectionState
+import com.raceface.wear.domain.model.ExportState
 import com.raceface.wear.domain.model.HudUiState
 import com.raceface.wear.domain.model.LapColor
 import com.raceface.wear.domain.model.SessionData
 import com.raceface.wear.domain.usecase.HapticEvent
 import com.raceface.wear.domain.usecase.HapticManager
+import com.raceface.wear.domain.usecase.RaceExporter
 import com.raceface.wear.domain.usecase.RaceMath
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +27,7 @@ import javax.inject.Inject
 class HudViewModel @Inject constructor(
     private val repository: RaceRepository,
     private val haptic: HapticManager,
+    private val exporter: RaceExporter,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HudUiState())
@@ -120,6 +124,29 @@ class HudViewModel @Inject constructor(
                 lastLapColor = lastLapColor,
                 lapHistory   = lapHistory,
             )
+        }
+    }
+
+    fun saveRace() {
+        val session = _uiState.value.sessionData ?: return
+        if (_uiState.value.exportState == ExportState.SENDING) return  // debounce
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(exportState = ExportState.SENDING) }
+
+            val result = exporter.export(session)
+
+            if (result.isSuccess) {
+                haptic.fire(HapticEvent.CONNECTED)   // short positive buzz
+                _uiState.update { it.copy(exportState = ExportState.SUCCESS) }
+            } else {
+                haptic.fire(HapticEvent.DISCONNECTED) // short negative buzz
+                _uiState.update { it.copy(exportState = ExportState.ERROR) }
+            }
+
+            // Auto-reset pill to IDLE after 3 seconds
+            delay(3_000)
+            _uiState.update { it.copy(exportState = ExportState.IDLE) }
         }
     }
 }
