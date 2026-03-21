@@ -39,33 +39,25 @@ class RaceExporter @Inject constructor(
     }
 
     private fun postJson(url: String, json: String) {
+        val bytes = json.toByteArray(Charsets.UTF_8)
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            requestMethod  = "POST"
             doOutput       = true
             connectTimeout = 10_000
             readTimeout    = 15_000
+            setRequestProperty("Content-Type",   "application/json; charset=utf-8")
+            setRequestProperty("Content-Length", bytes.size.toString())
+            setRequestProperty("Accept",         "application/json")
         }
-        OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(json) }
+        connection.outputStream.use { it.write(bytes); it.flush() }
         val code = connection.responseCode
         connection.disconnect()
         if (code !in 200..299) throw RuntimeException("HTTP $code")
     }
 
     private fun buildRunJson(timestamp: String, session: SessionData, run: com.raceface.wear.domain.model.DriverRun): String {
-        val lapTimesJson = run.lapTimes.joinToString(",") { it.toString() }
-        return """{
-  "timestamp":    "$timestamp",
-  "eventName":    ${session.eventName.jsonStr()},
-  "sessionName":  ${session.sessionName.jsonStr()},
-  "kartNumber":   ${run.kartNumber.jsonStr()},
-  "driverName":   ${run.driverName.jsonStr()},
-  "position":     ${run.position},
-  "bestTimeRaw":  ${run.bestTimeRaw},
-  "lastTimeRaw":  ${run.lastTimeRaw},
-  "laps":         ${run.laps},
-  "lapTimes":     [$lapTimesJson]
-}"""
+        val lapTimesJson = run.lapTimes.joinToString(",")
+        return """{"timestamp":${timestamp.jsonStr()},"eventName":${session.eventName.jsonStr()},"sessionName":${session.sessionName.jsonStr()},"kartNumber":${run.kartNumber.jsonStr()},"driverName":${run.driverName.jsonStr()},"position":${run.position},"bestTimeRaw":${run.bestTimeRaw},"lastTimeRaw":${run.lastTimeRaw},"laps":${run.laps},"lapTimes":[$lapTimesJson]}"""
     }
 
     private fun String.jsonStr(): String {
