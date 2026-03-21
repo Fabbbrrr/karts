@@ -1,6 +1,7 @@
 package com.raceface.wear.presentation.screens.compare
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -11,9 +12,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
-import androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType
-import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Text
 import com.raceface.wear.domain.model.LapComparison
 import com.raceface.wear.domain.usecase.RaceMath
@@ -23,282 +21,234 @@ import com.raceface.wear.presentation.theme.*
 fun CompareScreen(
     state: CompareUiState,
     onRepick: () -> Unit,
+    onBackToHud: () -> Unit,
 ) {
-    val listState = rememberScalingLazyListState()
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundBlack),
+        contentAlignment = Alignment.Center,
     ) {
         if (state.noMateSelected || state.comparison == null) {
             NoMateContent()
         } else {
-            val c = state.comparison
-            ScalingLazyColumn(
-                state          = listState,
-                anchorType     = ScalingLazyListAnchorType.ItemCenter,
-                modifier       = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+            CompareContent(
+                c            = state.comparison,
+                onBackToHud  = onBackToHud,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompareContent(
+    c: LapComparison,
+    onBackToHud: () -> Unit,
+) {
+    val deltaMs   = c.lastLapDeltaMs
+    val iWin      = deltaMs <= 0
+    val deltaText = RaceMath.formatDelta(deltaMs)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        // ── Top bar: back button + lap counts ─────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Back to HUD pill
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(SurfaceDark)
+                    .clickable(onClick = onBackToHud)
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                contentAlignment = Alignment.Center,
             ) {
+                Text(
+                    text       = "< HUD",
+                    color      = TextMuted2,
+                    fontSize   = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
 
-                // ── Kart names ───────────────────────────────────────────
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(
-                                text       = c.myRun.kartNumber,
-                                color      = RaceFacerGreen,
-                                fontSize   = 16.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                            )
-                            Text(
-                                text     = c.myRun.driverName.split(" ").first(),
-                                color    = TextMuted2,
-                                fontSize = 9.sp,
-                            )
-                        }
-                        Text(
-                            text       = "VS",
-                            color      = TextMuted,
-                            fontSize   = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(
-                                text       = c.mateRun.kartNumber,
-                                color      = RaceFacerAmber,
-                                fontSize   = 16.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                            )
-                            Text(
-                                text     = c.mateRun.driverName.split(" ").first(),
-                                color    = TextMuted2,
-                                fontSize = 9.sp,
-                            )
-                        }
-                    }
-                }
-
-                // ── Hero: last lap times ─────────────────────────────────
-                item {
-                    val deltaMs   = c.lastLapDeltaMs
-                    val iWin      = deltaMs <= 0
-                    val deltaText = RaceMath.formatDelta(deltaMs)
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(SurfaceDark)
-                            .padding(horizontal = 8.dp, vertical = 10.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text          = "LAST LAP",
-                            color         = TextMuted,
-                            fontSize      = 8.sp,
-                            letterSpacing = 1.5.sp,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text       = c.myRun.lastTimeFormatted.ifBlank { "---.---" },
-                                color      = if (iWin) RaceFacerGreen else RaceFacerRed,
-                                fontSize   = 34.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontFamily = Mono,
-                                letterSpacing = (-1).sp,
-                            )
-                            Text(
-                                text       = c.mateRun.lastTimeFormatted.ifBlank { "---.---" },
-                                color      = if (!iWin) RaceFacerGreen else RaceFacerRed,
-                                fontSize   = 34.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontFamily = Mono,
-                                letterSpacing = (-1).sp,
-                            )
-                        }
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            text       = if (iWin) "$deltaText faster" else "$deltaText slower",
-                            color      = if (iWin) RaceFacerGreen else RaceFacerRed,
-                            fontSize   = 11.sp,
-                            fontFamily = Mono,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
-                }
-
-                // ── Best lap ─────────────────────────────────────────────
-                item {
-                    StatRow(
-                        label   = "BEST LAP",
-                        myVal   = c.myRun.bestTimeFormatted,
-                        mateVal = c.mateRun.bestTimeFormatted,
-                        deltaMs = c.bestLapDeltaMs,
-                    )
-                }
-
-                // ── Average lap ──────────────────────────────────────────
-                item {
-                    StatRow(
-                        label   = "AVERAGE",
-                        myVal   = RaceMath.formatTime(c.myRun.avgLapRaw),
-                        mateVal = RaceMath.formatTime(c.mateRun.avgLapRaw),
-                        deltaMs = c.myRun.avgLapRaw - c.mateRun.avgLapRaw,
-                    )
-                }
-
-                // ── Consistency + position side by side ──────────────────
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        MiniStatRow(
-                            label   = "CONSIST.",
-                            myVal   = "${RaceMath.consistency(c.myRun.lapTimes)}%",
-                            mateVal = "${RaceMath.consistency(c.mateRun.lapTimes)}%",
-                            // higher % is better → invert delta
-                            iWin    = RaceMath.consistency(c.myRun.lapTimes) >=
-                                      RaceMath.consistency(c.mateRun.lapTimes),
-                            modifier = Modifier.weight(1f),
-                        )
-                        MiniStatRow(
-                            label    = "POSITION",
-                            myVal    = "P${c.myRun.position}",
-                            mateVal  = "P${c.mateRun.position}",
-                            iWin     = c.positionDelta <= 0,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-
-                // ── Gap summary ──────────────────────────────────────────
-                item { GapSummary(c) }
+            // Lap counts
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                LapBadge(label = "L${c.myRun.laps}", color = RaceFacerGreen)
+                LapBadge(label = "L${c.mateRun.laps}", color = RaceFacerAmber)
             }
         }
-    }
-}
 
-@Composable
-private fun StatRow(
-    label: String,
-    myVal: String,
-    mateVal: String,
-    deltaMs: Long,
-) {
-    val iWin = deltaMs <= 0
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceDark)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text       = myVal,
-            color      = if (iWin) RaceFacerGreen else RaceFacerRed,
-            fontSize   = 15.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = Mono,
-            modifier   = Modifier.weight(1f),
-            textAlign  = TextAlign.Center,
-        )
-        Text(
-            text          = label,
-            color         = TextMuted,
-            fontSize      = 8.sp,
-            letterSpacing = 0.5.sp,
-            modifier      = Modifier.width(50.dp),
-            textAlign     = TextAlign.Center,
-        )
-        Text(
-            text       = mateVal,
-            color      = if (!iWin) RaceFacerGreen else RaceFacerRed,
-            fontSize   = 15.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = Mono,
-            modifier   = Modifier.weight(1f),
-            textAlign  = TextAlign.Center,
-        )
-    }
-}
+        // ── Kart identities ───────────────────────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // My kart: position + number + name
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    PositionText(c.myRun.position)
+                    Text(
+                        text       = "#${c.myRun.kartNumber}",
+                        color      = RaceFacerGreen,
+                        fontSize   = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                }
+                Text(
+                    text     = c.myRun.driverName.split(" ").first(),
+                    color    = TextMuted2,
+                    fontSize = 9.sp,
+                )
+            }
 
-@Composable
-private fun MiniStatRow(
-    label: String,
-    myVal: String,
-    mateVal: String,
-    iWin: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceDark)
-            .padding(6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(label, color = TextMuted, fontSize = 7.sp, letterSpacing = 0.5.sp)
-        Spacer(Modifier.height(2.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(myVal,   color = if (iWin)  RaceFacerGreen else RaceFacerRed,  fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = Mono)
-            Text(mateVal, color = if (!iWin) RaceFacerGreen else RaceFacerRed, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = Mono)
+            // Mate kart: number + position
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text       = "#${c.mateRun.kartNumber}",
+                        color      = RaceFacerAmber,
+                        fontSize   = 14.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    )
+                    PositionText(c.mateRun.position)
+                }
+                Text(
+                    text     = c.mateRun.driverName.split(" ").first(),
+                    color    = TextMuted2,
+                    fontSize = 9.sp,
+                )
+            }
+        }
+
+        // ── Hero: stacked lap times + delta ───────────────────────────────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            // My last lap — always green (identity)
+            Text(
+                text          = c.myRun.lastTimeFormatted.ifBlank { "---.---" },
+                color         = RaceFacerGreen,
+                fontSize      = 36.sp,
+                fontWeight    = FontWeight.ExtraBold,
+                fontFamily    = Mono,
+                letterSpacing = (-1).sp,
+                textAlign     = TextAlign.Center,
+            )
+
+            // VS separator
+            Text(
+                text       = "VS",
+                color      = TextMuted,
+                fontSize   = 10.sp,
+                fontWeight = FontWeight.Bold,
+            )
+
+            // Mate last lap — always amber (identity)
+            Text(
+                text          = c.mateRun.lastTimeFormatted.ifBlank { "---.---" },
+                color         = RaceFacerAmber,
+                fontSize      = 36.sp,
+                fontWeight    = FontWeight.ExtraBold,
+                fontFamily    = Mono,
+                letterSpacing = (-1).sp,
+                textAlign     = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            // Delta — green if winning, red if losing
+            Text(
+                text       = if (iWin) "$deltaText faster" else "$deltaText slower",
+                color      = if (iWin) RaceFacerGreen else RaceFacerRed,
+                fontSize   = 14.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = Mono,
+            )
+        }
+
+        // ── Footer: best lap comparison + trend ───────────────────────────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Best lap comparison
+            val bestDelta = c.bestLapDeltaMs
+            val bestIWin  = bestDelta <= 0
+            Text(
+                text  = "best ${c.myRun.bestTimeFormatted} vs ${c.mateRun.bestTimeFormatted}",
+                color = TextMuted2,
+                fontSize = 10.sp,
+                fontFamily = Mono,
+            )
+
+            // Closing/losing trend
+            val closing   = c.closingMs
+            val trendText = when {
+                closing < -50 -> "closing ${RaceMath.formatDelta(closing)}/lap"
+                closing > 50  -> "losing ${RaceMath.formatDelta(closing)}/lap"
+                else          -> "stable pace"
+            }
+            val trendColor = when {
+                closing < -50 -> RaceFacerGreen
+                closing > 50  -> RaceFacerRed
+                else          -> TextMuted2
+            }
+            Text(
+                text       = trendText,
+                color      = trendColor,
+                fontSize   = 9.sp,
+                fontFamily = Mono,
+            )
         }
     }
 }
 
 @Composable
-private fun GapSummary(c: LapComparison) {
-    val isBehind  = c.positionDelta > 0
-    val gapText   = if (isBehind) "+${c.myRun.gap}" else c.myRun.gap
-    val closing   = c.closingMs
-    val trendText = when {
-        closing < -50 -> "closing ${RaceMath.formatDelta(closing)}/lap"
-        closing > 50  -> "losing  ${RaceMath.formatDelta(closing)}/lap"
-        else          -> "stable"
+private fun PositionText(position: Int) {
+    val color = when (position) {
+        1    -> GoldP1
+        2    -> SilverP2
+        3    -> BronzeP3
+        else -> TextMuted2
     }
-    val trendColor = when {
-        closing < -50 -> RaceFacerGreen
-        closing > 50  -> RaceFacerRed
-        else          -> TextMuted2
-    }
+    Text(
+        text       = "P$position",
+        color      = color,
+        fontSize   = 12.sp,
+        fontWeight = FontWeight.Bold,
+    )
+}
 
-    Column(
+@Composable
+private fun LapBadge(label: String, color: androidx.compose.ui.graphics.Color) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(SurfaceDark)
-            .padding(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .clip(RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = 0.15f))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text("GAP", color = TextMuted, fontSize = 8.sp, letterSpacing = 1.sp)
         Text(
-            text       = gapText,
-            color      = if (isBehind) RaceFacerRed else RaceFacerGreen,
-            fontSize   = 22.sp,
+            text       = label,
+            color      = color,
+            fontSize   = 10.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = Mono,
         )
-        Text(trendText, color = trendColor, fontSize = 10.sp, fontFamily = Mono)
     }
 }
 

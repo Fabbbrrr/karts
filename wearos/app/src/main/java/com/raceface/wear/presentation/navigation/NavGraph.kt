@@ -95,8 +95,15 @@ fun RaceFacerNavGraph(startDestination: String) {
             val vm: CompareViewModel = hiltViewModel()
             val state by vm.uiState.collectAsStateWithLifecycle()
             CompareScreen(
-                state    = state,
-                onRepick = { navController.navigate(Screen.KartPicker.route) },
+                state       = state,
+                onRepick    = { navController.navigate(Screen.KartPicker.route) },
+                onBackToHud = {
+                    if (!navController.popBackStack(Screen.Hud.route, false)) {
+                        navController.navigate(Screen.Hud.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                },
             )
         }
 
