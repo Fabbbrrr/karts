@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,8 +112,12 @@ fun KartPickerScreen(
             // Build stamp — lets you confirm which build is installed
             item {
                 Spacer(Modifier.height(8.dp))
+                val fmt = remember {
+                    java.text.SimpleDateFormat("MMM dd HH:mm", java.util.Locale.US)
+                        .format(java.util.Date(com.raceface.wear.BuildConfig.BUILD_TIME_MS))
+                }
                 Text(
-                    text      = "build ${com.raceface.wear.BuildConfig.BUILD_TIME}",
+                    text      = "build $fmt",
                     color     = TextMuted.copy(alpha = 0.5f),
                     fontSize  = 8.sp,
                     textAlign = TextAlign.Center,

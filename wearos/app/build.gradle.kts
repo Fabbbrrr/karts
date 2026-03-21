@@ -17,9 +17,8 @@ android {
         versionCode     = 1
         versionName     = "1.0.0"
 
-        // Inject build timestamp so the user can verify which build is installed
-        val buildTime = "${java.util.Date()}"
-        buildConfigField("String", "BUILD_TIME", "\"${buildTime}\"")
+        // Inject build timestamp (millis) — formatted in app code
+        buildConfigField("long", "BUILD_TIME_MS", "${System.currentTimeMillis()}L")
     }
 
     buildFeatures {
