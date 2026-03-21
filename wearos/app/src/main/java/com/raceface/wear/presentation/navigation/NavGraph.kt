@@ -44,6 +44,13 @@ fun RaceFacerNavGraph(startDestination: String) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
+                quickPickPair = state.quickPickPair,
+                onQuickPick   = { myKart, mateKart ->
+                    vm.selectQuickPick(myKart, mateKart)
+                    navController.navigate(Screen.Hud.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
             )
         }
 

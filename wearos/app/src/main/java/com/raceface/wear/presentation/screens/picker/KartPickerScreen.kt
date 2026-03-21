@@ -27,6 +27,9 @@ import com.raceface.wear.presentation.theme.*
 /**
  * Pure display composable — shows a scrollable list of karts.
  * Zero navigation logic, zero DataStore awareness.
+ *
+ * When [quickPickPair] is non-null, shows a simplified two-button picker
+ * for FM and JB instead of the full kart list (hidden feature).
  */
 @Composable
 fun KartPickerScreen(
@@ -36,7 +39,18 @@ fun KartPickerScreen(
     selectedKart: String? = null,
     onKartPicked: (String) -> Unit,
     onSkip: (() -> Unit)? = null,
+    quickPickPair: QuickPickPair? = null,
+    onQuickPick: ((myKart: String, mateKart: String) -> Unit)? = null,
 ) {
+    // Hidden feature: FM + JB both racing → show big glove-friendly buttons
+    if (quickPickPair != null && onQuickPick != null) {
+        QuickPickContent(
+            pair        = quickPickPair,
+            onQuickPick = onQuickPick,
+        )
+        return
+    }
+
     val listState = rememberScalingLazyListState()
 
     Box(
@@ -181,5 +195,97 @@ private fun KartChip(
             color    = TextMuted2,
             fontSize = 11.sp,
         )
+    }
+}
+
+// ── Hidden feature: FM + JB quick-pick ──────────────────────────────────────
+
+@Composable
+private fun QuickPickContent(
+    pair: QuickPickPair,
+    onQuickPick: (myKart: String, mateKart: String) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundBlack),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            // FM button — tap to race as FM, auto-VS against JB
+            QuickPickButton(
+                initials    = "FM",
+                driver      = pair.fm,
+                tint        = RaceFacerGreen,
+                onClick     = { onQuickPick(pair.fm.kartNumber, pair.jb.kartNumber) },
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            // JB button — tap to race as JB, auto-VS against FM
+            QuickPickButton(
+                initials    = "JB",
+                driver      = pair.jb,
+                tint        = RaceFacerAmber,
+                onClick     = { onQuickPick(pair.jb.kartNumber, pair.fm.kartNumber) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuickPickButton(
+    initials: String,
+    driver: DriverRun,
+    tint: Color,
+    onClick: () -> Unit,
+) {
+    val posColor = when (driver.position) {
+        1    -> GoldP1
+        2    -> SilverP2
+        3    -> BronzeP3
+        else -> TextMuted2
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(tint.copy(alpha = 0.15f))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text       = initials,
+                color      = tint,
+                fontSize   = 40.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text       = "#${driver.kartNumber}",
+                    color      = tint,
+                    fontSize   = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text       = "P${driver.position}",
+                    color      = posColor,
+                    fontSize   = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
     }
 }

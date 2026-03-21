@@ -13,11 +13,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/** Pair of drivers whose initials match the hardcoded "FM" / "JB" easter egg. */
+data class QuickPickPair(
+    val fm: DriverRun,
+    val jb: DriverRun,
+)
+
 data class KartPickerUiState(
     val drivers: List<DriverRun> = emptyList(),
     val myKart: String? = null,
     val mateKart: String? = null,
     val isConnected: Boolean = false,
+    val quickPickPair: QuickPickPair? = null,
 )
 
 @HiltViewModel
@@ -37,7 +44,10 @@ class KartPickerViewModel @Inject constructor(
         }
         viewModelScope.launch {
             repository.sessionDataFlow.collect { session ->
-                _uiState.update { it.copy(drivers = session.runs) }
+                val fm = session.runs.find { it.driverName.initials() == "FM" }
+                val jb = session.runs.find { it.driverName.initials() == "JB" }
+                val pair = if (fm != null && jb != null) QuickPickPair(fm, jb) else null
+                _uiState.update { it.copy(drivers = session.runs, quickPickPair = pair) }
             }
         }
         viewModelScope.launch {
@@ -64,4 +74,18 @@ class KartPickerViewModel @Inject constructor(
     fun selectMate(kartNumber: String?) {
         appScope.launch { repository.dataStore.setMateKart(kartNumber) }
     }
+
+    /** Quick-pick: set both my kart and mate in one shot. */
+    fun selectQuickPick(myKartNumber: String, mateKartNumber: String) {
+        appScope.launch {
+            repository.dataStore.setMyKart(myKartNumber)
+            repository.dataStore.setMateKart(mateKartNumber)
+        }
+    }
+
+    /** Extract initials from a driver name, e.g. "Fabio Morales" → "FM" */
+    private fun String.initials(): String =
+        split(" ").filter { it.isNotBlank() }
+            .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+            .joinToString("")
 }
