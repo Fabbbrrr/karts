@@ -56,8 +56,10 @@ class RaceExporter @Inject constructor(
     }
 
     private fun buildRunJson(timestamp: String, session: SessionData, run: com.raceface.wear.domain.model.DriverRun): String {
-        val lapTimesJson = run.lapTimes.joinToString(",")
-        return """{"timestamp":${timestamp.jsonStr()},"eventName":${session.eventName.jsonStr()},"sessionName":${session.sessionName.jsonStr()},"kartNumber":${run.kartNumber.jsonStr()},"driverName":${run.driverName.jsonStr()},"position":${run.position},"bestTimeRaw":${run.bestTimeRaw},"lastTimeRaw":${run.lastTimeRaw},"laps":${run.laps},"lapTimes":[$lapTimesJson]}"""
+        // lapTimes sent as a comma-separated string — Google Sheets cells must be scalar,
+        // not arrays. Parse with SPLIT(J2,",") in the Sheet if needed.
+        val lapTimesStr = run.lapTimes.joinToString(",")
+        return """{"timestamp":${timestamp.jsonStr()},"eventName":${session.eventName.jsonStr()},"sessionName":${session.sessionName.jsonStr()},"kartNumber":${run.kartNumber.jsonStr()},"driverName":${run.driverName.jsonStr()},"position":${run.position},"bestTimeRaw":${run.bestTimeRaw},"lastTimeRaw":${run.lastTimeRaw},"laps":${run.laps},"lapTimes":${lapTimesStr.jsonStr()}}"""
     }
 
     private fun String.jsonStr(): String {
