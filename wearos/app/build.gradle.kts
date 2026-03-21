@@ -16,6 +16,15 @@ android {
         targetSdk       = 35
         versionCode     = 1
         versionName     = "1.0.0"
+
+        // Inject build timestamp so the user can verify which build is installed
+        val buildTime = java.text.SimpleDateFormat("MMM dd HH:mm", java.util.Locale.US)
+            .format(java.util.Date())
+        buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

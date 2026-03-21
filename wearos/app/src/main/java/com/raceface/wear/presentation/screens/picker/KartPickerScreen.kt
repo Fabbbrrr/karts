@@ -107,6 +107,18 @@ fun KartPickerScreen(
                     }
                 }
             }
+
+            // Build stamp — lets you confirm which build is installed
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text      = "build ${com.raceface.wear.BuildConfig.BUILD_TIME}",
+                    color     = TextMuted.copy(alpha = 0.5f),
+                    fontSize  = 8.sp,
+                    textAlign = TextAlign.Center,
+                    modifier  = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }
